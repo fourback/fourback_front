@@ -2,9 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../community/posts.dart';
+import 'post_list_screen.dart';
 import '/api_url.dart';
-import '../community/searchscreen.dart';
+import 'search_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../models/community.dart';
+
+
+Future<String?> readJwt() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getString('USERID');
+}
 
 class BoardScreen extends StatefulWidget {
   const BoardScreen({super.key});
@@ -41,8 +49,11 @@ class _BoardState extends State<BoardScreen> {
 
 
   Future<void> fetchBoards() async {
-    const int memberId = 1;  //사용자 id(pk)
-    final response = await http.get(Uri.parse('${ApiUrl.baseUrl}/api/board?memberId=$memberId'));
+    String? token = await readJwt();
+    final response = await http.get(
+      Uri.parse('${ApiUrl.baseUrl}/api/board'),
+      headers: {'authorization': '$token'},
+    );
     if (response.statusCode == 200) {
       final List<dynamic> jsonData = jsonDecode(response.body);
       setState(() {
@@ -161,7 +172,7 @@ class _BoardState extends State<BoardScreen> {
                     splashColor: Colors.transparent,
                     highlightColor: Colors.transparent,
                     onPressed: () async {
-                      await boards[index]._toggleFavorite(boards[index].boardName,1);
+                      await favoriteboard(boards[index].boardName);
                       await fetchBoards();
                       setState(() {});
                     },
@@ -191,67 +202,33 @@ class _BoardState extends State<BoardScreen> {
 
     ));
   }
-
-
 }
 
-class FavoriteDto {
-  final int memberId;
-  final String boardName;
-  //final DateTime dt;
+Future<void> favoriteboard(String boardName) async {
 
+  // API 엔드포인트 설정
+  String apiUrl = "${ApiUrl.baseUrl}/api/board/favorite";
+  String? token = await readJwt();
 
-  FavoriteDto(this.memberId, this.boardName);
-
-  Map<String, dynamic> toJson() {
-    return {
-      'memberId' : memberId,
-      'boardName': boardName,
-    };
-  }
-}
-
-class BoardDto {
-  final int id;
-  final String boardName;
-  bool isfavorite ;
-
-  BoardDto({required this.id,required this.boardName,this.isfavorite = false});
-
-  factory BoardDto.fromJson(Map<String, dynamic> json) {
-    return BoardDto(
-      id: json['id'],
-      boardName: json['boardName'],
-      isfavorite: json['isfavorite'] ?? false,
+  // POST 요청으로 즐겨찾기 토글 요청 보내기
+  try {
+    final response = await http.post(
+      Uri.parse(apiUrl),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'authorization': '$token'
+      },
+      body: jsonEncode(FavoriteBoard(boardName)),
     );
-  }
 
-  Future<void> _toggleFavorite(String boardName, int memberId) async {
-
-    // API 엔드포인트 설정
-    String apiUrl = "${ApiUrl.baseUrl}/api/board/favorite";
-
-    // POST 요청으로 즐겨찾기 토글 요청 보내기
-    try {
-      final response = await http.post(
-        Uri.parse(apiUrl),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode(FavoriteDto(memberId, boardName)),
-      );
-
-      if (response.statusCode == 200) {
-        // 즐겨찾기 상태가 토글되었으므로 UI 갱신
-
-
-      } else {
-        // 오류 발생 시 에러 메시지 출력
-        print('Failed to toggle favorite: ${response.statusCode}');
-      }
-    } catch (error) {
-      // 네트워크 오류 발생 시 에러 메시지 출력
-      print('Network error: $error');
+    if (response.statusCode == 200) {
+      // 즐겨찾기 상태가 토글되었으므로 UI 갱신
+    } else {
+      // 오류 발생 시 에러 메시지 출력
+      print('Failed to favorite: ${response.statusCode}');
     }
+  } catch (error) {
+    // 네트워크 오류 발생 시 에러 메시지 출력
+    print('Network error: $error');
   }
 }

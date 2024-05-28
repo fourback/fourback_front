@@ -3,36 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../api_url.dart';
+import '/api_url.dart';
+import '/models/postsearch.dart';
 
-class PostSearchDto {
-  final int id;
-  final String title;
-  final String content;
-  final String memberName;
-  final int goodCount;
-  final int commentCount;
-  final int viewCount;
-  final String postDate;
-  final String boardName;
 
-  PostSearchDto({required this.id,required this.title, required this.content,required this.memberName,
-    required this.goodCount,required this.commentCount,required this.viewCount,required this.postDate, required this.boardName});
-
-  factory PostSearchDto.fromJson(Map<String, dynamic> json) {
-    return PostSearchDto(
-        id: json['id'],
-        title: json['title'],
-        content: json['content'],
-        memberName: json['memberName'],
-        goodCount: json['goodCount'],
-        commentCount: json['commentCount'],
-        viewCount: json['viewCount'],
-        postDate: json['postDate'],
-        boardName: json['boardName']
-    );
-  }
-}
 
 class SearchScreen extends StatefulWidget {
   @override
@@ -45,7 +19,7 @@ class _SearchScreenState extends State<SearchScreen> {
   bool beforeSearch = true;
   int page = 0;
   int pageSize = 10;
-  late List<PostSearchDto> posts = [];
+  late List<PostSearch> posts = [];
   late ScrollController _scrollController;
   String currentQuery = '';
 
@@ -75,7 +49,7 @@ class _SearchScreenState extends State<SearchScreen> {
     if (response.statusCode == 200) {
       final List<dynamic> jsonData = jsonDecode(response.body);
       setState(() {
-        posts.addAll(jsonData.map((data) => PostSearchDto.fromJson(data)).toList());
+        posts.addAll(jsonData.map((data) => PostSearch.fromJson(data)).toList());
         page++;
       });
     } else {

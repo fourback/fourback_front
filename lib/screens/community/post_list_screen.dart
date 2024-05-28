@@ -1,37 +1,12 @@
+import 'post_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'write.dart';
+import 'write_screen.dart';
 import '/api_url.dart';
+import '/models/post.dart';
 
-class PostDto {
-  final int id;
-  final String title;
-  final String content;
-  final String memberName;
-  final int goodCount;
-  final int commentCount;
-  final int viewCount;
-  final String postDate;
-
-  PostDto({required this.id,required this.title, required this.content,required this.memberName,
-    required this.goodCount,required this.commentCount,required this.viewCount,required this.postDate});
-
-  factory PostDto.fromJson(Map<String, dynamic> json) {
-    return PostDto(
-      id: json['id'],
-      title: json['title'],
-      content: json['content'],
-      memberName: json['memberName'],
-      goodCount: json['goodCount'],
-      commentCount: json['commentCount'],
-      viewCount: json['viewCount'],
-      postDate: json['postDate']
-
-    );
-  }
-}
 
 class PostListScreen extends StatefulWidget {
 
@@ -46,7 +21,7 @@ class PostListScreen extends StatefulWidget {
 class _PostListScreenState extends State<PostListScreen> {
 
   late ScrollController _scrollController;
-  late List<PostDto> posts = [];
+  late List<Post> posts = [];
   bool isFavorite = false;
   int page = 0;
   int pageSize = 10;
@@ -70,7 +45,6 @@ class _PostListScreenState extends State<PostListScreen> {
   Future<void> fetchPosts() async {
     if (isLoading) return;
 
-
     setState(() {
       isLoading = true;
     });
@@ -82,7 +56,7 @@ class _PostListScreenState extends State<PostListScreen> {
     if (response.statusCode == 200) {
       final List<dynamic> jsonData = jsonDecode(response.body);
       setState(() {
-        posts.addAll(jsonData.map((data) => PostDto.fromJson(data)).toList());
+        posts.addAll(jsonData.map((data) => Post.fromJson(data)).toList());
         page++;
       });
     } else {
@@ -223,7 +197,10 @@ class _PostListScreenState extends State<PostListScreen> {
                     ],
                   ),
                   onTap: () {
-                    // 게시글을 눌렀을 때의 동작을 추가할 수 있습니다.
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => DetailScreen(post : posts[index],boardName: widget.boardName)),
+                    );
                   },
                 ),
               ),
