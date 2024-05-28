@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'home.dart';
-import 'chat.dart';
-import 'board.dart';
-import 'group.dart';
-import 'mypage.dart';
+import 'home_screen.dart';
+import 'chat_screen.dart';
+import 'community/community_screen.dart';
+import 'group_screen.dart';
+import 'mypage_screen.dart';
 
 class navigationScreen extends StatefulWidget {
   @override

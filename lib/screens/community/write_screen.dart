@@ -2,29 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'posts.dart';
+import 'post_list_screen.dart';
 import '/api_url.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../models/write.dart';
 
 
-class TextModel {
-  final String content;
-  final String title;
-  final int boardId;
-  //final DateTime dt;
 
 
-  TextModel(this.title, this.content,this.boardId);
-
-  Map<String, dynamic> toJson() {
-    return {
-      'title' : title,
-      'content': content,
-      'boardId' : boardId,
-      'memberId' : 2,
-    };
-  }
+Future<String?> readJwt() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getString('USERID');
 }
-
 
 class WriteScreen extends StatefulWidget {
   final int boardId;
@@ -38,15 +27,16 @@ class _InputScreenState extends State<WriteScreen> {
   TextEditingController _textEditingController = TextEditingController();
   TextEditingController _textEditingController2 = TextEditingController();
 
-  Future<void> _sendTextToAPI(TextModel textModel) async {
+  Future<void> _sendTextToAPI(Write textModel) async {
     // 여기에 API 엔드포인트를 적절히 설정하세요.
     String apiUrl = '${ApiUrl.baseUrl}/api/post';
-
+    String? token = await readJwt();
     try {
       final response = await http.post(
         Uri.parse(apiUrl),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
+          'authorization': '$token'
         },
         body: jsonEncode(textModel.toJson()),
       );
@@ -93,7 +83,7 @@ class _InputScreenState extends State<WriteScreen> {
                 String inputText2 = _textEditingController2.text;
 
                 // 모델을 사용하여 텍스트를 래핑하여 API로 전송
-                await _sendTextToAPI(TextModel(inputText,inputText2,widget.boardId));
+                await _sendTextToAPI(Write(inputText,inputText2,widget.boardId));
                 // 입력 후에는 텍스트 필드를 초기화합니다.
                 _textEditingController.clear();
                 _textEditingController2.clear();

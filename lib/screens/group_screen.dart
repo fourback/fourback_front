@@ -4,7 +4,7 @@ class GroupScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Text('Profile Screen'),
+      child: Text('Group Screen'),
     );
   }
 }
