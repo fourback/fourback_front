@@ -10,6 +10,7 @@ import '../../models/write.dart';
 
 
 
+
 Future<String?> readJwt() async {
   final prefs = await SharedPreferences.getInstance();
   return prefs.getString('USERID');
@@ -24,8 +25,11 @@ class WriteScreen extends StatefulWidget {
 }
 
 class _InputScreenState extends State<WriteScreen> {
+
   TextEditingController _textEditingController = TextEditingController();
   TextEditingController _textEditingController2 = TextEditingController();
+
+
 
   Future<void> _sendTextToAPI(Write textModel) async {
     // 여기에 API 엔드포인트를 적절히 설정하세요.
@@ -183,7 +187,7 @@ class _InputScreenState extends State<WriteScreen> {
                   height: null,
                 ),
                 onPressed: () {
-                  // 버튼을 눌렀을 때 할 동작
+
                 },
               ),
             ],

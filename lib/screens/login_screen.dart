@@ -55,6 +55,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
 
     userID = response.headers["authorization"]!;
+    print("userID" + userID!);
 
     _registerUserId();
     user = UserInfo(
