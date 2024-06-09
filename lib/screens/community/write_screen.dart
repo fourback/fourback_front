@@ -6,6 +6,12 @@ import 'post_list_screen.dart';
 import '/api_url.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/write.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:http_parser/http_parser.dart';
+import 'package:mime/mime.dart';
+import 'dart:io';
+
+
 
 
 
@@ -28,38 +34,115 @@ class _InputScreenState extends State<WriteScreen> {
 
   TextEditingController _textEditingController = TextEditingController();
   TextEditingController _textEditingController2 = TextEditingController();
-
-
+  List<File> images = [];
 
   Future<void> _sendTextToAPI(Write textModel) async {
     // 여기에 API 엔드포인트를 적절히 설정하세요.
     String apiUrl = '${ApiUrl.baseUrl}/api/post';
     String? token = await readJwt();
-    try {
-      final response = await http.post(
-        Uri.parse(apiUrl),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-          'authorization': '$token'
-        },
-        body: jsonEncode(textModel.toJson()),
-      );
+    final url = Uri.parse('${ApiUrl.baseUrl}/api/post');
+    final request = http.MultipartRequest('POST', url);
 
+    request.fields['title'] = textModel.title;
+    request.fields['content'] = textModel.content;
+    request.fields['boardId'] = textModel.boardId.toString();
+
+    request.headers['authorization'] = '$token';
+
+
+    if (images.isNotEmpty) {
+      for (var image in images) {
+
+        request.files.add(await http.MultipartFile.fromPath(
+          'images', // Assuming your server expects an array of images under the key 'images'
+          image.path,
+        ));
+      }
+
+    }
+
+
+    try {
+      final response = await request.send();
       if (response.statusCode == 200) {
-        // 성공적으로 API에 데이터를 전송한 경우 처리할 내용
         print('텍스트가 성공적으로 전송되었습니다.');
       } else {
-        // API 요청이 실패한 경우 처리할 내용
         print('API 요청이 실패했습니다.');
       }
     } catch (e) {
-      // 오류 발생 시 처리
       print('오류: $e');
     }
+
+    // try {
+    //   final response = await http.post(
+    //     Uri.parse(apiUrl),
+    //     headers: <String, String>{
+    //       'Content-Type': 'application/json; charset=UTF-8',
+    //       'authorization': '$token'
+    //     },
+    //
+    //     body: jsonEncode(textModel.toJson()),
+    //   );
+    //
+    //   if (response.statusCode == 200) {
+    //     // 성공적으로 API에 데이터를 전송한 경우 처리할 내용
+    //     print('텍스트가 성공적으로 전송되었습니다.');
+    //   } else {
+    //     // API 요청이 실패한 경우 처리할 내용
+    //     print('API 요청이 실패했습니다.');
+    //   }
+    // } catch (e) {
+    //   // 오류 발생 시 처리
+    //   print('오류: $e');
+    // }
   }
+
+  void _removeImage(int index) {
+    setState(() {
+      images.removeAt(index);
+    });
+  }
+
+  Future<void> pickImages() async {
+    if (images.length >= 9) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('사진은 최대 9장까지 첨부할 수 있어요.')),
+      );
+      return;
+    }
+
+    final pickedFiles = await ImagePicker().pickMultiImage();
+    if (pickedFiles != null && pickedFiles.isNotEmpty) {
+      List<File> tempImages = [];
+      for (var pickedFile in pickedFiles) {
+        final mimeType = lookupMimeType(pickedFile.path);
+        if (images.length + tempImages.length >= 9) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('사진은 최대 9장까지 첨부할 수 있어요.')),
+          );
+          break;
+        }
+        if (mimeType != null && mimeType.startsWith('image/')) {
+          tempImages.add(File(pickedFile.path));
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('이미지 파일을 업로드 해주세요.')),
+          );
+        }
+
+      }
+      setState(() {
+        images.addAll(tempImages);
+      });
+    }
+
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
     return Scaffold(
 
       appBar: AppBar(
@@ -137,8 +220,6 @@ class _InputScreenState extends State<WriteScreen> {
               ),
             ),
             Divider(),
-
-
             TextFormField(
               maxLines: null,
               keyboardType: TextInputType.multiline,
@@ -155,6 +236,62 @@ class _InputScreenState extends State<WriteScreen> {
               ),
             ),
 
+
+
+            images.isEmpty
+                ? SizedBox.shrink()
+                :
+
+
+            Column(
+                  children: [
+                    Container(
+
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: images.asMap().entries.map((entry) {
+                          int index = entry.key;
+                          File image = entry.value;
+                          return Stack(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(16.0),
+                                  child: FadeInImage(
+                                    placeholder: AssetImage('assets/icons/loading.gif'),
+                                    image: FileImage(image),
+                                    width: screenSize.width / 3 - 10,
+                                    height: screenSize.height / 6 - 10,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                right: 0,
+                                child: IconButton(
+                                  icon: Icon(Icons.remove_circle_outline, color: Colors.red),
+                                  onPressed: () => _removeImage(index),
+                                  splashColor: Colors.transparent,
+                                  highlightColor: Colors.transparent,
+                                ),
+                              ),
+                            ],
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    ),
+                    Row(
+                      children: [
+                        Spacer(),
+                        Text("${images.length} / 9",style: TextStyle(fontWeight: FontWeight.bold),),
+                      ],
+                    ),
+                  ],
+                ),
 
           ],
 
@@ -186,9 +323,8 @@ class _InputScreenState extends State<WriteScreen> {
                   width: 30,
                   height: null,
                 ),
-                onPressed: () {
+                onPressed: pickImages,
 
-                },
               ),
             ],
           ),
