@@ -30,6 +30,7 @@ class _DetailScreenState extends State<DetailScreen> {
 
   bool isLoading = false;
   late List<CommentResult> commentsResult = [];
+
   late int size = 0;
   int page = 0;
 
@@ -254,13 +255,16 @@ class _DetailScreenState extends State<DetailScreen> {
                   ),
                   child: Column(
                     children: List.generate(size, (index) {
+                      List<dynamic> jsonData = commentsResult[index].reply?['result'];
+                      List<CommentResult> repliesResult = [];
+                      // 대댓글 리스트
+                      repliesResult.addAll(jsonData.map((data) => CommentResult.fromJson(data)).toList());
                       final memberId = '${commentsResult[index].userName}';
                       final comment = '${commentsResult[index].content}'; // comment
 
-                      // 대댓글 리스트
-                      final List<String> replies = List.generate(
-                        commentsResult[index].reply['size'],
-                            (replyIndex) => (commentsResult[index].reply['result'])[replyIndex].content,
+                      final List<CommentResult> replies = List.generate(
+                          jsonData.length,
+                            (replyIndex) => repliesResult[replyIndex]
                       );
 
                       return Column(
@@ -324,7 +328,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                   mainAxisAlignment: MainAxisAlignment.start,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
-                                    Text("2024-05-27"), // 날짜 텍스트
+                                    Text('${commentsResult[index].dateDiff}'), // 댓글 날짜 텍스트
                                     Spacer(),
                                     IconButton(
                                       onPressed: () {
@@ -341,7 +345,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                       },
                                       icon: Icon(Icons.chat_bubble_outline, color: Colors.black),
                                     ),
-                                    Text('3'),
+                                    Text('${jsonData.length}'), // 대댓글 갯수 표시
                                     SizedBox(width: 8),
                                     IconButton(
                                       icon: Icon(
@@ -390,7 +394,8 @@ class _DetailScreenState extends State<DetailScreen> {
                                                     crossAxisAlignment: CrossAxisAlignment.start,
                                                     children: [
                                                       Text(
-                                                        '사용자',
+                                                        '${replies[replyIndex].userName}',
+                                                        //대댓글 사용자명
                                                         style: TextStyle(
                                                           fontWeight: FontWeight.bold,
                                                           fontSize: 14.0,
@@ -437,7 +442,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                                   });
                                                 },
                                                 child: Text(
-                                                  reply,
+                                                  reply.content,
                                                   style: TextStyle(fontSize: 14.0),
                                                 ),
                                               ),
@@ -522,17 +527,27 @@ class _DetailScreenState extends State<DetailScreen> {
                     // 대댓글 작성 로직
                     // replyingToCommentIndex를 사용하여 대댓글을 작성할 댓글을 식별할 수 있습니다.
                   } else {
-                    // 댓글 작성 로직
+    // 댓글 작성 로직
+    }
                     String apiUrl = '${ApiUrl.baseUrl}/api/comment';
                     String? token = await readJwt();
               try {
+                int t1 = widget.post.id;
+                String t2 = _commentController.text;
+                int replyingToCommentIndexToInt = replyingToCommentIndex ?? -1;
+                int replyParentCommentId = -1;
+
+                if(replyingToCommentIndexToInt != -1)
+                  replyParentCommentId = commentsResult[replyingToCommentIndexToInt].id;
+
                     final response = await http.post(
                     Uri.parse(apiUrl),
                     headers: <String, String>{
                     'Content-Type': 'application/json; charset=UTF-8',
                     'authorization': '$token'
                     },
-                    body: jsonEncode(CommentWrite(widget.post.id, _commentController.text, 0).toJson()),
+                    body: jsonEncode(CommentWrite(widget.post.id, _commentController.text, replyParentCommentId)),
+
                     );
 
                   if (response.statusCode == 200) {
@@ -546,13 +561,13 @@ class _DetailScreenState extends State<DetailScreen> {
                   // 오류 발생 시 처리
                   print('오류: $e');
                   }
-                }
+
                   setState(() {
                     isReplying = false;
                     replyingToCommentIndex = null;
                     _commentController.clear();
                   });
-                },
+  },
               ),
             ],
           ),

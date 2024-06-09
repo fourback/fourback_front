@@ -6,7 +6,9 @@ class CommentResult {
   final String commentDate;
   final int postId;
   final int parentId;
-  final Map<String, dynamic> reply;
+  final String? dateDiff;
+
+  final Map<String, dynamic>? reply;
 
   CommentResult({
   required this.id,
@@ -16,7 +18,9 @@ class CommentResult {
   required this.commentDate,
   required this.postId,
   required this.parentId,
+  required this.dateDiff,
   required this.reply
+
   });
 
   factory CommentResult.fromJson(Map<String, dynamic> json) {
@@ -28,6 +32,7 @@ class CommentResult {
   commentDate: json['commentDate'],
   postId: json['postId'],
   parentId: json['parentId'],
+  dateDiff: json['dateDiff'],
   reply: json['reply'],
   );
   }
@@ -41,6 +46,7 @@ class CommentResult {
   'commentDate': commentDate,
     'postId': postId,
     'parentId': parentId,
+    'dateDiff': dateDiff,
     'reply': reply
   };
   }

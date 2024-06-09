@@ -7,9 +7,9 @@ class CommentWrite {
 
   Map<String, dynamic> toJson() {
     return {
-      'title' : postId,
+      'postId' : postId,
       'content': content,
-      'boardId' : parentCommentId,
+      'parentCommentId' : parentCommentId,
     };
   }
 }
