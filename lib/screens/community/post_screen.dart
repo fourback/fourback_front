@@ -7,7 +7,6 @@ import '../../models/commentResult.dart';
 import '/models/post.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-
 class DetailScreen extends StatefulWidget {
   final Post post;
   final String boardName;
@@ -29,9 +28,9 @@ class _DetailScreenState extends State<DetailScreen> {
   int? replyingToCommentIndex;
 
   bool isLoading = false;
-  late List<CommentResult> commentsResult = [];
+  List<CommentResult> commentsResult = [];
 
-  late int size = 0;
+  int size = 0;
   int page = 0;
 
   List<bool> _isReplyVisible = List.generate(12, (index) => false);  //글 갯수 12
@@ -67,14 +66,38 @@ class _DetailScreenState extends State<DetailScreen> {
 
       setState(() {
         List<dynamic> jsonData = jsonMap['result'];
-        commentsResult.addAll(jsonData.map((data) => CommentResult.fromJson(data)).toList());
+        commentsResult = jsonData.map((data) => CommentResult.fromJson(data)).toList();
         size = jsonMap['size'];
         page++;
       });
     } else {
       throw Exception('Failed to load comments');
     }
+  }
 
+  Future<void> _addComment(String content, int parentCommentId) async {
+    String apiUrl = '${ApiUrl.baseUrl}/api/comment';
+    String? token = await readJwt();
+
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'authorization': '$token'
+        },
+        body: jsonEncode(CommentWrite(widget.post.id, content, parentCommentId)),
+      );
+
+      if (response.statusCode == 200) {
+        print('댓글이 성공적으로 전송되었습니다.');
+        await fetchComments(); // 새로운 댓글을 작성한 후 댓글 리스트를 다시 로드
+      } else {
+        print('API 요청이 실패했습니다.');
+      }
+    } catch (e) {
+      print('오류: $e');
+    }
   }
 
   @override
@@ -195,7 +218,6 @@ class _DetailScreenState extends State<DetailScreen> {
                           style: TextStyle(color: Colors.grey, fontSize: 14.0),
                         ),
                         Flexible(
-
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
@@ -264,7 +286,7 @@ class _DetailScreenState extends State<DetailScreen> {
 
                       final List<CommentResult> replies = List.generate(
                           jsonData.length,
-                            (replyIndex) => repliesResult[replyIndex]
+                              (replyIndex) => repliesResult[replyIndex]
                       );
 
                       return Column(
@@ -333,10 +355,12 @@ class _DetailScreenState extends State<DetailScreen> {
                                     IconButton(
                                       onPressed: () {
                                         setState(() {
-                                          if (isReplying && replyingToCommentIndex == index) {
+                                          if (replyingToCommentIndex == index) {
+                                            // 대댓글 작성 모드 종료
                                             isReplying = false;
                                             replyingToCommentIndex = null;
                                           } else {
+                                            // 대댓글 작성 모드 시작
                                             isReplying = true;
                                             replyingToCommentIndex = index;
                                           }
@@ -504,7 +528,12 @@ class _DetailScreenState extends State<DetailScreen> {
           ),
         ),
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+          padding: EdgeInsets.only(
+            left: 12.0,
+            right: 12.0,
+            top: 8.0,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 8.0,
+          ),
           child: Row(
             children: [
               SizedBox(width: 12),
@@ -525,49 +554,20 @@ class _DetailScreenState extends State<DetailScreen> {
                 onPressed: () async {
                   if (isReplying && replyingToCommentIndex != null) {
                     // 대댓글 작성 로직
-                    // replyingToCommentIndex를 사용하여 대댓글을 작성할 댓글을 식별할 수 있습니다.
+                    int parentCommentId = commentsResult[replyingToCommentIndex!].id;
+                    await _addComment(_commentController.text, parentCommentId);
                   } else {
-    // 댓글 작성 로직
-    }
-                    String apiUrl = '${ApiUrl.baseUrl}/api/comment';
-                    String? token = await readJwt();
-              try {
-                int t1 = widget.post.id;
-                String t2 = _commentController.text;
-                int replyingToCommentIndexToInt = replyingToCommentIndex ?? -1;
-                int replyParentCommentId = -1;
-
-                if(replyingToCommentIndexToInt != -1)
-                  replyParentCommentId = commentsResult[replyingToCommentIndexToInt].id;
-
-                    final response = await http.post(
-                    Uri.parse(apiUrl),
-                    headers: <String, String>{
-                    'Content-Type': 'application/json; charset=UTF-8',
-                    'authorization': '$token'
-                    },
-                    body: jsonEncode(CommentWrite(widget.post.id, _commentController.text, replyParentCommentId)),
-
-                    );
-
-                  if (response.statusCode == 200) {
-                  // 성공적으로 API에 데이터를 전송한 경우 처리할 내용
-                  print('댓글이 성공적으로 전송되었습니다.');
-                  } else {
-                  // API 요청이 실패한 경우 처리할 내용
-                  print('API 요청이 실패했습니다.');
-                  }
-                  } catch (e) {
-                  // 오류 발생 시 처리
-                  print('오류: $e');
+                    // 댓글 작성 로직
+                    await _addComment(_commentController.text, -1);
                   }
 
                   setState(() {
-                    isReplying = false;
-                    replyingToCommentIndex = null;
+                    if (!isReplying) {
+                      replyingToCommentIndex = null;
+                    }
                     _commentController.clear();
                   });
-  },
+                },
               ),
             ],
           ),
