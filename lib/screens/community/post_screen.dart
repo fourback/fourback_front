@@ -1,8 +1,11 @@
+import 'package:bemajor_frontend/models/commentWrite.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:bemajor_frontend/api_url.dart';
+import '../../models/commentResult.dart';
 import '/models/post.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 
 class DetailScreen extends StatefulWidget {
@@ -15,10 +18,21 @@ class DetailScreen extends StatefulWidget {
   State<DetailScreen> createState() => _DetailScreenState();
 }
 
+Future<String?> readJwt() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getString('USERID');
+}
+
 class _DetailScreenState extends State<DetailScreen> {
   final TextEditingController _commentController = TextEditingController();
   bool isReplying = false;
   int? replyingToCommentIndex;
+
+  bool isLoading = false;
+  late List<CommentResult> commentsResult = [];
+
+  late int size = 0;
+  int page = 0;
 
   List<bool> _isReplyVisible = List.generate(12, (index) => false);  //글 갯수 12
   bool isLiked = false; // 글 좋아요 상태를 나타내는 변수
@@ -29,6 +43,39 @@ class _DetailScreenState extends State<DetailScreen> {
 
   List<List<bool>> _replyLikes = List.generate(12, (index) => List.generate(3, (replyIndex) => false)); // 대댓글 좋아요 상태
   List<List<int>> _replyLikeCounts = List.generate(12, (index) => List.generate(3, (replyIndex) => 3)); // 대댓글 좋아요 수 테이블 수정
+
+  @override
+  void initState() {
+    super.initState();
+    fetchComments();
+  }
+
+  Future<void> fetchComments() async {
+    if (isLoading) return;
+
+    setState(() {
+      isLoading = true;
+    });
+
+    final response = await http.get(Uri.parse('${ApiUrl.baseUrl}/api/comment/list?postID=${widget.post.id}'));
+    setState(() {
+      isLoading = false;
+    });
+    if (response.statusCode == 200) {
+
+      final Map<String, dynamic> jsonMap = jsonDecode(response.body);
+
+      setState(() {
+        List<dynamic> jsonData = jsonMap['result'];
+        commentsResult.addAll(jsonData.map((data) => CommentResult.fromJson(data)).toList());
+        size = jsonMap['size'];
+        page++;
+      });
+    } else {
+      throw Exception('Failed to load comments');
+    }
+
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -207,14 +254,17 @@ class _DetailScreenState extends State<DetailScreen> {
                     color: Colors.white,
                   ),
                   child: Column(
-                    children: List.generate(12, (index) {
-                      final memberId = '사용자${index + 1}'; // 사용자 ID
-                      final comment = '${index + 1} 번째 댓글입니다.'; // 댓글 내용
-
+                    children: List.generate(size, (index) {
+                      List<dynamic> jsonData = commentsResult[index].reply?['result'];
+                      List<CommentResult> repliesResult = [];
                       // 대댓글 리스트
-                      final List<String> replies = List.generate(
-                        3,
-                            (replyIndex) => '대댓글 ${replyIndex + 1}입니다.',
+                      repliesResult.addAll(jsonData.map((data) => CommentResult.fromJson(data)).toList());
+                      final memberId = '${commentsResult[index].userName}';
+                      final comment = '${commentsResult[index].content}'; // comment
+
+                      final List<CommentResult> replies = List.generate(
+                          jsonData.length,
+                            (replyIndex) => repliesResult[replyIndex]
                       );
 
                       return Column(
@@ -278,7 +328,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                   mainAxisAlignment: MainAxisAlignment.start,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
-                                    Text("2024-05-27"), // 날짜 텍스트
+                                    Text('${commentsResult[index].dateDiff}'), // 댓글 날짜 텍스트
                                     Spacer(),
                                     IconButton(
                                       onPressed: () {
@@ -295,7 +345,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                       },
                                       icon: Icon(Icons.chat_bubble_outline, color: Colors.black),
                                     ),
-                                    Text('3'),
+                                    Text('${jsonData.length}'), // 대댓글 갯수 표시
                                     SizedBox(width: 8),
                                     IconButton(
                                       icon: Icon(
@@ -344,7 +394,8 @@ class _DetailScreenState extends State<DetailScreen> {
                                                     crossAxisAlignment: CrossAxisAlignment.start,
                                                     children: [
                                                       Text(
-                                                        '사용자',
+                                                        '${replies[replyIndex].userName}',
+                                                        //대댓글 사용자명
                                                         style: TextStyle(
                                                           fontWeight: FontWeight.bold,
                                                           fontSize: 14.0,
@@ -391,7 +442,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                                   });
                                                 },
                                                 child: Text(
-                                                  reply,
+                                                  reply.content,
                                                   style: TextStyle(fontSize: 14.0),
                                                 ),
                                               ),
@@ -471,20 +522,52 @@ class _DetailScreenState extends State<DetailScreen> {
               SizedBox(width: 6),
               IconButton(
                 icon: Icon(Icons.send, color: Colors.purple),
-                onPressed: () {
-                  // Add your send action here
+                onPressed: () async {
                   if (isReplying && replyingToCommentIndex != null) {
                     // 대댓글 작성 로직
                     // replyingToCommentIndex를 사용하여 대댓글을 작성할 댓글을 식별할 수 있습니다.
                   } else {
-                    // 댓글 작성 로직
+    // 댓글 작성 로직
+    }
+                    String apiUrl = '${ApiUrl.baseUrl}/api/comment';
+                    String? token = await readJwt();
+              try {
+                int t1 = widget.post.id;
+                String t2 = _commentController.text;
+                int replyingToCommentIndexToInt = replyingToCommentIndex ?? -1;
+                int replyParentCommentId = -1;
+
+                if(replyingToCommentIndexToInt != -1)
+                  replyParentCommentId = commentsResult[replyingToCommentIndexToInt].id;
+
+                    final response = await http.post(
+                    Uri.parse(apiUrl),
+                    headers: <String, String>{
+                    'Content-Type': 'application/json; charset=UTF-8',
+                    'authorization': '$token'
+                    },
+                    body: jsonEncode(CommentWrite(widget.post.id, _commentController.text, replyParentCommentId)),
+
+                    );
+
+                  if (response.statusCode == 200) {
+                  // 성공적으로 API에 데이터를 전송한 경우 처리할 내용
+                  print('댓글이 성공적으로 전송되었습니다.');
+                  } else {
+                  // API 요청이 실패한 경우 처리할 내용
+                  print('API 요청이 실패했습니다.');
                   }
+                  } catch (e) {
+                  // 오류 발생 시 처리
+                  print('오류: $e');
+                  }
+
                   setState(() {
                     isReplying = false;
                     replyingToCommentIndex = null;
                     _commentController.clear();
                   });
-                },
+  },
               ),
             ],
           ),

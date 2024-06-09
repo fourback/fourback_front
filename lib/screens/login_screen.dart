@@ -35,27 +35,28 @@ class _LoginScreenState extends State<LoginScreen> {
 
 
 
-  void _sendUserInfo() async {
-    final url = Uri.http(address, "login");
-    final response = await http.post(
-      url,
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: json.encode(
-        {
-          "userId": userId,
-          "birthYear": userBirth,
-          "email": userEmail,
-          "gender": userGender,
-          "name": userName,
-          "registrationId": "KAKAO",
+    void _sendUserInfo() async {
+      final url = Uri.http(address, "login");
+      final response = await http.post(
+        url,
+        headers: {
+          "Content-Type": "application/json",
         },
-      ),
-    );
+        body: json.encode(
+          {
+            "userId": userId,
+            "birthYear": userBirth,
+            "email": userEmail,
+            "gender": userGender,
+            "name": userName,
+            "registrationId": "KAKAO",
+          },
+        ),
+      );
 
     userID = response.headers["authorization"]!;
     print("userID" + userID!);
+
 
     _registerUserId();
     user = UserInfo(

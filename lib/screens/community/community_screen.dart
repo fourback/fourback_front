@@ -50,6 +50,7 @@ class _BoardState extends State<BoardScreen> {
 
   Future<void> fetchBoards() async {
     String? token = await readJwt();
+
     final response = await http.get(
       Uri.parse('${ApiUrl.baseUrl}/api/board'),
       headers: {'authorization': '$token'},
