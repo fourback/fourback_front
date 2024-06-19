@@ -33,9 +33,9 @@ class _DetailScreenState extends State<DetailScreen> {
   int size = 0;
   int page = 0;
 
-  List<bool> _isReplyVisible = List.generate(12, (index) => false);  //글 갯수 12
+  List<bool> _isReplyVisible = List.generate(12, (index) => false); // 글 갯수 12
   bool isLiked = false; // 글 좋아요 상태를 나타내는 변수
-  int likeCount = 3; // 글 좋아요 수  goodCount
+  int likeCount = 3; // 글 좋아요 수 goodCount
 
   List<bool> _commentLikes = List.generate(12, (index) => false); // 댓글 좋아요 상태
   List<int> _commentLikeCounts = List.generate(12, (index) => 3); // 댓글 좋아요 수
@@ -61,7 +61,6 @@ class _DetailScreenState extends State<DetailScreen> {
       isLoading = false;
     });
     if (response.statusCode == 200) {
-
       final Map<String, dynamic> jsonMap = jsonDecode(response.body);
 
       setState(() {
@@ -141,9 +140,9 @@ class _DetailScreenState extends State<DetailScreen> {
                           TextSpan(
                             text: widget.boardName,
                             style: TextStyle(
-                                color: Colors.purple,
-                                fontSize: 14.0,
-                                fontWeight: FontWeight.bold
+                              color: Colors.purple,
+                              fontSize: 14.0,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ],
@@ -167,7 +166,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                 widget.post.memberName,
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
-                              Text('수원대학교 컴퓨터학부'), //출신 및 과
+                              Text('수원대학교 컴퓨터학부'), // 출신 및 과
                               SizedBox(height: 8.0),
                             ],
                           ),
@@ -200,10 +199,7 @@ class _DetailScreenState extends State<DetailScreen> {
                     ),
                     Text(
                       widget.post.title, // 글 제목
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 25.0
-                      ),
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 25.0),
                     ),
                     Text(
                       widget.post.content, // 글 내용
@@ -214,7 +210,7 @@ class _DetailScreenState extends State<DetailScreen> {
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
                         Text(
-                          '2024-05-27', // 예시 작성 시간 comment_date
+                          widget.post.postDate, // 글 작성 날짜
                           style: TextStyle(color: Colors.grey, fontSize: 14.0),
                         ),
                         Flexible(
@@ -261,10 +257,7 @@ class _DetailScreenState extends State<DetailScreen> {
               // Comment 텍스트
               Text(
                 'Comment',
-                style: TextStyle(
-                    fontSize: 20.0,
-                    fontWeight: FontWeight.bold
-                ),
+                style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 10.0),
               // 댓글 리스트
@@ -286,16 +279,12 @@ class _DetailScreenState extends State<DetailScreen> {
 
                       final List<CommentResult> replies = List.generate(
                           jsonData.length,
-                              (replyIndex) => repliesResult[replyIndex]
-                      );
+                              (replyIndex) => repliesResult[replyIndex]);
 
                       return Column(
                         children: [
                           ListTile(
-                            contentPadding: EdgeInsets.symmetric(
-                                vertical: 10.0,
-                                horizontal: 15.0
-                            ),
+                            contentPadding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
                             title: Row(
                               mainAxisAlignment: MainAxisAlignment.start,
                               children: [
@@ -373,7 +362,9 @@ class _DetailScreenState extends State<DetailScreen> {
                                     SizedBox(width: 8),
                                     IconButton(
                                       icon: Icon(
-                                        _commentLikes[index] ? Icons.favorite : Icons.favorite_border_outlined,
+                                        _commentLikes[index]
+                                            ? Icons.favorite
+                                            : Icons.favorite_border_outlined,
                                         color: _commentLikes[index] ? Colors.purple : Colors.grey,
                                       ),
                                       onPressed: () {
@@ -419,7 +410,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                                     children: [
                                                       Text(
                                                         '${replies[replyIndex].userName}',
-                                                        //대댓글 사용자명
+                                                        // 대댓글 사용자명
                                                         style: TextStyle(
                                                           fontWeight: FontWeight.bold,
                                                           fontSize: 14.0,
@@ -478,13 +469,17 @@ class _DetailScreenState extends State<DetailScreen> {
                                                   children: [
                                                     IconButton(
                                                       icon: Icon(
-                                                        _replyLikes[index][replyIndex] ? Icons.favorite : Icons.favorite_border_outlined,
-                                                        color: _replyLikes[index][replyIndex] ? Colors.purple : Colors.grey,
-
+                                                        _replyLikes[index][replyIndex]
+                                                            ? Icons.favorite
+                                                            : Icons.favorite_border_outlined,
+                                                        color: _replyLikes[index][replyIndex]
+                                                            ? Colors.purple
+                                                            : Colors.grey,
                                                       ),
                                                       onPressed: () {
                                                         setState(() {
-                                                          _replyLikes[index][replyIndex] = !_replyLikes[index][replyIndex];
+                                                          _replyLikes[index][replyIndex] =
+                                                          !_replyLikes[index][replyIndex];
                                                           if (_replyLikes[index][replyIndex]) {
                                                             _replyLikeCounts[index][replyIndex]++;
                                                           } else {
