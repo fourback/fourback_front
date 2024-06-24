@@ -57,6 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
 PreferredSizeWidget _HomeAppbar() {
   return AppBar(
     backgroundColor: Colors.white,
+    scrolledUnderElevation: 0,
     leading: Padding(
       padding: const EdgeInsets.only(left: 8.0),
       child: IconButton(
@@ -146,11 +147,179 @@ class _HomeBody extends StatelessWidget {
           ),
         ),
         Expanded(
-          child: Center(child: Text('HomeScreen')),
+
+          child: ListView.builder(
+            itemCount: 3,
+            itemBuilder: (context, index) {
+              // 임시 데이터
+              final List<Map<String, String>> posts = [
+                {
+                  'boardName': '자유게시판',
+                  'title': '첫 번째 게시글 제목',
+                  'content': '첫 번째 게시글 내용',
+                  'author': '작성자1',
+                  'date': '2023-06-24',
+                },
+                {
+                  'boardName': '프로젝트 홍보',
+                  'title': '두 번째 게시글 제목',
+                  'content': '두 번째 게시글 내용',
+                  'author': '작성자2',
+                  'date': '2023-06-23',
+                },
+                {
+                  'boardName': 'Q&A',
+                  'title': '세 번째 게시글 제목',
+                  'content': '세 번째 게시글 내용',
+                  'author': '작성자3',
+                  'date': '2023-06-22',
+                },
+              ];
+
+              return Padding(
+                padding: EdgeInsets.only(bottom: 8.0),
+                child: Container(
+                  padding: EdgeInsets.only(top: 5.0, bottom: 5.0),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.5),
+                        spreadRadius: 0,
+                        blurRadius: 0,
+                        offset: Offset(0, 1), // 그림자의 위치 조정
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: ListTile(
+                      title: Container(
+                        padding: EdgeInsets.only(top: 5.0, bottom: 5.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            RichText(
+                              text: TextSpan(
+                                text: 'Posted in ',
+                                style: DefaultTextStyle.of(context).style,
+                                children: <TextSpan>[
+                                  TextSpan(
+                                    text: posts[index]['boardName']!,
+                                    style: TextStyle(
+                                        color: Color(0xff7C3AED),
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Divider(),
+                            SizedBox(height: 8.0),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                CircleAvatar(
+                                  backgroundColor: Colors.blue,
+                                  child: Icon(Icons.person, color: Colors.white),
+                                ),
+                                SizedBox(
+                                    width: 8), // CircleAvatar와 작성자 이름 사이의 간격 조절
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text(
+                                          posts[index]['author']!, // 작성자 이름 표시
+                                          style: TextStyle(
+                                            fontSize: 14.0,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.black,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Text(
+                                      '수원대학교', // 작성자 학교 표시
+                                      style: TextStyle(
+                                        fontSize: 14.0,
+                                        fontWeight: FontWeight.normal,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                    SizedBox(height: 8), // 각 항목 사이의 간격 추가
+                                  ],
+                                ),
+                                Spacer(), // 작성자 이름과 날짜 사이에 공간을 확장합니다.
+                                Text(
+                                  posts[index]['date']!, // 날짜 표시 예시
+                                  style: TextStyle(
+                                    fontSize: 14.0,
+                                    fontWeight: FontWeight.normal,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            posts[index]['title']!,
+                            style: TextStyle(
+                              fontSize: 16.0,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            posts[index]['content']!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          SizedBox(height: 4.0),
+                          Divider(),
+                          SizedBox(height: 4.0),
+                          // 각 항목 사이의 간격 추가
+                          Row(
+                            children: [
+                              Icon(Icons.favorite_border),
+                              SizedBox(width: 4), // 아이콘 사이의 간격 조절
+                              Text(
+                                '0', // 좋아요 수 임시 값
+                              ),
+                              SizedBox(width: 16.0), // 아이콘 사이의 간격 조절
+                              SvgPicture.asset('assets/icons/comment.svg'),
+                              SizedBox(width: 4), // 아이콘 사이의 간격 조절
+                              Text(
+                                '0', // 댓글 수 임시 값
+                              ),
+                              Spacer(), // 오른쪽으로 확장되는 공간을 만듭니다.
+                              SvgPicture.asset('assets/icons/viewcount.svg'),
+                              SizedBox(width: 4),
+                              Text(
+                                '0', // 조회 수 임시 값
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      onTap: () {
+                        // 게시글을 눌렀을 때의 동작을 추가할 수 있습니다.
+                      },
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
         ),
       ],
     );
   }
 }
+
 
 
