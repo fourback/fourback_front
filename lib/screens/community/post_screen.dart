@@ -410,6 +410,7 @@ class _DetailScreenState extends State<DetailScreen> {
                           jsonData.length,
                               (replyIndex) => repliesResult[replyIndex]);
 
+
                       return Column(
                         children: [
                           ListTile(
@@ -514,6 +515,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                 if (_isReplyVisible[index])
                                   ...replies.map((reply) {
                                     int replyIndex = replies.indexOf(reply);
+                                    _getFavoriteReply(replies[replyIndex].id, index, replyIndex);
                                     return Padding(
                                       padding: EdgeInsets.only(left: 20.0, top: 10.0),
                                       child: Container(
@@ -608,7 +610,6 @@ class _DetailScreenState extends State<DetailScreen> {
                                                       onPressed: () {
                                                         setState(() {
                                                           _replyLikeCounts[index][replyIndex] = repliesResult[index].goodCount;
-                                                          _getFavoriteReply(replies[replyIndex].id, index, replyIndex);
                                                           if (_replyLikes[index][replyIndex] == true) {
                                                             _deleteFavoriteReply(replies[replyIndex], index, replyIndex);
                                                           } else {
