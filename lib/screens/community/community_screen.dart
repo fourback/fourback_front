@@ -1,3 +1,4 @@
+import 'package:bemajor_frontend/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -50,6 +51,7 @@ class _BoardState extends State<BoardScreen> {
 
   Future<void> fetchBoards() async {
     String? token = await readJwt();
+
     final response = await http.get(
       Uri.parse('${ApiUrl.baseUrl}/api/board'),
       headers: {'authorization': '$token'},
