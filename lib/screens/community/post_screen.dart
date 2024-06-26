@@ -66,6 +66,7 @@ class _DetailScreenState extends State<DetailScreen> {
       setState(() {
         List<dynamic> jsonData = jsonMap['result'];
         commentsResult = jsonData.map((data) => CommentResult.fromJson(data)).toList();
+
         size = jsonMap['size'];
         page++;
       });
@@ -90,6 +91,132 @@ class _DetailScreenState extends State<DetailScreen> {
 
       if (response.statusCode == 200) {
         print('댓글이 성공적으로 전송되었습니다.');
+        await fetchComments(); // 새로운 댓글을 작성한 후 댓글 리스트를 다시 로드
+      } else {
+        print('API 요청이 실패했습니다.');
+      }
+    } catch (e) {
+      print('오류: $e');
+    }
+  }
+
+  Future<void> _getFavoriteComment(int commentID, int index) async {
+    String apiUrl = await '${ApiUrl.baseUrl}/api/comment/favorite?commentID=${commentID}';
+    String? token = await readJwt();
+
+      final response = await http.get(Uri.parse(apiUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'authorization': '$token'
+        },
+      );
+    _commentLikes[index] = jsonDecode(response.body);
+  }
+
+  Future<void> _getFavoriteReply(int commentID, int index, int replyIndex) async {
+    String apiUrl = await '${ApiUrl.baseUrl}/api/comment/favorite?commentID=${commentID}';
+    String? token = await readJwt();
+
+    final response = await http.get(Uri.parse(apiUrl),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'authorization': '$token'
+      },
+    );
+    _replyLikes[index][replyIndex] = jsonDecode(response.body);
+  }
+
+  Future<void> _addFavoriteComment(CommentResult commentResult, int index) async {
+    String apiUrl = '${ApiUrl.baseUrl}/api/comment/favorite?commentID=${commentResult.id}';
+    String? token = await readJwt();
+
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'authorization': '$token'
+        },
+      );
+
+      if (response.statusCode == 200) {
+        print('좋아요가 성공적으로 추가되었습니다.');
+        _getFavoriteComment(commentResult.id, index);
+        await fetchComments(); // 새로운 댓글을 작성한 후 댓글 리스트를 다시 로드
+      } else {
+        print('API 요청이 실패했습니다.');
+      }
+    } catch (e) {
+      print('오류: $e');
+    }
+  }
+
+  Future<void> _deleteFavoriteComment(CommentResult commentResult, int index) async {
+    String apiUrl = '${ApiUrl.baseUrl}/api/comment/favorite?commentID=${commentResult.id}';
+    String? token = await readJwt();
+
+    try {
+      final response = await http.delete(
+        Uri.parse(apiUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'authorization': '$token'
+        },
+      );
+
+      if (response.statusCode == 200) {
+        print('좋아요가 성공적으로 제거되었습니다.');
+        _getFavoriteComment(commentResult.id, index);
+        await fetchComments(); // 새로운 댓글을 작성한 후 댓글 리스트를 다시 로드
+      } else {
+        print('API 요청이 실패했습니다.');
+      }
+    } catch (e) {
+      print('오류: $e');
+    }
+  }
+
+  Future<void> _addFavoriteReply(CommentResult commentResult, int index, int replyIndex) async {
+    String apiUrl = '${ApiUrl.baseUrl}/api/comment/favorite?commentID=${commentResult.id}';
+    String? token = await readJwt();
+
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'authorization': '$token'
+        },
+      );
+
+      if (response.statusCode == 200) {
+        print('좋아요가 성공적으로 추가되었습니다.');
+        _getFavoriteReply(commentResult.id, index, replyIndex);
+        await fetchComments(); // 새로운 댓글을 작성한 후 댓글 리스트를 다시 로드
+      } else {
+        print('API 요청이 실패했습니다.');
+      }
+    } catch (e) {
+      print('오류: $e');
+    }
+  }
+
+  Future<void> _deleteFavoriteReply(CommentResult commentResult, int index, int replyIndex) async {
+    String apiUrl = '${ApiUrl.baseUrl}/api/comment/favorite?commentID=${commentResult.id}';
+    String? token = await readJwt();
+
+    try {
+      final response = await http.delete(
+        Uri.parse(apiUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'authorization': '$token'
+        },
+      );
+
+      if (response.statusCode == 200) {
+        print('좋아요가 성공적으로 제거되었습니다.');
+        _getFavoriteReply(commentResult.id, index, replyIndex);
         await fetchComments(); // 새로운 댓글을 작성한 후 댓글 리스트를 다시 로드
       } else {
         print('API 요청이 실패했습니다.');
@@ -276,6 +403,8 @@ class _DetailScreenState extends State<DetailScreen> {
                       repliesResult.addAll(jsonData.map((data) => CommentResult.fromJson(data)).toList());
                       final memberId = '${commentsResult[index].userName}';
                       final comment = '${commentsResult[index].content}'; // comment
+                      _commentLikeCounts[index] = commentsResult[index].goodCount;
+                      _getFavoriteComment(commentsResult[index].id, index);
 
                       final List<CommentResult> replies = List.generate(
                           jsonData.length,
@@ -369,16 +498,16 @@ class _DetailScreenState extends State<DetailScreen> {
                                       ),
                                       onPressed: () {
                                         setState(() {
-                                          _commentLikes[index] = !_commentLikes[index];
-                                          if (_commentLikes[index]) {
-                                            _commentLikeCounts[index]++;
+
+                                          if(_commentLikes[index] == true) {
+                                            _deleteFavoriteComment(commentsResult[index], index);
                                           } else {
-                                            _commentLikeCounts[index]--;
+                                            _addFavoriteComment(commentsResult[index], index);
                                           }
                                         });
                                       },
                                     ),
-                                    Text("${_commentLikeCounts[index]}"), // 좋아요 숫자
+                                    Text("${commentsResult[index].goodCount}"), // 좋아요 숫자
                                   ],
                                 ),
                                 // 대댓글 리스트 표시
@@ -478,18 +607,18 @@ class _DetailScreenState extends State<DetailScreen> {
                                                       ),
                                                       onPressed: () {
                                                         setState(() {
-                                                          _replyLikes[index][replyIndex] =
-                                                          !_replyLikes[index][replyIndex];
-                                                          if (_replyLikes[index][replyIndex]) {
-                                                            _replyLikeCounts[index][replyIndex]++;
+                                                          _replyLikeCounts[index][replyIndex] = repliesResult[index].goodCount;
+                                                          _getFavoriteReply(replies[replyIndex].id, index, replyIndex);
+                                                          if (_replyLikes[index][replyIndex] == true) {
+                                                            _deleteFavoriteReply(replies[replyIndex], index, replyIndex);
                                                           } else {
-                                                            _replyLikeCounts[index][replyIndex]--;
+                                                            _addFavoriteReply(replies[replyIndex], index, replyIndex);
                                                           }
                                                         });
                                                       },
                                                     ),
                                                     Text(
-                                                      "${_replyLikeCounts[index][replyIndex]}",
+                                                      "${replies[replyIndex].goodCount}",
                                                       style: TextStyle(fontSize: 12.0), // 텍스트 크기 조정
                                                     ),
                                                   ],
