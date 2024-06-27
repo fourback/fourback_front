@@ -1,7 +1,7 @@
 class Write {
   final String content;
   final String title;
-  final int boardId;
+  final int? boardId;
 
   Write(this.title, this.content,this.boardId);
 

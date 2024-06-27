@@ -1,3 +1,5 @@
+import 'package:flutter/cupertino.dart';
+
 import 'post_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -155,19 +157,55 @@ class _PostListScreenState extends State<PostListScreen> {
 
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        posts[index].title,
-                        style: TextStyle(
-                          fontSize: 16.0,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  posts[index].title,
+                                  style: TextStyle(
+                                    fontSize: 16.0,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  posts[index].content,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (posts[index].imageName.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(left: 8.0),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8.0),
+                                child: FadeInImage.assetNetwork(
+                                  placeholder: 'assets/icons/loading.gif',
+                                  image: 'http://116.47.60.159:8080/images/' + posts[index].imageName[0],
+                                  width: 80,
+                                  height: 80,
+                                  fit: BoxFit.cover,
+                                  imageErrorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      width: 80,
+                                      height: 80,
+                                      color: Colors.grey[200],
+                                      child: Icon(Icons.error, color: Colors.red),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
 
-                      Text(
-                        posts[index].content,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+
+
+
                       SizedBox(height: 5.0),
                       Divider(),
                       SizedBox(height: 5.0),
@@ -196,11 +234,20 @@ class _PostListScreenState extends State<PostListScreen> {
                       ),
                     ],
                   ),
-                  onTap: () {
-                    Navigator.push(
+                  onTap: () async {
+                    final ifDelete = await Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => DetailScreen(post : posts[index],boardName: widget.boardName)),
                     );
+
+                    setState(()  {
+                      if(ifDelete == true) {
+                        posts.clear();
+                        page = 0;
+                      }
+
+                      fetchPosts();
+                    });
                   },
                 ),
               ),

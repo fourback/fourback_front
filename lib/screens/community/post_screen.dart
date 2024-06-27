@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:bemajor_frontend/models/commentWrite.dart';
+import 'package:bemajor_frontend/screens/community/post_update_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -6,10 +9,11 @@ import 'package:bemajor_frontend/api_url.dart';
 import '../../models/commentResult.dart';
 import '/models/post.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'fullimage_screen.dart';
 
 
 class DetailScreen extends StatefulWidget {
-  final Post post;
+  Post post;
   final String boardName;
 
   DetailScreen({required this.post, required this.boardName});
@@ -48,6 +52,34 @@ class _DetailScreenState extends State<DetailScreen> {
   void initState() {
     super.initState();
     fetchComments();
+  }
+
+  Future<void> _updatePost() async {
+    final response = await http.get(Uri.parse('${ApiUrl.baseUrl}/api/post/${widget.post.id}'));
+    if (response.statusCode == 200) {
+      final updatedData = jsonDecode(response.body);
+      setState(() {
+        widget.post.title = updatedData['title'];
+        widget.post.content = updatedData['content'];
+        widget.post.postDate = updatedData['updateDate'];
+        widget.post.imageName = List<String>.from(updatedData['imageName'] ?? []);
+      });
+    } else {
+      throw Exception('Failed to load posts');
+    }
+  }
+
+  Future<void> _deletePost() async {
+    final response = await http.delete(Uri.parse('${ApiUrl.baseUrl}/api/post/${widget.post.id}'));
+    if (response.statusCode == 200) {
+
+      Navigator.pop(context,true);
+
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('삭제 실패')),
+      );
+    }
   }
 
   Future<void> fetchComments() async {
@@ -161,10 +193,32 @@ class _DetailScreenState extends State<DetailScreen> {
                           itemBuilder: (BuildContext context) {
                             return [
                               PopupMenuItem<String>(
+
                                 value: 'edit',
-                                child: Text('수정'), // 수정 액션 Ontap 시 글 작성 화면 이동
+                                child: Text('수정'),
+                                onTap: () async {
+                                  final updatedPost = await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (context) => PostUpdateScreen(widget.post)),
+                                  );
+
+
+                                  // 수정된 게시글 정보를 받아오고 상태를 업데이트
+
+                                    if (updatedPost == true) {
+                                      _updatePost();
+                                    }
+
+
+                                },
+                                // 수정 액션 Ontap 시 글 작성 화면 이동
                               ),
                               PopupMenuItem<String>(
+                                onTap: () async {
+                                  await _deletePost();
+
+
+                                },
                                 value: 'delete',
                                 child: Text('삭제'), // 삭제 액션 Ontap 시 글 삭제
                               ),
@@ -186,7 +240,33 @@ class _DetailScreenState extends State<DetailScreen> {
                       widget.post.content, // 글 내용
                       style: TextStyle(fontSize: 18.0),
                     ),
+                    if (widget.post.imageName.isNotEmpty) ...widget.post.imageName.map((imageName) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => FullImageScreen(imageUrl: 'http://116.47.60.159:8080/images/' + imageName),
+                              ),
+                            );
+                          },
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8.0),
+                          child: FadeInImage.assetNetwork(
+                            placeholder: 'assets/icons/loading.gif',
+                            image: 'http://116.47.60.159:8080/images/' + imageName,
+                            width: MediaQuery.of(context).size.width,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      )
+                      );
+                    }).toList(),
+
                     SizedBox(height: 20.0),
+
                     Row(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
@@ -496,6 +576,7 @@ class _DetailScreenState extends State<DetailScreen> {
           ),
         ),
       ),
+      //resizeToAvoidBottomInset: true,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: Color(0xffffff),
@@ -504,7 +585,13 @@ class _DetailScreenState extends State<DetailScreen> {
           ),
         ),
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+            padding: EdgeInsets.only(
+              left: 12.0,
+              right: 12.0,
+              top: 8.0,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 8.0,
+            ),
+
           child: Row(
             children: [
               SizedBox(width: 12),
