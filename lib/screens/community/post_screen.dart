@@ -262,253 +262,251 @@ class _DetailScreenState extends State<DetailScreen> {
               SizedBox(height: 10.0),
               // 댓글 리스트
               SingleChildScrollView(
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey, width: 1),
-                    borderRadius: BorderRadius.circular(10.0),
-                    color: Colors.white,
-                  ),
-                  child: Column(
-                    children: List.generate(size, (index) {
-                      List<dynamic> jsonData = commentsResult[index].reply?['result'];
-                      List<CommentResult> repliesResult = [];
-                      // 대댓글 리스트
-                      repliesResult.addAll(jsonData.map((data) => CommentResult.fromJson(data)).toList());
-                      final memberId = '${commentsResult[index].userName}';
-                      final comment = '${commentsResult[index].content}'; // comment
+                child: Column(
+                  children: List.generate(size, (index) {
+                    List<dynamic> jsonData = commentsResult[index].reply?['result'];
+                    List<CommentResult> repliesResult = [];
+                    // 대댓글 리스트
+                    repliesResult.addAll(jsonData.map((data) => CommentResult.fromJson(data)).toList());
+                    final memberId = '${commentsResult[index].userName}';
+                    final comment = '${commentsResult[index].content}'; // comment
 
-                      final List<CommentResult> replies = List.generate(
-                          jsonData.length,
-                              (replyIndex) => repliesResult[replyIndex]);
+                    final List<CommentResult> replies = List.generate(
+                        jsonData.length,
+                            (replyIndex) => repliesResult[replyIndex]);
 
-                      return Column(
-                        children: [
-                          ListTile(
-                            contentPadding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
-                            title: Row(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                CircleAvatar(
-                                  backgroundColor: Colors.blue,
-                                  child: Icon(Icons.person, color: Colors.white),
-                                ),
-                                SizedBox(width: 8.0),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      memberId,
-                                      style: TextStyle(fontWeight: FontWeight.bold),
+                    return Column(
+                      children: [
+                        ListTile(
+                          shape: RoundedRectangleBorder(
+                            side: BorderSide(color: Colors.grey, width: 1),
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
+                          contentPadding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
+                          title: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              CircleAvatar(
+                                backgroundColor: Colors.blue,
+                                child: Icon(Icons.person, color: Colors.white),
+                              ),
+                              SizedBox(width: 8.0),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    memberId,
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                  Text('수원대학교 컴퓨터학부'),
+                                ],
+                              ),
+                              Spacer(),
+                              PopupMenuButton<String>(
+                                onSelected: (String value) {
+                                  // Edit 및 Delete 액션 처리
+                                  if (value == 'edit') {
+                                    // Edit action
+                                  } else if (value == 'delete') {
+                                    // Delete action
+                                  }
+                                },
+                                itemBuilder: (BuildContext context) {
+                                  return [
+                                    PopupMenuItem<String>(
+                                      value: 'edit',
+                                      child: Text('수정'), // 수정 액션
                                     ),
-                                    Text('수원대학교 컴퓨터학부'),
-                                  ],
-                                ),
-                                Spacer(),
-                                PopupMenuButton<String>(
-                                  onSelected: (String value) {
-                                    // Edit 및 Delete 액션 처리
-                                    if (value == 'edit') {
-                                      // Edit action
-                                    } else if (value == 'delete') {
-                                      // Delete action
-                                    }
-                                  },
-                                  itemBuilder: (BuildContext context) {
-                                    return [
-                                      PopupMenuItem<String>(
-                                        value: 'edit',
-                                        child: Text('수정'), // 수정 액션
-                                      ),
-                                      PopupMenuItem<String>(
-                                        value: 'delete',
-                                        child: Text('삭제'), // 삭제 액션
-                                      ),
-                                    ];
-                                  },
-                                  icon: Icon(Icons.more_vert, color: Colors.grey),
-                                ),
-                              ],
-                            ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                SizedBox(height: 16.0),
-                                Text(comment, style: TextStyle(fontSize: 16.0)),
-                                SizedBox(height: 10.0),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Text('${commentsResult[index].dateDiff}'), // 댓글 날짜 텍스트
-                                    Spacer(),
-                                    IconButton(
-                                      onPressed: () {
-                                        setState(() {
-                                          if (replyingToCommentIndex == index) {
-                                            // 대댓글 작성 모드 종료
-                                            isReplying = false;
-                                            replyingToCommentIndex = null;
-                                          } else {
-                                            // 대댓글 작성 모드 시작
-                                            isReplying = true;
-                                            replyingToCommentIndex = index;
-                                          }
-                                          _isReplyVisible[index] = !_isReplyVisible[index];
-                                        });
-                                      },
-                                      icon: Icon(Icons.chat_bubble_outline, color: Colors.black),
+                                    PopupMenuItem<String>(
+                                      value: 'delete',
+                                      child: Text('삭제'), // 삭제 액션
                                     ),
-                                    Text('${jsonData.length}'), // 대댓글 갯수 표시
-                                    SizedBox(width: 8),
-                                    IconButton(
-                                      icon: Icon(
-                                        _commentLikes[index]
-                                            ? Icons.favorite
-                                            : Icons.favorite_border_outlined,
-                                        color: _commentLikes[index] ? Colors.purple : Colors.grey,
-                                      ),
-                                      onPressed: () {
-                                        setState(() {
-                                          _commentLikes[index] = !_commentLikes[index];
-                                          if (_commentLikes[index]) {
-                                            _commentLikeCounts[index]++;
-                                          } else {
-                                            _commentLikeCounts[index]--;
-                                          }
-                                        });
-                                      },
+                                  ];
+                                },
+                                icon: Icon(Icons.more_vert, color: Colors.grey),
+                              ),
+                            ],
+
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SizedBox(height: 16.0),
+                              Text(comment, style: TextStyle(fontSize: 16.0)),
+                              SizedBox(height: 10.0),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Text('${commentsResult[index].dateDiff}'), // 댓글 날짜 텍스트
+                                  Spacer(),
+                                  IconButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        if (replyingToCommentIndex == index) {
+                                          // 대댓글 작성 모드 종료
+                                          isReplying = false;
+                                          replyingToCommentIndex = null;
+                                        } else {
+                                          // 대댓글 작성 모드 시작
+                                          isReplying = true;
+                                          replyingToCommentIndex = index;
+                                        }
+                                        _isReplyVisible[index] = !_isReplyVisible[index];
+                                      });
+                                    },
+                                    icon: Icon(Icons.chat_bubble_outline, color: Colors.black),
+                                  ),
+                                  Text('${jsonData.length}'), // 대댓글 갯수 표시
+                                  SizedBox(width: 8),
+                                  IconButton(
+                                    icon: Icon(
+                                      _commentLikes[index]
+                                          ? Icons.favorite
+                                          : Icons.favorite_border_outlined,
+                                      color: _commentLikes[index] ? Colors.purple : Colors.grey,
                                     ),
-                                    Text("${_commentLikeCounts[index]}"), // 좋아요 숫자
-                                  ],
-                                ),
-                                // 대댓글 리스트 표시
-                                if (_isReplyVisible[index])
-                                  ...replies.map((reply) {
-                                    int replyIndex = replies.indexOf(reply);
-                                    return Padding(
-                                      padding: EdgeInsets.only(left: 20.0, top: 10.0),
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          border: Border.all(color: Colors.grey, width: 1),
-                                          borderRadius: BorderRadius.circular(10.0),
-                                        ),
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 15.0),
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                children: [
-                                                  CircleAvatar(
-                                                    backgroundColor: Colors.grey,
-                                                    child: Icon(Icons.person, color: Colors.white),
-                                                    radius: 16,
-                                                  ),
-                                                  SizedBox(width: 8.0),
-                                                  Column(
-                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                    children: [
-                                                      Text(
-                                                        '${replies[replyIndex].userName}',
-                                                        // 대댓글 사용자명
-                                                        style: TextStyle(
-                                                          fontWeight: FontWeight.bold,
-                                                          fontSize: 14.0,
-                                                        ),
-                                                      ),
-                                                      Text(
-                                                        '수원대학교 컴퓨터학부',
-                                                        style: TextStyle(fontSize: 12),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  Spacer(),
-                                                  PopupMenuButton<String>(
-                                                    onSelected: (String value) {
-                                                      // Edit 및 Delete 액션 처리
-                                                      if (value == 'edit') {
-                                                        // Edit action
-                                                      } else if (value == 'delete') {
-                                                        // Delete action
-                                                      }
-                                                    },
-                                                    itemBuilder: (BuildContext context) {
-                                                      return [
-                                                        PopupMenuItem<String>(
-                                                          value: 'edit',
-                                                          child: Text('수정'), // 수정 액션
-                                                        ),
-                                                        PopupMenuItem<String>(
-                                                          value: 'delete',
-                                                          child: Text('삭제'), // 삭제 액션
-                                                        ),
-                                                      ];
-                                                    },
-                                                    icon: Icon(Icons.more_vert, color: Colors.grey),
-                                                  ),
-                                                ],
-                                              ),
-                                              SizedBox(height: 16.0),
-                                              GestureDetector(
-                                                onTap: () {
-                                                  setState(() {
-                                                    isReplying = true;
-                                                    replyingToCommentIndex = index;
-                                                  });
-                                                },
-                                                child: Text(
-                                                  reply.content,
-                                                  style: TextStyle(fontSize: 14.0),
+                                    onPressed: () {
+                                      setState(() {
+                                        _commentLikes[index] = !_commentLikes[index];
+                                        if (_commentLikes[index]) {
+                                          _commentLikeCounts[index]++;
+                                        } else {
+                                          _commentLikeCounts[index]--;
+                                        }
+                                      });
+                                    },
+                                  ),
+                                  Text("${_commentLikeCounts[index]}"), // 좋아요 숫자
+                                ],
+                              ),
+                              // 대댓글 리스트 표시
+                              if (_isReplyVisible[index])
+                                ...replies.map((reply) {
+                                  int replyIndex = replies.indexOf(reply);
+                                  return Padding(
+                                    padding: EdgeInsets.only(left: 20.0, top: 10.0),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        border: Border.all(color: Colors.grey, width: 1),
+                                        borderRadius: BorderRadius.circular(10.0),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 15.0),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                CircleAvatar(
+                                                  backgroundColor: Colors.grey,
+                                                  child: Icon(Icons.person, color: Colors.white),
+                                                  radius: 16,
                                                 ),
-                                              ),
-                                              SizedBox(height: 8.0),
-                                              Align(
-                                                alignment: Alignment.bottomRight,
-                                                child: Row(
-                                                  mainAxisSize: MainAxisSize.min,
+                                                SizedBox(width: 8.0),
+                                                Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
                                                   children: [
-                                                    IconButton(
-                                                      icon: Icon(
-                                                        _replyLikes[index][replyIndex]
-                                                            ? Icons.favorite
-                                                            : Icons.favorite_border_outlined,
-                                                        color: _replyLikes[index][replyIndex]
-                                                            ? Colors.purple
-                                                            : Colors.grey,
+                                                    Text(
+                                                      '${replies[replyIndex].userName}',
+                                                      // 대댓글 사용자명
+                                                      style: TextStyle(
+                                                        fontWeight: FontWeight.bold,
+                                                        fontSize: 14.0,
                                                       ),
-                                                      onPressed: () {
-                                                        setState(() {
-                                                          _replyLikes[index][replyIndex] =
-                                                          !_replyLikes[index][replyIndex];
-                                                          if (_replyLikes[index][replyIndex]) {
-                                                            _replyLikeCounts[index][replyIndex]++;
-                                                          } else {
-                                                            _replyLikeCounts[index][replyIndex]--;
-                                                          }
-                                                        });
-                                                      },
                                                     ),
                                                     Text(
-                                                      "${_replyLikeCounts[index][replyIndex]}",
-                                                      style: TextStyle(fontSize: 12.0), // 텍스트 크기 조정
+                                                      '수원대학교 컴퓨터학부',
+                                                      style: TextStyle(fontSize: 12),
                                                     ),
                                                   ],
                                                 ),
+                                                Spacer(),
+                                                PopupMenuButton<String>(
+                                                  onSelected: (String value) {
+                                                    // Edit 및 Delete 액션 처리
+                                                    if (value == 'edit') {
+                                                      // Edit action
+                                                    } else if (value == 'delete') {
+                                                      // Delete action
+                                                    }
+                                                  },
+                                                  itemBuilder: (BuildContext context) {
+                                                    return [
+                                                      PopupMenuItem<String>(
+                                                        value: 'edit',
+                                                        child: Text('수정'), // 수정 액션
+                                                      ),
+                                                      PopupMenuItem<String>(
+                                                        value: 'delete',
+                                                        child: Text('삭제'), // 삭제 액션
+                                                      ),
+                                                    ];
+                                                  },
+                                                  icon: Icon(Icons.more_vert, color: Colors.grey),
+                                                ),
+                                              ],
+                                            ),
+                                            SizedBox(height: 16.0),
+                                            GestureDetector(
+                                              onTap: () {
+                                                setState(() {
+                                                  isReplying = true;
+                                                  replyingToCommentIndex = index;
+                                                });
+                                              },
+                                              child: Text(
+                                                reply.content,
+                                                style: TextStyle(fontSize: 14.0),
                                               ),
-                                            ],
-                                          ),
+                                            ),
+                                            SizedBox(height: 8.0),
+                                            Align(
+                                              alignment: Alignment.bottomRight,
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  IconButton(
+                                                    icon: Icon(
+                                                      _replyLikes[index][replyIndex]
+                                                          ? Icons.favorite
+                                                          : Icons.favorite_border_outlined,
+                                                      color: _replyLikes[index][replyIndex]
+                                                          ? Colors.purple
+                                                          : Colors.grey,
+                                                    ),
+                                                    onPressed: () {
+                                                      setState(() {
+                                                        _replyLikes[index][replyIndex] =
+                                                        !_replyLikes[index][replyIndex];
+                                                        if (_replyLikes[index][replyIndex]) {
+                                                          _replyLikeCounts[index][replyIndex]++;
+                                                        } else {
+                                                          _replyLikeCounts[index][replyIndex]--;
+                                                        }
+                                                      });
+                                                    },
+                                                  ),
+                                                  Text(
+                                                    "${_replyLikeCounts[index][replyIndex]}",
+                                                    style: TextStyle(fontSize: 12.0), // 텍스트 크기 조정
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                    );
-                                  }).toList(),
-                              ],
-                            ),
+                                    ),
+                                  );
+                                }).toList(),
+                            ],
                           ),
-                          Divider(color: Colors.grey),
-                        ],
-                      );
-                    }),
-                  ),
+                        ),
+                        SizedBox(height: 10.0)
+                      ],
+                    );
+                  }),
                 ),
               ),
             ],
