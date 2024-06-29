@@ -8,20 +8,24 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'write_screen.dart';
 import '/api_url.dart';
 import '/models/post.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PostListScreen extends StatefulWidget {
-
   final String boardName;
   final int boardId;
 
-  PostListScreen(this.boardName,this.boardId);
+  PostListScreen(this.boardName, this.boardId);
+
   @override
   _PostListScreenState createState() => _PostListScreenState();
 }
 
-class _PostListScreenState extends State<PostListScreen> {
+Future<String?> readJwt() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getString('USERID');
+}
 
+class _PostListScreenState extends State<PostListScreen> {
   late ScrollController _scrollController;
   late List<Post> posts = [];
   bool isFavorite = false;
@@ -29,7 +33,7 @@ class _PostListScreenState extends State<PostListScreen> {
   int pageSize = 10;
   bool isLoading = false;
   Color iconColor = Colors.grey;
-
+  bool isUpdate = false;
 
   @override
   void initState() {
@@ -38,6 +42,7 @@ class _PostListScreenState extends State<PostListScreen> {
     _scrollController.addListener(_scrollListener);
     fetchPosts();
   }
+
   @override
   void dispose() {
     _scrollController.dispose(); // Dispose the controller when not needed
@@ -45,13 +50,17 @@ class _PostListScreenState extends State<PostListScreen> {
   }
 
   Future<void> fetchPosts() async {
+    String? token = await readJwt();
     if (isLoading) return;
 
     setState(() {
       isLoading = true;
     });
 
-    final response = await http.get(Uri.parse('${ApiUrl.baseUrl}/api/post?page=$page&pageSize=$pageSize&boardId=${widget.boardId}'));
+    final response = await http.get(
+      Uri.parse('${ApiUrl.baseUrl}/api/post?page=$page&pageSize=$pageSize&boardId=${widget.boardId}'),
+      headers: {'authorization': '$token'},);
+
     setState(() {
       isLoading = false;
     });
@@ -68,7 +77,6 @@ class _PostListScreenState extends State<PostListScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       backgroundColor: Color(0xffe9ecef),
       appBar: AppBar(
@@ -83,10 +91,9 @@ class _PostListScreenState extends State<PostListScreen> {
         title: Text(widget.boardName),
       ),
       body: ListView.builder(
-
         itemCount: posts.length + (isLoading ? 1 : 0),
         itemBuilder: (BuildContext context, int index) {
-          if(index < posts.length) {
+          if (index < posts.length) {
             return Padding(
               padding: EdgeInsets.only(bottom: 8.0),
               child: Container(
@@ -99,15 +106,12 @@ class _PostListScreenState extends State<PostListScreen> {
                       blurRadius: 0,
                       offset: Offset(0, 1), // 그림자의 위치 조정
                     ),
-
-
                   ],
                 ),
                 child: ListTile(
                   title: Container(
-                    padding: EdgeInsets.only(top: 5.0,bottom: 5.0),
+                    padding: EdgeInsets.only(top: 5.0, bottom: 5.0),
                     child: Row(
-
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         CircleAvatar(
@@ -154,7 +158,6 @@ class _PostListScreenState extends State<PostListScreen> {
                     ),
                   ),
                   subtitle: Column(
-
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
@@ -206,6 +209,10 @@ class _PostListScreenState extends State<PostListScreen> {
 
 
 
+
+
+
+
                       SizedBox(height: 5.0),
                       Divider(),
                       SizedBox(height: 5.0),
@@ -237,16 +244,22 @@ class _PostListScreenState extends State<PostListScreen> {
                   onTap: () async {
                     final ifDelete = await Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => DetailScreen(post : posts[index],boardName: widget.boardName)),
+                      MaterialPageRoute(
+                        builder: (context) => DetailScreen(
+                          post: posts[index],
+                          boardName: widget.boardName,
+                        ),
+                      ),
                     );
 
                     setState(()  {
                       if(ifDelete == true) {
                         posts.clear();
                         page = 0;
+                        fetchPosts();
                       }
 
-                      fetchPosts();
+
                     });
                   },
                 ),
@@ -257,30 +270,26 @@ class _PostListScreenState extends State<PostListScreen> {
               child: CircularProgressIndicator(),
             );
           }
-
         },
         controller: _scrollController,
-
       ),
       floatingActionButton: FloatingActionButton(
-
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => WriteScreen(widget.boardId,widget.boardName)),
+            MaterialPageRoute(builder: (context) => WriteScreen(widget.boardId, widget.boardName)),
           );
           // 버튼을 눌렀을 때 수행할 작업을 추가할 수 있습니다.
         },
         child: SvgPicture.asset(
-            'assets/icons/pencil.svg',
+          'assets/icons/pencil.svg',
           width: 35,
           color: Colors.white,
         ),
-
       ),
-
     );
   }
+
   void _scrollListener() {
     if (isLoading) return;
 
