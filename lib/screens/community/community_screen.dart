@@ -55,7 +55,7 @@ class _BoardState extends State<BoardScreen> {
 
     final response = await http.get(
       Uri.parse('${ApiUrl.baseUrl}/api/board'),
-      headers: {'authorization': '$token'},
+      headers: {'access': '$token'},
     );
     if (response.statusCode == 200) {
       final List<dynamic> jsonData = jsonDecode(response.body);
@@ -239,7 +239,7 @@ Future<void> favoriteboard(String boardName) async {
       Uri.parse(apiUrl),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
-        'authorization': '$token'
+        'access': '$token'
       },
       body: jsonEncode(FavoriteBoard(boardName)),
     );

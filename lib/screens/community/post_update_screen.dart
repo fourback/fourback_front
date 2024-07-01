@@ -76,7 +76,7 @@ class _InputScreenState extends State<PostUpdateScreen> {
     request.fields['title'] = textModel.title;
     request.fields['content'] = textModel.content;
 
-    request.headers['authorization'] = '$token';
+    request.headers['access'] = '$token';
 
 
     if (images.isNotEmpty) {

@@ -100,7 +100,7 @@ class _DetailScreenState extends State<DetailScreen> {
     try {
       final response = await http.post(
         Uri.parse(apiUrl),
-        headers: {'authorization': '$token'},
+        headers: {'access': '$token'},
       );
 
       if (response.statusCode == 200) {

@@ -59,7 +59,7 @@ class _PostListScreenState extends State<PostListScreen> {
 
     final response = await http.get(
       Uri.parse('${ApiUrl.baseUrl}/api/post?page=$page&pageSize=$pageSize&boardId=${widget.boardId}'),
-      headers: {'authorization': '$token'},);
+      headers: {'access': '$token'},);
 
     setState(() {
       isLoading = false;

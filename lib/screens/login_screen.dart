@@ -27,7 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _sendUserInfo() async {
-    final url = Uri.http(address, "login");
+    final url = Uri.http(address, "user");
     final response = await http.post(
       url,
       headers: {
@@ -41,7 +41,7 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
 
-    userID = response.headers["authorization"]!;
+    userID = response.headers["access"]!;
     print("userID" + userID!);
 
     _registerUserId();

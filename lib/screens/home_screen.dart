@@ -31,7 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
     String? token = await readJwt();
     final response = await http.get(
       Uri.parse('${ApiUrl.baseUrl}/api/board'),
-      headers: {'authorization': '$token'},
+      headers: {'access': '$token'},
     );
     if (response.statusCode == 200) {
       final List<dynamic> jsonData = jsonDecode(response.body);
