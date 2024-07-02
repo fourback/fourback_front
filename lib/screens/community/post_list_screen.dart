@@ -1,3 +1,5 @@
+import 'package:flutter/cupertino.dart';
+
 import 'post_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -6,6 +8,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'write_screen.dart';
 import '/api_url.dart';
 import '/models/post.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PostListScreen extends StatefulWidget {
   final String boardName;
@@ -17,6 +20,11 @@ class PostListScreen extends StatefulWidget {
   _PostListScreenState createState() => _PostListScreenState();
 }
 
+Future<String?> readJwt() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getString('USERID');
+}
+
 class _PostListScreenState extends State<PostListScreen> {
   late ScrollController _scrollController;
   late List<Post> posts = [];
@@ -25,6 +33,7 @@ class _PostListScreenState extends State<PostListScreen> {
   int pageSize = 10;
   bool isLoading = false;
   Color iconColor = Colors.grey;
+  bool isUpdate = false;
 
   @override
   void initState() {
@@ -41,13 +50,17 @@ class _PostListScreenState extends State<PostListScreen> {
   }
 
   Future<void> fetchPosts() async {
+    String? token = await readJwt();
     if (isLoading) return;
 
     setState(() {
       isLoading = true;
     });
 
-    final response = await http.get(Uri.parse('${ApiUrl.baseUrl}/api/post?page=$page&pageSize=$pageSize&boardId=${widget.boardId}'));
+    final response = await http.get(
+      Uri.parse('${ApiUrl.baseUrl}/api/post?page=$page&pageSize=$pageSize&boardId=${widget.boardId}'),
+      headers: {'access': '$token'},);
+
     setState(() {
       isLoading = false;
     });
@@ -147,18 +160,59 @@ class _PostListScreenState extends State<PostListScreen> {
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        posts[index].title,
-                        style: TextStyle(
-                          fontSize: 16.0,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  posts[index].title,
+                                  style: TextStyle(
+                                    fontSize: 16.0,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  posts[index].content,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (posts[index].imageName.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(left: 8.0),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8.0),
+                                child: FadeInImage.assetNetwork(
+                                  placeholder: 'assets/icons/loading.gif',
+                                  image: 'http://116.47.60.159:8080/images/' + posts[index].imageName[0],
+                                  width: 80,
+                                  height: 80,
+                                  fit: BoxFit.cover,
+                                  imageErrorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      width: 80,
+                                      height: 80,
+                                      color: Colors.grey[200],
+                                      child: Icon(Icons.error, color: Colors.red),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
-                      Text(
-                        posts[index].content,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+
+
+
+
+
+
+
+
                       SizedBox(height: 5.0),
                       Divider(),
                       SizedBox(height: 5.0),
@@ -187,8 +241,8 @@ class _PostListScreenState extends State<PostListScreen> {
                       ),
                     ],
                   ),
-                  onTap: () {
-                    Navigator.push(
+                  onTap: () async {
+                    final ifDelete = await Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => DetailScreen(
@@ -197,6 +251,16 @@ class _PostListScreenState extends State<PostListScreen> {
                         ),
                       ),
                     );
+
+                    setState(()  {
+                      if(ifDelete == true) {
+                        posts.clear();
+                        page = 0;
+                        fetchPosts();
+                      }
+
+
+                    });
                   },
                 ),
               ),

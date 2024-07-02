@@ -1,19 +1,24 @@
-import 'package:bemajor_frontend/screens/community/post_screen.dart';
 import 'package:flutter/cupertino.dart';
+
+import 'post_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../../models/post.dart';
+import 'write_screen.dart';
 import '/api_url.dart';
-import '/models/postsearch.dart';
+import '/models/post.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+class PostListScreen2 extends StatefulWidget {
 
+  final int boardId;
+  final String boardName;
 
-class SearchScreen extends StatefulWidget {
+  PostListScreen2(this.boardId,this.boardName);
+
   @override
-  _SearchScreenState createState() => _SearchScreenState();
+  _PostListScreenState2 createState() => _PostListScreenState2();
 }
 
 Future<String?> readJwt() async {
@@ -21,27 +26,31 @@ Future<String?> readJwt() async {
   return prefs.getString('USERID');
 }
 
-class _SearchScreenState extends State<SearchScreen> {
-  TextEditingController _searchController = TextEditingController();
-  bool isLoading = false;
-  bool beforeSearch = true;
+class _PostListScreenState2 extends State<PostListScreen2> {
+  late ScrollController _scrollController;
+  late List<Post> posts = [];
+  bool isFavorite = false;
   int page = 0;
   int pageSize = 10;
-  late List<Post> posts = [];
-  late ScrollController _scrollController;
-  String currentQuery = '';
-
-
-
+  bool isLoading = false;
+  Color iconColor = Colors.grey;
+  bool isUpdate = false;
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
-    _scrollController.addListener(_scrollListener as VoidCallback);
+    _scrollController.addListener(_scrollListener);
+    fetchPosts();
   }
 
-  Future<void> fetchPostSearch(String keyword) async {
+  @override
+  void dispose() {
+    _scrollController.dispose(); // Dispose the controller when not needed
+    super.dispose();
+  }
+
+  Future<void> fetchPosts() async {
     String? token = await readJwt();
     if (isLoading) return;
 
@@ -49,12 +58,10 @@ class _SearchScreenState extends State<SearchScreen> {
       isLoading = true;
     });
 
-
-
     final response = await http.get(
-      Uri.parse('${ApiUrl.baseUrl}/api/post/search?page=$page&pageSize=$pageSize&keyword=$keyword'),
-      headers: {'access': '$token'},
-    );
+      Uri.parse('${ApiUrl.baseUrl}/api/post2?page=$page&pageSize=$pageSize&boardId=${widget.boardId}'),
+      headers: {'access': '$token'},);
+
     setState(() {
       isLoading = false;
     });
@@ -70,95 +77,27 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   @override
-  void dispose() {
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
-
       backgroundColor: Color(0xffe9ecef),
-      appBar: PreferredSize(
-        preferredSize: Size.fromHeight(kToolbarHeight), // 앱 바의 세로 크기 조절
-        child: AppBar(
-          scrolledUnderElevation: 0,
-          shape: Border(
-            bottom: BorderSide(
-              color: Color(0xffe9ecef),
-              width: 1.3,
-            ),
+      appBar: AppBar(
+        shape: Border(
+          bottom: BorderSide(
+            color: Color(0xffe9ecef),
+            width: 1.3,
           ),
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back),
-            onPressed: () {
-              FocusScope.of(context).unfocus();
-              Future.delayed(Duration(milliseconds: 100), () {
-                Navigator.pop(context);
-              });
-            },
-            color: Colors.black,
-          ),
-          backgroundColor: Colors.white,
-          titleSpacing: 0, // 타이틀과 왼쪽 경계 사이의 간격을 없앰
-          title: Padding(
-            padding: EdgeInsets.only(top: 4.0), // 검색 필드를 약간 위로 이동
-            child: TextField(
-              autofocus: true,
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: '글 제목, 내용을 검색하세요.',
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(horizontal: 16.0),
-              ),
-              onSubmitted: (query) {
-                if(query.trim().isNotEmpty) {
-                  setState(() {
-                    beforeSearch = false;
-                    posts.clear(); // 검색 결과 초기화
-                    page = 0;
-                    currentQuery = query; // 검색된 쿼리를 업데이트
-                  });
-                  fetchPostSearch(query);
-                }
-              },
-            ),
-          ),
-          actions: [
-            IconButton(
-              icon: Icon(Icons.search),
-              onPressed: () {
-                String query = _searchController.text;
-                if(query.trim().isNotEmpty) {
-                  setState(() {
-                    beforeSearch = false;
-                    posts.clear(); // 검색 결과 초기화
-                    page = 0;
-                    currentQuery = query; // 검색된 쿼리를 업데이트
-                  });
-                  fetchPostSearch(query);
-                }
-
-              },
-            ),
-          ],
         ),
+        scrolledUnderElevation: 0,
+        backgroundColor: Colors.white,
+        title: Text(widget.boardName),
       ),
-      body:
-      beforeSearch
-          ? Center(
-        child:  Text('글 제목, 내용을 검색하세요.')// 로딩 표시
-      )
-      : posts.isNotEmpty // 게시글이 있는 경우
-        ? ListView.builder(
-
+      body: ListView.builder(
         itemCount: posts.length + (isLoading ? 1 : 0),
         itemBuilder: (BuildContext context, int index) {
-          if(index < posts.length) {
+          if (index < posts.length) {
             return Padding(
               padding: EdgeInsets.only(bottom: 8.0),
               child: Container(
-
                 decoration: BoxDecoration(
                   color: Colors.white,
                   boxShadow: [
@@ -168,17 +107,12 @@ class _SearchScreenState extends State<SearchScreen> {
                       blurRadius: 0,
                       offset: Offset(0, 1), // 그림자의 위치 조정
                     ),
-
-
                   ],
-
                 ),
                 child: ListTile(
                   title: Container(
-
-                    padding: EdgeInsets.only(bottom: 5.0),
+                    padding: EdgeInsets.only(top: 5.0, bottom: 5.0),
                     child: Column(
-
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         RichText(
@@ -197,9 +131,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         Divider(),
                         SizedBox(height: 4.0,),
 
-
                         Row(
-
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             CircleAvatar(
@@ -210,10 +142,8 @@ class _SearchScreenState extends State<SearchScreen> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-
                                 Row(
                                   children: [
-
                                     Text(
                                       posts[index].memberName, // 작성자 이름 표시
                                       style: TextStyle(
@@ -222,7 +152,6 @@ class _SearchScreenState extends State<SearchScreen> {
                                         color: Colors.black,
                                       ),
                                     ),
-
                                   ],
                                 ),
                                 Text(
@@ -233,7 +162,6 @@ class _SearchScreenState extends State<SearchScreen> {
                                     color: Colors.black,
                                   ),
                                 ),
-
                                 SizedBox(height: 8), // 각 항목 사이의 간격 추가
                               ],
                             ),
@@ -252,7 +180,6 @@ class _SearchScreenState extends State<SearchScreen> {
                     ),
                   ),
                   subtitle: Column(
-
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
@@ -300,6 +227,14 @@ class _SearchScreenState extends State<SearchScreen> {
                             ),
                         ],
                       ),
+
+
+
+
+
+
+
+
                       SizedBox(height: 5.0),
                       Divider(),
                       SizedBox(height: 5.0),
@@ -340,11 +275,14 @@ class _SearchScreenState extends State<SearchScreen> {
                     );
 
                     setState(()  {
-
+                      if(ifDelete == true) {
+                        posts.clear();
+                        page = 0;
+                        fetchPosts();
+                      }
 
 
                     });
-                    // 게시글을 눌렀을 때의 동작을 추가할 수 있습니다.
                   },
                 ),
               ),
@@ -354,26 +292,31 @@ class _SearchScreenState extends State<SearchScreen> {
               child: CircularProgressIndicator(),
             );
           }
-
         },
         controller: _scrollController,
-
-      ) : Center(
-          child: Text('검색 결과가 없습니다.')
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => WriteScreen(widget.boardId, widget.boardName)),
+          );
+          // 버튼을 눌렀을 때 수행할 작업을 추가할 수 있습니다.
+        },
+        child: SvgPicture.asset(
+          'assets/icons/pencil.svg',
+          width: 35,
+          color: Colors.white,
+        ),
       ),
     );
-
-
-
   }
 
   void _scrollListener() {
     if (isLoading) return;
 
     if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
-      fetchPostSearch(currentQuery);
+      fetchPosts();
     }
   }
-
 }
-

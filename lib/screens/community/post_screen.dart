@@ -1,5 +1,4 @@
 import 'package:bemajor_frontend/models/commentWrite.dart';
-import 'package:bemajor_frontend/screens/community/community_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -9,7 +8,7 @@ import '/models/post.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class DetailScreen extends StatefulWidget {
-  final Post post;
+  Post post;
   final String boardName;
 
   DetailScreen({required this.post, required this.boardName});
@@ -47,7 +46,87 @@ class _DetailScreenState extends State<DetailScreen> {
   @override
   void initState() {
     super.initState();
+    viewCountUp();
     fetchComments();
+  }
+
+  Future<void> _updatePost() async {
+    final response = await http.get(Uri.parse('${ApiUrl.baseUrl}/api/post/${widget.post.id}'));
+    if (response.statusCode == 200) {
+      final updatedData = jsonDecode(response.body);
+      setState(() {
+        widget.post.title = updatedData['title'];
+        widget.post.content = updatedData['content'];
+        widget.post.postDate = updatedData['updateDate'];
+        widget.post.imageName = List<String>.from(updatedData['imageName'] ?? []);
+
+      });
+
+    } else {
+      throw Exception('Failed to load posts');
+    }
+  }
+
+  Future<void> _deletePost() async {
+    final response = await http.delete(Uri.parse('${ApiUrl.baseUrl}/api/post/${widget.post.id}'));
+    if (response.statusCode == 200) {
+
+
+      Navigator.pop(context,true);
+
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('삭제 실패')),
+      );
+    }
+  }
+
+  Future<void> _favoritePost() async {
+
+    // API 엔드포인트 설정
+    String apiUrl = "${ApiUrl.baseUrl}/api/post/${widget.post.id}/favorite";
+    String? token = await readJwt();
+
+
+    // POST 요청으로 즐겨찾기 토글 요청 보내기
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {'access': '$token'},
+      );
+
+      if (response.statusCode == 200) {
+        // 즐겨찾기 상태가 토글되었으므로 UI 갱신
+        setState(() {
+          widget.post.postGood = !widget.post.postGood;
+          if(widget.post.postGood) {
+            widget.post.goodCount += 1;
+          } else {
+            widget.post.goodCount -= 1;
+          }
+        });
+      } else {
+        // 오류 발생 시 에러 메시지 출력
+        print('Failed to favorite: ${response.statusCode}');
+      }
+    } catch (error) {
+      // 네트워크 오류 발생 시 에러 메시지 출력
+      print('Network error: $error');
+    }
+  }
+
+  Future<void> viewCountUp() async {
+    final url = Uri.parse('${ApiUrl.baseUrl}/api/post/${widget.post.id}/view');
+    final response = await http.patch(url);
+
+    if (response.statusCode == 200) {
+      setState(() {
+        widget.post.viewCount += 1; // 조회수를 증가시킵니다.
+      });
+    } else {
+      // 오류 처리
+      print('Failed to favorite: ${response.statusCode}');
+    }
   }
 
   Future<void> fetchComments() async {
@@ -57,17 +136,7 @@ class _DetailScreenState extends State<DetailScreen> {
       isLoading = true;
     });
 
-    String apiUrl = '${ApiUrl.baseUrl}/api/comment/list?postID=${widget.post.id}';
-    String? token = await readJwt();
-
-      final response = await http.get(
-        Uri.parse(apiUrl),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-          'authorization': '$token'
-        },
-      );
-
+    final response = await http.get(Uri.parse('${ApiUrl.baseUrl}/api/comment/list?postID=${widget.post.id}'));
     setState(() {
       isLoading = false;
     });
@@ -111,17 +180,17 @@ class _DetailScreenState extends State<DetailScreen> {
     }
   }
 
-  Future<void> _getFavoriteComment  (int commentID, int index) async {
+  Future<void> _getFavoriteComment(int commentID, int index) async {
     String apiUrl = await '${ApiUrl.baseUrl}/api/comment/favorite?commentID=${commentID}';
     String? token = await readJwt();
 
-    final response = await http.get(Uri.parse(apiUrl),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-        'authorization': '$token'
-      },
-    );
-      _commentLikes[index] = jsonDecode(response.body);
+      final response = await http.get(Uri.parse(apiUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'authorization': '$token'
+        },
+      );
+    _commentLikes[index] = jsonDecode(response.body);
   }
 
   Future<void> _getFavoriteReply(int commentID, int index, int replyIndex) async {
@@ -245,7 +314,7 @@ class _DetailScreenState extends State<DetailScreen> {
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () {
-            Navigator.pop(context);
+            Navigator.pop(context, true);
           },
         ),
         bottom: PreferredSize(
@@ -309,6 +378,7 @@ class _DetailScreenState extends State<DetailScreen> {
                             ],
                           ),
                         ),
+                        if(widget.post.userCheck == true)
                         PopupMenuButton<String>(
                           onSelected: (String value) {
                             // Edit 및 Delete 액션 처리
@@ -343,7 +413,33 @@ class _DetailScreenState extends State<DetailScreen> {
                       widget.post.content, // 글 내용
                       style: TextStyle(fontSize: 18.0),
                     ),
+                    if (widget.post.imageName.isNotEmpty) ...widget.post.imageName.map((imageName) {
+                      return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => FullImageScreen(imageUrl: 'http://116.47.60.159:8080/images/' + imageName),
+                                ),
+                              );
+                            },
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8.0),
+                              child: FadeInImage.assetNetwork(
+                                placeholder: 'assets/icons/loading.gif',
+                                image: 'http://116.47.60.159:8080/images/' + imageName,
+                                width: MediaQuery.of(context).size.width,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          )
+                      );
+                    }).toList(),
+
                     SizedBox(height: 20.0),
+
                     Row(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
@@ -357,29 +453,23 @@ class _DetailScreenState extends State<DetailScreen> {
                             children: [
                               IconButton(
                                 icon: Icon(
-                                  isLiked ? Icons.favorite : Icons.favorite_border_outlined,
-                                  color: isLiked ? Colors.purple : Colors.grey,
+                                  widget.post.postGood ? Icons.favorite : Icons.favorite_border_outlined,
+                                  color:  widget.post.postGood ? Colors.purple : Colors.grey,
                                 ),
-                                onPressed: () {
-                                  setState(() {
-                                    isLiked = !isLiked;
-                                    if (isLiked) {
-                                      likeCount++;
-                                    } else {
-                                      likeCount--;
-                                    }
-                                  });
+                                onPressed: () async {
+                                  await _favoritePost();
+
                                 },
                               ),
                               Text(
-                                '좋아요 $likeCount', // 좋아요 수
+                                '좋아요 ${widget.post.goodCount}', // 좋아요 수
                                 style: TextStyle(color: Colors.grey, fontSize: 14.0),
                               ),
                               SizedBox(width: 16.0),
                               Icon(Icons.visibility, color: Colors.grey, size: 16.0),
                               SizedBox(width: 4.0),
                               Text(
-                                '조회 수 123', // 예시 조회 수 viewcount
+                                '조회 수 ${widget.post.viewCount}', // 예시 조회 수 viewcount
                                 style: TextStyle(color: Colors.grey, fontSize: 14.0),
                               ),
                             ],
@@ -415,11 +505,13 @@ class _DetailScreenState extends State<DetailScreen> {
                       final memberId = '${commentsResult[index].userName}';
                       final comment = '${commentsResult[index].content}'; // comment
                       _commentLikeCounts[index] = commentsResult[index].goodCount;
-                      _commentLikes[index] = commentsResult[index].isFavorite;
+                      _getFavoriteComment(commentsResult[index].id, index);
 
                       final List<CommentResult> replies = List.generate(
                           jsonData.length,
                               (replyIndex) => repliesResult[replyIndex]);
+
+
                       return Column(
                         children: [
                           ListTile(
@@ -508,6 +600,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                       ),
                                       onPressed: () {
                                         setState(() {
+
                                           if(_commentLikes[index] == true) {
                                             _deleteFavoriteComment(commentsResult[index], index);
                                           } else {
@@ -516,7 +609,6 @@ class _DetailScreenState extends State<DetailScreen> {
                                         });
                                       },
                                     ),
-
                                     Text("${commentsResult[index].goodCount}"), // 좋아요 숫자
                                   ],
                                 ),
@@ -524,7 +616,6 @@ class _DetailScreenState extends State<DetailScreen> {
                                 if (_isReplyVisible[index])
                                   ...replies.map((reply) {
                                     int replyIndex = replies.indexOf(reply);
-                                    _replyLikes[index][replyIndex] = repliesResult[replyIndex].isFavorite;
                                     _getFavoriteReply(replies[replyIndex].id, index, replyIndex);
                                     return Padding(
                                       padding: EdgeInsets.only(left: 20.0, top: 10.0),
@@ -620,7 +711,6 @@ class _DetailScreenState extends State<DetailScreen> {
                                                       onPressed: () {
                                                         setState(() {
                                                           _replyLikeCounts[index][replyIndex] = repliesResult[replyIndex].goodCount;
-
                                                           if (_replyLikes[index][replyIndex] == true) {
                                                             _deleteFavoriteReply(replies[replyIndex], index, replyIndex);
                                                           } else {

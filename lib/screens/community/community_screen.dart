@@ -1,3 +1,4 @@
+import 'package:bemajor_frontend/screens/community/post_list_screen2.dart';
 import 'package:bemajor_frontend/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -54,7 +55,7 @@ class _BoardState extends State<BoardScreen> {
 
     final response = await http.get(
       Uri.parse('${ApiUrl.baseUrl}/api/board'),
-      headers: {'authorization': '$token'},
+      headers: {'access': '$token'},
     );
     if (response.statusCode == 200) {
       final List<dynamic> jsonData = jsonDecode(response.body);
@@ -127,28 +128,48 @@ class _BoardState extends State<BoardScreen> {
                     contentPadding: const EdgeInsets.symmetric(horizontal: 0),
                     leading: SvgPicture.asset('assets/icons/list.svg',width: 25,height: 25,),
                     title: Text('내가 쓴 글', style: TextStyle(fontWeight: FontWeight.normal,fontSize: 18),),
-                    onTap: (){print('내가 쓴글');},
+                    onTap: (){
+                      Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => PostListScreen2(1,'내가 쓴 글')),
+                    );
+                      },
                   ),
                   ListTile(
                     dense: true,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 0),
                     leading: SvgPicture.asset('assets/icons/chat.svg',width: 25,height: 25,),
                     title: Text('댓글 단 글', style: TextStyle(fontWeight: FontWeight.normal,fontSize: 18),),
-                    onTap: (){print('댓글 단 글');},
+                    onTap: (){
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => PostListScreen2(2,"댓글 단 글")),
+                      );
+                    },
                   ),
                   ListTile(
                     dense: true,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 0),
                     leading: SvgPicture.asset('assets/icons/good.svg',width: 25,height: 25,),
                     title: Text('좋아요 누른 글', style: TextStyle(fontWeight: FontWeight.normal,fontSize: 18),),
-                    onTap: (){print('좋아요 누른 글');},
+                    onTap: (){
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => PostListScreen2(3,'좋아요 누른 글')),
+                      );
+                    },
                   ),
                   ListTile(
                     dense: true,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 0),
                     leading: SvgPicture.asset('assets/icons/fire.svg',width: 25,height: 25,),
                     title: Text('실시간 인기글', style: TextStyle(fontWeight: FontWeight.normal,fontSize: 18),),
-                    onTap: (){print('HOT 게시글');},
+                    onTap: (){
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => PostListScreen2(4,'실시간 인기글')),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -218,7 +239,7 @@ Future<void> favoriteboard(String boardName) async {
       Uri.parse(apiUrl),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
-        'authorization': '$token'
+        'access': '$token'
       },
       body: jsonEncode(FavoriteBoard(boardName)),
     );
