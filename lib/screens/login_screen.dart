@@ -75,8 +75,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _loginKakao() async {
-    // String? fcmToken = await FirebaseMessaging.instance.getToken();
-    // print("token : $fcmToken");
     if (await isKakaoTalkInstalled()) {
       try {
         await UserApi.instance.loginWithKakaoTalk();

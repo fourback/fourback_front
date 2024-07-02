@@ -1,4 +1,5 @@
 import 'package:bemajor_frontend/models/commentWrite.dart';
+import 'package:bemajor_frontend/screens/community/community_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -56,7 +57,17 @@ class _DetailScreenState extends State<DetailScreen> {
       isLoading = true;
     });
 
-    final response = await http.get(Uri.parse('${ApiUrl.baseUrl}/api/comment/list?postID=${widget.post.id}'));
+    String apiUrl = '${ApiUrl.baseUrl}/api/comment/list?postID=${widget.post.id}';
+    String? token = await readJwt();
+
+      final response = await http.get(
+        Uri.parse(apiUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'authorization': '$token'
+        },
+      );
+
     setState(() {
       isLoading = false;
     });
@@ -100,17 +111,17 @@ class _DetailScreenState extends State<DetailScreen> {
     }
   }
 
-  Future<void> _getFavoriteComment(int commentID, int index) async {
+  Future<void> _getFavoriteComment  (int commentID, int index) async {
     String apiUrl = await '${ApiUrl.baseUrl}/api/comment/favorite?commentID=${commentID}';
     String? token = await readJwt();
 
-      final response = await http.get(Uri.parse(apiUrl),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-          'authorization': '$token'
-        },
-      );
-    _commentLikes[index] = jsonDecode(response.body);
+    final response = await http.get(Uri.parse(apiUrl),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'authorization': '$token'
+      },
+    );
+      _commentLikes[index] = jsonDecode(response.body);
   }
 
   Future<void> _getFavoriteReply(int commentID, int index, int replyIndex) async {
@@ -404,13 +415,11 @@ class _DetailScreenState extends State<DetailScreen> {
                       final memberId = '${commentsResult[index].userName}';
                       final comment = '${commentsResult[index].content}'; // comment
                       _commentLikeCounts[index] = commentsResult[index].goodCount;
-                      _getFavoriteComment(commentsResult[index].id, index);
+                      _commentLikes[index] = commentsResult[index].isFavorite;
 
                       final List<CommentResult> replies = List.generate(
                           jsonData.length,
                               (replyIndex) => repliesResult[replyIndex]);
-
-
                       return Column(
                         children: [
                           ListTile(
@@ -499,7 +508,6 @@ class _DetailScreenState extends State<DetailScreen> {
                                       ),
                                       onPressed: () {
                                         setState(() {
-
                                           if(_commentLikes[index] == true) {
                                             _deleteFavoriteComment(commentsResult[index], index);
                                           } else {
@@ -508,6 +516,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                         });
                                       },
                                     ),
+
                                     Text("${commentsResult[index].goodCount}"), // 좋아요 숫자
                                   ],
                                 ),
@@ -515,6 +524,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                 if (_isReplyVisible[index])
                                   ...replies.map((reply) {
                                     int replyIndex = replies.indexOf(reply);
+                                    _replyLikes[index][replyIndex] = repliesResult[replyIndex].isFavorite;
                                     _getFavoriteReply(replies[replyIndex].id, index, replyIndex);
                                     return Padding(
                                       padding: EdgeInsets.only(left: 20.0, top: 10.0),
@@ -609,7 +619,8 @@ class _DetailScreenState extends State<DetailScreen> {
                                                       ),
                                                       onPressed: () {
                                                         setState(() {
-                                                          _replyLikeCounts[index][replyIndex] = repliesResult[index].goodCount;
+                                                          _replyLikeCounts[index][replyIndex] = repliesResult[replyIndex].goodCount;
+
                                                           if (_replyLikes[index][replyIndex] == true) {
                                                             _deleteFavoriteReply(replies[replyIndex], index, replyIndex);
                                                           } else {

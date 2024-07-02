@@ -7,6 +7,7 @@ class CommentResult {
   final int postId;
   final int parentId;
   final String? dateDiff;
+  final bool isFavorite;
 
   final Map<String, dynamic>? reply;
 
@@ -19,7 +20,8 @@ class CommentResult {
   required this.postId,
   required this.parentId,
   required this.dateDiff,
-  required this.reply
+  required this.reply,
+  required this.isFavorite
 
   });
 
@@ -34,6 +36,7 @@ class CommentResult {
   parentId: json['parentId'],
   dateDiff: json['dateDiff'],
   reply: json['reply'],
+  isFavorite: json['favorite']
   );
   }
 
@@ -47,7 +50,8 @@ class CommentResult {
     'postId': postId,
     'parentId': parentId,
     'dateDiff': dateDiff,
-    'reply': reply
+    'reply': reply,
+    'Favorite': isFavorite
   };
   }
   }
