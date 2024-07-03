@@ -180,7 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       left: 0,
                       child: Text(
                         '비전공자 개발 커뮤니티\nBe전공자',
-                        textAlign: TextAlign.left,
+                        textAlign: TextAlign.center,
                         style: TextStyle(
                             color: Color.fromRGBO(30, 35, 44, 1),
                             fontFamily: 'Urbanist',
@@ -193,7 +193,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       )),
                 ]),
               ),
-              SizedBox(height: 250,),
+              const SizedBox(height: 250,),
               Container(
                 width: 280,
                 height: 40,
