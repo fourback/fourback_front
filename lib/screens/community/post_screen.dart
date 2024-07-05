@@ -7,6 +7,8 @@ import '../../models/commentResult.dart';
 import '/models/post.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'fullimage_screen.dart';
+
 class DetailScreen extends StatefulWidget {
   Post post;
   final String boardName;
@@ -130,13 +132,18 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   Future<void> fetchComments() async {
+    String? token = await readJwt();
     if (isLoading) return;
 
     setState(() {
       isLoading = true;
     });
 
-    final response = await http.get(Uri.parse('${ApiUrl.baseUrl}/api/comment/list?postID=${widget.post.id}'));
+
+
+    final response = await http.get(
+        Uri.parse('${ApiUrl.baseUrl}/api/comment/list?postID=${widget.post.id}'),
+      headers: {'access': '$token'},);
     setState(() {
       isLoading = false;
     });
@@ -164,10 +171,10 @@ class _DetailScreenState extends State<DetailScreen> {
         Uri.parse(apiUrl),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
-          'authorization': '$token'
+          'access': '$token'
         },
-        body: jsonEncode(CommentWrite(widget.post.id, content, parentCommentId)),
-      );
+      body: jsonEncode(CommentWrite(widget.post.id, content, parentCommentId)),
+    );
 
       if (response.statusCode == 200) {
         print('댓글이 성공적으로 전송되었습니다.');
@@ -175,21 +182,20 @@ class _DetailScreenState extends State<DetailScreen> {
       } else {
         print('API 요청이 실패했습니다.');
       }
-    } catch (e) {
-      print('오류: $e');
-    }
+  } catch (e) {
+  print('오류: $e');
+  }
   }
 
   Future<void> _getFavoriteComment(int commentID, int index) async {
     String apiUrl = await '${ApiUrl.baseUrl}/api/comment/favorite?commentID=${commentID}';
     String? token = await readJwt();
 
-      final response = await http.get(Uri.parse(apiUrl),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-          'authorization': '$token'
-        },
-      );
+    final response = await http.get(
+        Uri.parse(apiUrl),
+        headers: {'access': '$token'}
+    );
+
     _commentLikes[index] = jsonDecode(response.body);
   }
 
@@ -197,10 +203,10 @@ class _DetailScreenState extends State<DetailScreen> {
     String apiUrl = await '${ApiUrl.baseUrl}/api/comment/favorite?commentID=${commentID}';
     String? token = await readJwt();
 
-    final response = await http.get(Uri.parse(apiUrl),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-        'authorization': '$token'
+    final response = await http.get(
+        Uri.parse(apiUrl),
+        headers: {
+        'access': '$token'
       },
     );
     _replyLikes[index][replyIndex] = jsonDecode(response.body);
@@ -212,10 +218,9 @@ class _DetailScreenState extends State<DetailScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse(apiUrl),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-          'authorization': '$token'
+          Uri.parse(apiUrl),
+          headers: {
+          'access': '$token'
         },
       );
 
@@ -237,11 +242,8 @@ class _DetailScreenState extends State<DetailScreen> {
 
     try {
       final response = await http.delete(
-        Uri.parse(apiUrl),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-          'authorization': '$token'
-        },
+          Uri.parse(apiUrl),
+          headers: {'access': '$token'}
       );
 
       if (response.statusCode == 200) {
@@ -261,12 +263,9 @@ class _DetailScreenState extends State<DetailScreen> {
     String? token = await readJwt();
 
     try {
-      final response = await http.post(
-        Uri.parse(apiUrl),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-          'authorization': '$token'
-        },
+        final response = await http.post(
+            Uri.parse(apiUrl),
+            headers: {'access': '$token'}
       );
 
       if (response.statusCode == 200) {
@@ -287,11 +286,8 @@ class _DetailScreenState extends State<DetailScreen> {
 
     try {
       final response = await http.delete(
-        Uri.parse(apiUrl),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-          'authorization': '$token'
-        },
+          Uri.parse(apiUrl),
+          headers: {'access': '$token'}
       );
 
       if (response.statusCode == 200) {
@@ -505,7 +501,7 @@ class _DetailScreenState extends State<DetailScreen> {
                       final memberId = '${commentsResult[index].userName}';
                       final comment = '${commentsResult[index].content}'; // comment
                       _commentLikeCounts[index] = commentsResult[index].goodCount;
-                      _getFavoriteComment(commentsResult[index].id, index);
+                      _commentLikes[index] = commentsResult[index].isFavorite;
 
                       final List<CommentResult> replies = List.generate(
                           jsonData.length,
@@ -616,7 +612,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                 if (_isReplyVisible[index])
                                   ...replies.map((reply) {
                                     int replyIndex = replies.indexOf(reply);
-                                    _getFavoriteReply(replies[replyIndex].id, index, replyIndex);
+                                    _replyLikes[index][replyIndex] = repliesResult[replyIndex].isFavorite;
                                     return Padding(
                                       padding: EdgeInsets.only(left: 20.0, top: 10.0),
                                       child: Container(
