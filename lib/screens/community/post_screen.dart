@@ -1,11 +1,15 @@
+//import 'dart:html';
+
 import 'package:bemajor_frontend/models/commentWrite.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:bemajor_frontend/api_url.dart';
+import '../../models/commentModify.dart';
 import '../../models/commentResult.dart';
 import '/models/post.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
 
 import 'fullimage_screen.dart';
 
@@ -17,6 +21,11 @@ class DetailScreen extends StatefulWidget {
 
   @override
   State<DetailScreen> createState() => _DetailScreenState();
+}
+
+Future<int?> readUserId() async {
+  User user = await UserApi.instance.me();
+  return user.id;
 }
 
 Future<String?> readJwt() async {
@@ -31,6 +40,10 @@ class _DetailScreenState extends State<DetailScreen> {
 
   bool isLoading = false;
   List<CommentResult> commentsResult = [];
+
+  bool isModifying = false;
+  int? modifyingToCommentId;
+  List<CommentResult> modifyingToReply = [];
 
   int size = 0;
   int page = 0;
@@ -185,6 +198,55 @@ class _DetailScreenState extends State<DetailScreen> {
   } catch (e) {
   print('오류: $e');
   }
+  }
+
+  Future<void> _modifyComment(String content, int commentId) async {
+    String apiUrl = '${ApiUrl.baseUrl}/api/comment';
+    String? token = await readJwt();
+
+    try {
+      final response = await http.put(
+        Uri.parse(apiUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'access': '$token'
+        },
+        body: jsonEncode(CommentModify(commentId, content)),
+      );
+
+      if (response.statusCode == 200) {
+        print('댓글이 성공적으로 수정되었습니다.');
+        await fetchComments(); // 댓글을 수정한 후 댓글 리스트를 다시 로드
+      } else {
+        print('API 요청이 실패했습니다.');
+      }
+    } catch (e) {
+      print('오류: $e');
+    }
+  }
+
+  Future<void> _deleteComment(int commentId) async {
+    String apiUrl = '${ApiUrl.baseUrl}/api/comment?commentID=${commentId}';
+    String? token = await readJwt();
+
+    try {
+      final response = await http.delete(
+        Uri.parse(apiUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'access': '$token'
+        },
+      );
+
+      if (response.statusCode == 200) {
+        print('댓글이 성공적으로 삭제되었습니다.');
+        await fetchComments(); // 댓글을 수정한 후 댓글 리스트를 다시 로드
+      } else {
+        print('API 요청이 실패했습니다.');
+      }
+    } catch (e) {
+      print('오류: $e');
+    }
   }
 
   Future<void> _getFavoriteComment(int commentID, int index) async {
@@ -536,21 +598,35 @@ class _DetailScreenState extends State<DetailScreen> {
                                     // Edit 및 Delete 액션 처리
                                     if (value == 'edit') {
                                       // Edit action
+                                      if (modifyingToCommentId == commentsResult[index].id) {
+                                        isModifying = false;
+                                        _commentController.text = '';
+                                      }
+                                      else {
+                                        isModifying = true;
+                                        modifyingToCommentId = commentsResult[index].id;
+                                        _commentController.text = commentsResult[index].content;
+                                      }
                                     } else if (value == 'delete') {
+                                      _deleteComment(commentsResult[index].id);
                                       // Delete action
                                     }
                                   },
                                   itemBuilder: (BuildContext context) {
-                                    return [
-                                      PopupMenuItem<String>(
-                                        value: 'edit',
-                                        child: Text('수정'), // 수정 액션
-                                      ),
-                                      PopupMenuItem<String>(
-                                        value: 'delete',
-                                        child: Text('삭제'), // 삭제 액션
-                                      ),
-                                    ];
+                                    if(readUserId() == commentsResult[index].userName) {
+                                      return [
+                                        PopupMenuItem<String>(
+                                          value: 'edit',
+                                          child: Text('수정'), // 댓글 수정 액션
+                                        ),
+                                        PopupMenuItem<String>(
+                                          value: 'delete',
+                                          child: Text('삭제'), // 댓글 삭제 액션
+                                        ),
+                                      ];
+                                    }
+                                    else
+                                      return false;
                                   },
                                   icon: Icon(Icons.more_vert, color: Colors.grey),
                                 ),
@@ -656,7 +732,18 @@ class _DetailScreenState extends State<DetailScreen> {
                                                       // Edit 및 Delete 액션 처리
                                                       if (value == 'edit') {
                                                         // Edit action
+                                                        if (modifyingToCommentId == replies[replyIndex].id) {
+                                                          isModifying = false;
+                                                          _commentController.text = '';
+                                                        }
+                                                        else {
+                                                          isModifying = true;
+                                                          modifyingToCommentId = replies[replyIndex].id;
+                                                          modifyingToReply = replies;
+                                                          _commentController.text = replies[replyIndex].content;
+                                                        }
                                                       } else if (value == 'delete') {
+                                                        _deleteComment(replies[replyIndex].id);
                                                         // Delete action
                                                       }
                                                     },
@@ -664,11 +751,11 @@ class _DetailScreenState extends State<DetailScreen> {
                                                       return [
                                                         PopupMenuItem<String>(
                                                           value: 'edit',
-                                                          child: Text('수정'), // 수정 액션
+                                                          child: Text('수정'), // 대댓글 수정 액션
                                                         ),
                                                         PopupMenuItem<String>(
                                                           value: 'delete',
-                                                          child: Text('삭제'), // 삭제 액션
+                                                          child: Text('삭제'), // 대댓글 삭제 액션
                                                         ),
                                                       ];
                                                     },
@@ -763,6 +850,7 @@ class _DetailScreenState extends State<DetailScreen> {
                 child: TextField(
                   controller: _commentController,
                   decoration: InputDecoration(
+
                     hintText: isReplying ? '대댓글을 입력하세요.' : '댓글을 입력하세요.',
                     hintStyle: TextStyle(color: Colors.grey),
                     border: InputBorder.none,
@@ -774,13 +862,19 @@ class _DetailScreenState extends State<DetailScreen> {
               IconButton(
                 icon: Icon(Icons.send, color: Colors.purple),
                 onPressed: () async {
-                  if (isReplying && replyingToCommentIndex != null) {
+                  if (isReplying == true && isModifying == false && replyingToCommentIndex != null) {
                     // 대댓글 작성 로직
                     int parentCommentId = commentsResult[replyingToCommentIndex!].id;
                     await _addComment(_commentController.text, parentCommentId);
-                  } else {
+                  } else if (isReplying == false && isModifying == false) {
                     // 댓글 작성 로직
                     await _addComment(_commentController.text, -1);
+                  } else if (isReplying == false && isModifying == true) {
+                    // 댓글 수정 로직
+                    await _modifyComment(_commentController.text, modifyingToCommentId!);
+                  } else if (isReplying == true && isModifying == true) {
+                    // 대댓글 수정 로직
+                    await _modifyComment(_commentController.text, modifyingToCommentId!);
                   }
 
                   setState(() {

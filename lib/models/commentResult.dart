@@ -8,6 +8,7 @@ class CommentResult {
   final int parentId;
   final String? dateDiff;
   final bool isFavorite;
+  final int status;
 
   final Map<String, dynamic>? reply;
 
@@ -20,9 +21,9 @@ class CommentResult {
   required this.postId,
   required this.parentId,
   required this.dateDiff,
-  required this.reply,
-  required this.isFavorite
-
+  required this.isFavorite,
+  required this.status,
+  required this.reply
   });
 
   factory CommentResult.fromJson(Map<String, dynamic> json) {
@@ -35,8 +36,9 @@ class CommentResult {
   postId: json['postId'],
   parentId: json['parentId'],
   dateDiff: json['dateDiff'],
-  reply: json['reply'],
-  isFavorite: json['favorite']
+  isFavorite: json['favorite'],
+  status: json['status'],
+  reply: json['reply']
   );
   }
 
@@ -44,14 +46,15 @@ class CommentResult {
   return {
   'id': id,
   'userName': userName,
-    'content': content,
+  'content': content,
   'goodCount': goodCount,
   'commentDate': commentDate,
-    'postId': postId,
-    'parentId': parentId,
-    'dateDiff': dateDiff,
-    'reply': reply,
-    'Favorite': isFavorite
+  'postId': postId,
+  'parentId': parentId,
+  'dateDiff': dateDiff,
+  'status': status,
+  'Favorite': isFavorite,
+  'reply': reply
   };
   }
   }
