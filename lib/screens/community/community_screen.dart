@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../../auth.dart';
 import 'post_list_screen.dart';
 import '/api_url.dart';
 import 'search_screen.dart';
@@ -15,6 +16,12 @@ Future<String?> readJwt() async {
   final prefs = await SharedPreferences.getInstance();
   return prefs.getString('USERID');
 }
+
+Future<String?> readRefresh() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getString('REFRESH');
+}
+
 
 class BoardScreen extends StatefulWidget {
   const BoardScreen({super.key});
@@ -35,6 +42,17 @@ class _BoardState extends State<BoardScreen> {
     );
   }
 
+  void _registerUserId(String userID) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('USERID', userID);
+  }
+
+  void _registerRefresh(String refresh) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('REFRESH', refresh);
+  }
+
+
   @override
   void initState() {
     super.initState();
@@ -52,17 +70,27 @@ class _BoardState extends State<BoardScreen> {
 
   Future<void> fetchBoards() async {
     String? token = await readJwt();
+    print("커뮤 액세스 토큰 : $token");
 
     final response = await http.get(
       Uri.parse('${ApiUrl.baseUrl}/api/board'),
-      headers: {'authorization': '$token'},
+      headers: {'access': '$token'},
     );
     if (response.statusCode == 200) {
       final List<dynamic> jsonData = jsonDecode(response.body);
       setState(() {
         boards = jsonData.map((data) => BoardDto.fromJson(data)).toList();
       });
-    } else {
+    } else if(response.statusCode == 403 || response.statusCode == 401) {
+      print("응답코드: ${response.statusCode}");
+      bool success = await reissueToken(context);
+      if(success) {
+        await fetchBoards();
+      } else {
+        print('토큰 재발급 실패');
+      }
+    }
+    else {
       throw Exception('Failed to load posts');
 
     }
@@ -239,14 +267,15 @@ Future<void> favoriteboard(String boardName) async {
       Uri.parse(apiUrl),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
-        'authorization': '$token'
+        'access': '$token'
       },
       body: jsonEncode(FavoriteBoard(boardName)),
     );
 
     if (response.statusCode == 200) {
       // 즐겨찾기 상태가 토글되었으므로 UI 갱신
-    } else {
+    }
+    else {
       // 오류 발생 시 에러 메시지 출력
       print('Failed to favorite: ${response.statusCode}');
     }

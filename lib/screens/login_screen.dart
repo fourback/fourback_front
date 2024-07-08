@@ -16,18 +16,35 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
+Future<String?> readJwt() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getString('USERID');
+}
+
+Future<String?> readRefresh() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getString('REFRESH');
+}
+
+
 class _LoginScreenState extends State<LoginScreen> {
   late UserInfo user;
   String? userId;
   String? userID;
+  String? refresh;
 
   void _registerUserId() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('USERID', userID!);
   }
 
-  void _sendUserInfo() async {
-    final url = Uri.http(address, "login");
+  void _registerRefresh() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('REFRESH', refresh!);
+  }
+
+  Future<void> _sendUserInfo() async {
+    final url = Uri.http(address, "user");
     final response = await http.post(
       url,
       headers: {
@@ -41,20 +58,23 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
 
-    userID = response.headers["authorization"]!;
-    print("userID" + userID!);
 
-    _registerUserId();
-    user = UserInfo(
-      userID: userID!,
-    );
-    // if (mounted) {
-    //   Navigator.of(context).pushReplacement(
-    //     MaterialPageRoute(
-    //       builder: (ctx) => TabsScreen(user: user),
-    //     ),
-    //   );
-    // }
+
+
+        userID = response.headers['access'];
+        refresh = response.headers['refresh'];
+        print("userID " + userID!);
+        print("refresh " + refresh!);
+        _registerUserId();
+        _registerRefresh();
+
+
+        user = UserInfo(
+          userID: userID!,
+        );
+        // _sendUserInfo 함수 호출
+
+
   }
 
   void _loginKakao() async {
@@ -90,11 +110,12 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     await getKakaoUserInfo();
-    _sendUserInfo();
+    await _sendUserInfo();
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => navigationScreen()),
     );
+
   }
 
   Future<void> getKakaoUserInfo() async {

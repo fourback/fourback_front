@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 
+import '../../auth.dart';
 import 'post_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -60,7 +61,7 @@ class _PostListScreenState2 extends State<PostListScreen2> {
 
     final response = await http.get(
       Uri.parse('${ApiUrl.baseUrl}/api/post2?page=$page&pageSize=$pageSize&boardId=${widget.boardId}'),
-      headers: {'authorization': '$token'},);
+      headers: {'access': '$token'},);
 
     setState(() {
       isLoading = false;
@@ -71,7 +72,15 @@ class _PostListScreenState2 extends State<PostListScreen2> {
         posts.addAll(jsonData.map((data) => Post.fromJson(data)).toList());
         page++;
       });
-    } else {
+    } else if(response.statusCode == 403) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await fetchPosts();
+      } else {
+        print('토큰 재발급 실패');
+      }
+    }
+    else {
       throw Exception('Failed to load posts');
     }
   }
@@ -295,20 +304,7 @@ class _PostListScreenState2 extends State<PostListScreen2> {
         },
         controller: _scrollController,
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => WriteScreen(widget.boardId, widget.boardName)),
-          );
-          // 버튼을 눌렀을 때 수행할 작업을 추가할 수 있습니다.
-        },
-        child: SvgPicture.asset(
-          'assets/icons/pencil.svg',
-          width: 35,
-          color: Colors.white,
-        ),
-      ),
+
     );
   }
 

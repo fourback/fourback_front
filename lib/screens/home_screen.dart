@@ -1,15 +1,24 @@
+import 'package:bemajor_frontend/screens/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../auth.dart';
+import '../models/post.dart';
 import 'community/post_list_screen.dart';
 import '/api_url.dart';
 import '../../models/community.dart';
+import 'community/post_screen.dart';
 
 Future<String?> readJwt() async {
   final prefs = await SharedPreferences.getInstance();
   return prefs.getString('USERID');
+}
+
+Future<String?> readRefresh() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getString('REFRESH');
 }
 
 class HomeScreen extends StatefulWidget {
@@ -21,6 +30,17 @@ class _HomeScreenState extends State<HomeScreen> {
   late List<BoardDto> boards = [];
   bool isLoading = true;
 
+  void _registerUserId(String userID) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('USERID', userID);
+  }
+
+  void _registerRefresh(String refresh) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('REFRESH', refresh);
+  }
+
+
   @override
   void initState() {
     super.initState();
@@ -31,15 +51,26 @@ class _HomeScreenState extends State<HomeScreen> {
     String? token = await readJwt();
     final response = await http.get(
       Uri.parse('${ApiUrl.baseUrl}/api/board'),
-      headers: {'authorization': '$token'},
+      headers: {'access': '$token'},
     );
     if (response.statusCode == 200) {
       final List<dynamic> jsonData = jsonDecode(response.body);
+
       setState(() {
         boards = jsonData.map((data) => BoardDto.fromJson(data)).toList();
         isLoading = false;
       });
-    } else {
+    } else if(response.statusCode == 401 ) {
+      print("홈화면 상태코드 ${response.statusCode} 바디: ${response.body} 끝");
+      bool success = await reissueToken(context);
+      if(success) {
+        await fetchBoards();
+      } else {
+        print('토큰 재발급 실패');
+      }
+    }
+    else {
+      print("${response.statusCode}");
       throw Exception('Failed to load boards');
     }
   }
@@ -320,6 +351,3 @@ class _HomeBody extends StatelessWidget {
     );
   }
 }
-
-
-

@@ -53,7 +53,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
     final response = await http.get(
       Uri.parse('${ApiUrl.baseUrl}/api/post/search?page=$page&pageSize=$pageSize&keyword=$keyword'),
-      headers: {'authorization': '$token'},
+      headers: {'access': '$token'},
     );
     setState(() {
       isLoading = false;

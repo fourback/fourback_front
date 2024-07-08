@@ -47,7 +47,7 @@ class _InputScreenState extends State<WriteScreen> {
     request.fields['content'] = textModel.content;
     request.fields['boardId'] = textModel.boardId.toString();
 
-    request.headers['authorization'] = '$token';
+    request.headers['access'] = '$token';
 
 
     if (images.isNotEmpty) {

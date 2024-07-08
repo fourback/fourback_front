@@ -1,5 +1,7 @@
 import 'package:flutter/cupertino.dart';
 
+import '../../publicImage.dart';
+import '/auth.dart';
 import 'post_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -25,6 +27,11 @@ Future<String?> readJwt() async {
   return prefs.getString('USERID');
 }
 
+Future<String?> readRefresh() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getString('REFRESH');
+}
+
 class _PostListScreenState extends State<PostListScreen> {
   late ScrollController _scrollController;
   late List<Post> posts = [];
@@ -34,6 +41,16 @@ class _PostListScreenState extends State<PostListScreen> {
   bool isLoading = false;
   Color iconColor = Colors.grey;
   bool isUpdate = false;
+
+  void _registerUserId(String userID) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('USERID', userID);
+  }
+
+  void _registerRefresh(String refresh) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('REFRESH', refresh);
+  }
 
   @override
   void initState() {
@@ -59,7 +76,7 @@ class _PostListScreenState extends State<PostListScreen> {
 
     final response = await http.get(
       Uri.parse('${ApiUrl.baseUrl}/api/post?page=$page&pageSize=$pageSize&boardId=${widget.boardId}'),
-      headers: {'authorization': '$token'},);
+      headers: {'access': '$token'},);
 
     setState(() {
       isLoading = false;
@@ -70,8 +87,17 @@ class _PostListScreenState extends State<PostListScreen> {
         posts.addAll(jsonData.map((data) => Post.fromJson(data)).toList());
         page++;
       });
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await fetchPosts();
+      } else {
+        print('토큰 재발급 실패');
+      }
     } else {
+      print("${response.statusCode}");
       throw Exception('Failed to load posts');
+
     }
   }
 
@@ -186,20 +212,12 @@ class _PostListScreenState extends State<PostListScreen> {
                               padding: const EdgeInsets.only(left: 8.0),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(8.0),
-                                child: FadeInImage.assetNetwork(
-                                  placeholder: 'assets/icons/loading.gif',
-                                  image: 'http://116.47.60.159:8080/images/' + posts[index].imageName[0],
+                                child: PublicImage(
+                                  imageUrl: 'http://116.47.60.159:8080/images/' + posts[index].imageName[0],
+                                  placeholderPath: 'assets/icons/loading.gif',
                                   width: 80,
                                   height: 80,
                                   fit: BoxFit.cover,
-                                  imageErrorBuilder: (context, error, stackTrace) {
-                                    return Container(
-                                      width: 80,
-                                      height: 80,
-                                      color: Colors.grey[200],
-                                      child: Icon(Icons.error, color: Colors.red),
-                                    );
-                                  },
                                 ),
                               ),
                             ),

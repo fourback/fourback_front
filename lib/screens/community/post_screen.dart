@@ -10,6 +10,7 @@ import '../../models/commentResult.dart';
 import '/models/post.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'fullimage_screen.dart';
+import 'dart:typed_data';
 
 class DetailScreen extends StatefulWidget {
   Post post;
@@ -59,7 +60,13 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   Future<void> _updatePost() async {
-    final response = await http.get(Uri.parse('${ApiUrl.baseUrl}/api/post/${widget.post.id}'));
+    String? access = await readJwt();
+    final response = await http.get(
+        Uri.parse('${ApiUrl.baseUrl}/api/post/${widget.post.id}'),
+      headers: {
+        'access': '$access'
+      },
+    );
     if (response.statusCode == 200) {
       final updatedData = jsonDecode(response.body);
       setState(() {
@@ -100,7 +107,7 @@ class _DetailScreenState extends State<DetailScreen> {
     try {
       final response = await http.post(
         Uri.parse(apiUrl),
-        headers: {'authorization': '$token'},
+        headers: {'access': '$token'},
       );
 
       if (response.statusCode == 200) {
@@ -115,7 +122,7 @@ class _DetailScreenState extends State<DetailScreen> {
         });
       } else {
         // 오류 발생 시 에러 메시지 출력
-        print('Failed to favorite: ${response.statusCode}');
+        print('Failed to favorite: ${response.statusCode} ${response.body}');
       }
     } catch (error) {
       // 네트워크 오류 발생 시 에러 메시지 출력
@@ -124,8 +131,12 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   Future<void> viewCountUp() async {
+    String? token = await readJwt();
     final url = Uri.parse('${ApiUrl.baseUrl}/api/post/${widget.post.id}/view');
-    final response = await http.patch(url);
+    final response = await http.patch(
+        url,
+      headers: {'access': '$token'}
+    );
 
     if (response.statusCode == 200) {
       setState(() {
@@ -174,7 +185,7 @@ class _DetailScreenState extends State<DetailScreen> {
         Uri.parse(apiUrl),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
-          'authorization': '$token'
+          'access': '$token'
         },
         body: jsonEncode(CommentWrite(widget.post.id, content, parentCommentId)),
       );
@@ -197,7 +208,7 @@ class _DetailScreenState extends State<DetailScreen> {
       final response = await http.get(Uri.parse(apiUrl),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
-          'authorization': '$token'
+          'access': '$token'
         },
       );
     _commentLikes[index] = jsonDecode(response.body);
@@ -210,7 +221,7 @@ class _DetailScreenState extends State<DetailScreen> {
     final response = await http.get(Uri.parse(apiUrl),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
-        'authorization': '$token'
+        'access': '$token'
       },
     );
     _replyLikes[index][replyIndex] = jsonDecode(response.body);
@@ -225,7 +236,7 @@ class _DetailScreenState extends State<DetailScreen> {
         Uri.parse(apiUrl),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
-          'authorization': '$token'
+          'access': '$token'
         },
       );
 
@@ -250,7 +261,7 @@ class _DetailScreenState extends State<DetailScreen> {
         Uri.parse(apiUrl),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
-          'authorization': '$token'
+          'access': '$token'
         },
       );
 
@@ -275,7 +286,7 @@ class _DetailScreenState extends State<DetailScreen> {
         Uri.parse(apiUrl),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
-          'authorization': '$token'
+          'access': '$token'
         },
       );
 
@@ -300,7 +311,7 @@ class _DetailScreenState extends State<DetailScreen> {
         Uri.parse(apiUrl),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
-          'authorization': '$token'
+          'access': '$token'
         },
       );
 
@@ -459,11 +470,11 @@ class _DetailScreenState extends State<DetailScreen> {
                           },
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(8.0),
-                          child: FadeInImage.assetNetwork(
-                            placeholder: 'assets/icons/loading.gif',
-                            image: 'http://116.47.60.159:8080/images/' + imageName,
+                          child: AuthenticatedImage(
+                            imageUrl: 'http://116.47.60.159:8080/images/' + imageName,
                             width: MediaQuery.of(context).size.width,
                             fit: BoxFit.cover,
+                            placeholderPath: 'assets/icons/loading.gif',
                           ),
                         ),
                       )
@@ -837,6 +848,83 @@ class _DetailScreenState extends State<DetailScreen> {
           ),
         ),
       ),
+    );
+  }
+
+}
+
+class AuthenticatedImage extends StatefulWidget {
+  final String imageUrl;
+  final String placeholderPath;
+  final double width;
+  final double? height;
+  final BoxFit fit;
+
+  AuthenticatedImage({
+    required this.imageUrl,
+    required this.placeholderPath,
+    required this.width,
+    this.height,
+    required this.fit,});
+
+  @override
+  _AuthenticatedImageState createState() => _AuthenticatedImageState();
+}
+
+class _AuthenticatedImageState extends State<AuthenticatedImage> {
+  late Future<Uint8List> _imageData;
+
+  Future<Uint8List> _fetchImage() async {
+
+    final token = await readJwt();
+
+    if (token == null) {
+      throw Exception('Token not found');
+    }
+
+    final response = await http.get(
+      Uri.parse(widget.imageUrl),
+      headers: {
+        'access': '$token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return response.bodyBytes;
+    } else {
+      throw Exception('Failed to load image');
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _imageData = _fetchImage();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Uint8List>(
+      future: _imageData,
+      builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return Image.asset(
+          widget.placeholderPath,
+          width: widget.width,
+          height: widget.height,
+          fit: widget.fit,
+        );
+      } else if (snapshot.hasError) {
+        return Icon(Icons.error); // 오류 발생 시 표시할 아이콘
+      } else {
+        return Image.memory(
+          snapshot.data!,
+          width: widget.width,
+          height: widget.height,
+          fit: widget.fit,
+        );
+      }
+    },
     );
   }
 }
