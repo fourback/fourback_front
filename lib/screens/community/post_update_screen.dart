@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:bemajor_frontend/auth.dart';
+import 'package:bemajor_frontend/publicImage.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_svg/flutter_svg.dart';
@@ -22,10 +24,7 @@ class ImageItem {
 
 
 
-Future<String?> readJwt() async {
-  final prefs = await SharedPreferences.getInstance();
-  return prefs.getString('USERID');
-}
+
 
 class PostUpdateScreen extends StatefulWidget {
   final Post post;
@@ -46,21 +45,30 @@ class _InputScreenState extends State<PostUpdateScreen> {
     // 기존 게시글 데이터로 텍스트 필드 초기화
     _textEditingController.text = widget.post.title;
     _textEditingController2.text = widget.post.content;
-    images.addAll(widget.post.imageName.map((imageName) => ImageItem(url: 'http://116.47.60.159:8080/images/$imageName')));
+    images.addAll(widget.post.imageName.map((imageName) => ImageItem(url: 'http://116.47.60.159:8080/image/$imageName')));
   }
 
   Future<void> _deleteImage(List<String> fileNames) async {
-    final url = Uri.parse('${ApiUrl.baseUrl}/api/images');
+    final url = Uri.parse('${ApiUrl.baseUrl}/image');
+    String? token = await readAccess();
     final response = await http.delete(
         url,
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
+          'access': '$token'
         },
         body: jsonEncode(fileNames),
     );
 
     if (response.statusCode == 200) {
       print('이미지가 삭제되었습니다');
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await _deleteImage(fileNames);
+      } else {
+        print('토큰 재발급 실패');
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('이미지 삭제 오류')),
@@ -69,7 +77,7 @@ class _InputScreenState extends State<PostUpdateScreen> {
   }
 
   Future<void> _updatePost(Write textModel) async {
-    String? token = await readJwt();
+    String? token = await readAccess();
     final url = Uri.parse('${ApiUrl.baseUrl}/api/post/${widget.post.id}');
     final request = http.MultipartRequest('PATCH', url);
 
@@ -102,7 +110,14 @@ class _InputScreenState extends State<PostUpdateScreen> {
           await _deleteImage(deletedImages);
         }
 
-      } else {
+      } else if(response.statusCode == 401) {
+        bool success = await reissueToken(context);
+        if(success) {
+          await _updatePost(textModel);
+        } else {
+          print('토큰 재발급 실패');
+        }
+      }else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('수정에 실패하였습니다.')),
         );
@@ -332,12 +347,13 @@ class _InputScreenState extends State<PostUpdateScreen> {
 
                                 child:imageItem.url != null
                                 ?
-                                FadeInImage(
-                                  placeholder: AssetImage('assets/icons/loading.gif'),
-                                  image: NetworkImage(imageItem.url!),
+                                PublicImage(
+                                  placeholderPath: 'assets/icons/loading.gif',
+                                  imageUrl: imageItem.url!,
                                   width: screenSize.width / 3 - 10,
                                   height: screenSize.height / 6 - 10,
                                   fit: BoxFit.cover,
+                                  key: ValueKey(imageItem.url),
                                 )
                                     : FadeInImage(
                                   placeholder: AssetImage('assets/icons/loading.gif'),

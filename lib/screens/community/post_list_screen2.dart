@@ -1,3 +1,4 @@
+import 'package:bemajor_frontend/publicImage.dart';
 import 'package:flutter/cupertino.dart';
 
 import '../../auth.dart';
@@ -22,10 +23,6 @@ class PostListScreen2 extends StatefulWidget {
   _PostListScreenState2 createState() => _PostListScreenState2();
 }
 
-Future<String?> readJwt() async {
-  final prefs = await SharedPreferences.getInstance();
-  return prefs.getString('USERID');
-}
 
 class _PostListScreenState2 extends State<PostListScreen2> {
   late ScrollController _scrollController;
@@ -52,7 +49,7 @@ class _PostListScreenState2 extends State<PostListScreen2> {
   }
 
   Future<void> fetchPosts() async {
-    String? token = await readJwt();
+    String? token = await readAccess();
     if (isLoading) return;
 
     setState(() {
@@ -72,7 +69,7 @@ class _PostListScreenState2 extends State<PostListScreen2> {
         posts.addAll(jsonData.map((data) => Post.fromJson(data)).toList());
         page++;
       });
-    } else if(response.statusCode == 403) {
+    } else if(response.statusCode == 401) {
       bool success = await reissueToken(context);
       if(success) {
         await fetchPosts();
@@ -217,20 +214,14 @@ class _PostListScreenState2 extends State<PostListScreen2> {
                               padding: const EdgeInsets.only(left: 8.0),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(8.0),
-                                child: FadeInImage.assetNetwork(
-                                  placeholder: 'assets/icons/loading.gif',
-                                  image: 'http://116.47.60.159:8080/images/' + posts[index].imageName[0],
+                                child: PublicImage(
+                                  placeholderPath: 'assets/icons/loading.gif',
+                                  imageUrl: 'http://116.47.60.159:8080/image/' + posts[index].imageName[0],
                                   width: 80,
                                   height: 80,
                                   fit: BoxFit.cover,
-                                  imageErrorBuilder: (context, error, stackTrace) {
-                                    return Container(
-                                      width: 80,
-                                      height: 80,
-                                      color: Colors.grey[200],
-                                      child: Icon(Icons.error, color: Colors.red),
-                                    );
-                                  },
+                                  key: ValueKey('http://116.47.60.159:8080/image/' + posts[index].imageName[0]),
+
                                 ),
                               ),
                             ),

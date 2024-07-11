@@ -1,3 +1,4 @@
+import 'package:bemajor_frontend/auth.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -11,16 +12,6 @@ import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
 import 'dart:io';
 
-
-
-
-
-
-
-Future<String?> readJwt() async {
-  final prefs = await SharedPreferences.getInstance();
-  return prefs.getString('USERID');
-}
 
 class WriteScreen extends StatefulWidget {
   final int boardId;
@@ -39,7 +30,7 @@ class _InputScreenState extends State<WriteScreen> {
   Future<void> _sendTextToAPI(Write textModel) async {
     // 여기에 API 엔드포인트를 적절히 설정하세요.
     String apiUrl = '${ApiUrl.baseUrl}/api/post';
-    String? token = await readJwt();
+    String? token = await readAccess();
     final url = Uri.parse('${ApiUrl.baseUrl}/api/post');
     final request = http.MultipartRequest('POST', url);
 
@@ -52,20 +43,24 @@ class _InputScreenState extends State<WriteScreen> {
 
     if (images.isNotEmpty) {
       for (var image in images) {
-
         request.files.add(await http.MultipartFile.fromPath(
           'images', // Assuming your server expects an array of images under the key 'images'
           image.path,
         ));
       }
-
     }
-
 
     try {
       final response = await request.send();
       if (response.statusCode == 200) {
         print('텍스트가 성공적으로 전송되었습니다.');
+      } else if(response.statusCode == 401) {
+        bool success = await reissueToken(context);
+        if(success) {
+          await _sendTextToAPI(textModel);
+        } else {
+          print('토큰 재발급 실패');
+        }
       } else {
         print('API 요청이 실패했습니다.');
       }

@@ -11,15 +11,7 @@ import '/api_url.dart';
 import '../../models/community.dart';
 import 'community/post_screen.dart';
 
-Future<String?> readJwt() async {
-  final prefs = await SharedPreferences.getInstance();
-  return prefs.getString('USERID');
-}
 
-Future<String?> readRefresh() async {
-  final prefs = await SharedPreferences.getInstance();
-  return prefs.getString('REFRESH');
-}
 
 class HomeScreen extends StatefulWidget {
   @override

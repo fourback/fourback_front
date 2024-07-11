@@ -22,15 +22,7 @@ class PostListScreen extends StatefulWidget {
   _PostListScreenState createState() => _PostListScreenState();
 }
 
-Future<String?> readJwt() async {
-  final prefs = await SharedPreferences.getInstance();
-  return prefs.getString('USERID');
-}
 
-Future<String?> readRefresh() async {
-  final prefs = await SharedPreferences.getInstance();
-  return prefs.getString('REFRESH');
-}
 
 class _PostListScreenState extends State<PostListScreen> {
   late ScrollController _scrollController;
@@ -42,15 +34,6 @@ class _PostListScreenState extends State<PostListScreen> {
   Color iconColor = Colors.grey;
   bool isUpdate = false;
 
-  void _registerUserId(String userID) async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('USERID', userID);
-  }
-
-  void _registerRefresh(String refresh) async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('REFRESH', refresh);
-  }
 
   @override
   void initState() {
@@ -67,7 +50,7 @@ class _PostListScreenState extends State<PostListScreen> {
   }
 
   Future<void> fetchPosts() async {
-    String? token = await readJwt();
+    String? token = await readAccess();
     if (isLoading) return;
 
     setState(() {
@@ -213,11 +196,12 @@ class _PostListScreenState extends State<PostListScreen> {
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(8.0),
                                 child: PublicImage(
-                                  imageUrl: 'http://116.47.60.159:8080/images/' + posts[index].imageName[0],
+                                  imageUrl: 'http://116.47.60.159:8080/image/' + posts[index].imageName[0],
                                   placeholderPath: 'assets/icons/loading.gif',
                                   width: 80,
                                   height: 80,
                                   fit: BoxFit.cover,
+                                  key: ValueKey('http://116.47.60.159:8080/image/' + posts[index].imageName[0]),
                                 ),
                               ),
                             ),

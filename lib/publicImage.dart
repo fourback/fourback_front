@@ -16,7 +16,8 @@ class PublicImage extends StatefulWidget {
     this.width,
     this.height,
     required this.fit,
-  });
+    Key? key,
+  }) : super(key: key);
 
   @override
   _PublicImageState createState() => _PublicImageState();
@@ -39,6 +40,15 @@ class _PublicImageState extends State<PublicImage> {
 
     if (response.statusCode == 200) {
       return response.bodyBytes;
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        return await _fetchImage();
+      } else {
+        print('토큰 재발급 실패');
+        throw Exception('Failed to load image');
+      }
+
     } else {
       throw Exception('Failed to load image');
     }

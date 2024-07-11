@@ -12,16 +12,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/community.dart';
 
 
-Future<String?> readJwt() async {
-  final prefs = await SharedPreferences.getInstance();
-  return prefs.getString('USERID');
-}
-
-Future<String?> readRefresh() async {
-  final prefs = await SharedPreferences.getInstance();
-  return prefs.getString('REFRESH');
-}
-
 
 class BoardScreen extends StatefulWidget {
   const BoardScreen({super.key});
@@ -42,15 +32,7 @@ class _BoardState extends State<BoardScreen> {
     );
   }
 
-  void _registerUserId(String userID) async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('USERID', userID);
-  }
 
-  void _registerRefresh(String refresh) async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('REFRESH', refresh);
-  }
 
 
   @override
@@ -69,20 +51,19 @@ class _BoardState extends State<BoardScreen> {
 
 
   Future<void> fetchBoards() async {
-    String? token = await readJwt();
-    print("커뮤 액세스 토큰 : $token");
+    String? token = await readAccess();
 
     final response = await http.get(
       Uri.parse('${ApiUrl.baseUrl}/api/board'),
       headers: {'access': '$token'},
     );
+
     if (response.statusCode == 200) {
       final List<dynamic> jsonData = jsonDecode(response.body);
       setState(() {
         boards = jsonData.map((data) => BoardDto.fromJson(data)).toList();
       });
-    } else if(response.statusCode == 403 || response.statusCode == 401) {
-      print("응답코드: ${response.statusCode}");
+    } else if(response.statusCode == 401) {
       bool success = await reissueToken(context);
       if(success) {
         await fetchBoards();
@@ -93,6 +74,43 @@ class _BoardState extends State<BoardScreen> {
     else {
       throw Exception('Failed to load posts');
 
+    }
+  }
+
+  Future<void> favoriteBoard(String boardName) async {
+
+    // API 엔드포인트 설정
+    String apiUrl = "${ApiUrl.baseUrl}/api/board/favorite";
+    String? token = await readAccess();
+
+    // POST 요청으로 즐겨찾기 토글 요청 보내기
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'access': '$token'
+        },
+        body: jsonEncode(FavoriteBoard(boardName)),
+      );
+
+      if (response.statusCode == 200) {
+
+      } else if(response.statusCode == 401) {
+        bool success = await reissueToken(context);
+        if(success) {
+          await fetchBoards();
+        } else {
+          print('토큰 재발급 실패');
+        }
+      }
+      else {
+        // 오류 발생 시 에러 메시지 출력
+        print('Failed to favorite: ${response.statusCode}');
+      }
+    } catch (error) {
+      // 네트워크 오류 발생 시 에러 메시지 출력
+      print('Network error: $error');
     }
   }
 
@@ -223,7 +241,7 @@ class _BoardState extends State<BoardScreen> {
                     splashColor: Colors.transparent,
                     highlightColor: Colors.transparent,
                     onPressed: () async {
-                      await favoriteboard(boards[index].boardName);
+                      await favoriteBoard(boards[index].boardName);
                       await fetchBoards();
                       setState(() {});
                     },
@@ -255,32 +273,3 @@ class _BoardState extends State<BoardScreen> {
   }
 }
 
-Future<void> favoriteboard(String boardName) async {
-
-  // API 엔드포인트 설정
-  String apiUrl = "${ApiUrl.baseUrl}/api/board/favorite";
-  String? token = await readJwt();
-
-  // POST 요청으로 즐겨찾기 토글 요청 보내기
-  try {
-    final response = await http.post(
-      Uri.parse(apiUrl),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-        'access': '$token'
-      },
-      body: jsonEncode(FavoriteBoard(boardName)),
-    );
-
-    if (response.statusCode == 200) {
-      // 즐겨찾기 상태가 토글되었으므로 UI 갱신
-    }
-    else {
-      // 오류 발생 시 에러 메시지 출력
-      print('Failed to favorite: ${response.statusCode}');
-    }
-  } catch (error) {
-    // 네트워크 오류 발생 시 에러 메시지 출력
-    print('Network error: $error');
-  }
-}

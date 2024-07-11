@@ -53,9 +53,8 @@ Future<bool> reissueToken(BuildContext context) async { //토큰 재발급
       registerRefresh(refresh!);
       return true;
 
-    } else if(reissueResponse.statusCode == 401)  {
-      print("바디 : ${reissueResponse.body}");//refresh 토큰 만료
-      print("refresh 토큰 만료");
+    } else {
+      print("상태 코드 : ${reissueResponse.statusCode}");
       if (context.mounted) {
         Navigator.pushAndRemoveUntil(
           context,
@@ -63,9 +62,6 @@ Future<bool> reissueToken(BuildContext context) async { //토큰 재발급
               (Route<dynamic> route) => false,
         );
       }
-      return false;
-    } else {
-      print("fail:${reissueResponse.statusCode}");
       return false;
     }
   } catch(e) {

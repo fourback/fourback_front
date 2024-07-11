@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:bemajor_frontend/models/commentWrite.dart';
+import 'package:bemajor_frontend/publicImage.dart';
 import 'package:bemajor_frontend/screens/community/post_update_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -11,6 +12,7 @@ import '/models/post.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'fullimage_screen.dart';
 import 'dart:typed_data';
+import 'package:bemajor_frontend/auth.dart';
 
 class DetailScreen extends StatefulWidget {
   Post post;
@@ -23,10 +25,7 @@ class DetailScreen extends StatefulWidget {
   State<DetailScreen> createState() => _DetailScreenState();
 }
 
-Future<String?> readJwt() async {
-  final prefs = await SharedPreferences.getInstance();
-  return prefs.getString('USERID');
-}
+
 
 class _DetailScreenState extends State<DetailScreen> {
   final TextEditingController _commentController = TextEditingController();
@@ -56,11 +55,11 @@ class _DetailScreenState extends State<DetailScreen> {
 
 
 
-    //fetchComments();
+    fetchComments();
   }
 
   Future<void> _updatePost() async {
-    String? access = await readJwt();
+    String? access = await readAccess();
     final response = await http.get(
         Uri.parse('${ApiUrl.baseUrl}/api/post/${widget.post.id}'),
       headers: {
@@ -74,21 +73,40 @@ class _DetailScreenState extends State<DetailScreen> {
         widget.post.content = updatedData['content'];
         widget.post.postDate = updatedData['updateDate'];
         widget.post.imageName = List<String>.from(updatedData['imageName'] ?? []);
-
       });
 
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await _updatePost();
+      } else {
+        print('토큰 재발급 실패');
+      }
     } else {
       throw Exception('Failed to load posts');
     }
   }
 
   Future<void> _deletePost() async {
-    final response = await http.delete(Uri.parse('${ApiUrl.baseUrl}/api/post/${widget.post.id}'));
+    String? access = await readAccess();
+    final response = await http.delete(
+        Uri.parse('${ApiUrl.baseUrl}/api/post/${widget.post.id}'),
+      headers: {
+        'access': '$access'
+      },
+    );
     if (response.statusCode == 200) {
 
 
       Navigator.pop(context,true);
 
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await _deletePost();
+      } else {
+        print('토큰 재발급 실패');
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('삭제 실패')),
@@ -100,7 +118,7 @@ class _DetailScreenState extends State<DetailScreen> {
 
     // API 엔드포인트 설정
     String apiUrl = "${ApiUrl.baseUrl}/api/post/${widget.post.id}/favorite";
-    String? token = await readJwt();
+    String? token = await readAccess();
 
 
     // POST 요청으로 즐겨찾기 토글 요청 보내기
@@ -120,6 +138,13 @@ class _DetailScreenState extends State<DetailScreen> {
             widget.post.goodCount -= 1;
           }
         });
+      } else if(response.statusCode == 401) {
+        bool success = await reissueToken(context);
+        if(success) {
+          await _favoritePost();
+        } else {
+          print('토큰 재발급 실패');
+        }
       } else {
         // 오류 발생 시 에러 메시지 출력
         print('Failed to favorite: ${response.statusCode} ${response.body}');
@@ -131,7 +156,7 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   Future<void> viewCountUp() async {
-    String? token = await readJwt();
+    String? token = await readAccess();
     final url = Uri.parse('${ApiUrl.baseUrl}/api/post/${widget.post.id}/view');
     final response = await http.patch(
         url,
@@ -142,6 +167,13 @@ class _DetailScreenState extends State<DetailScreen> {
       setState(() {
         widget.post.viewCount += 1; // 조회수를 증가시킵니다.
       });
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await viewCountUp();
+      } else {
+        print('토큰 재발급 실패');
+      }
     } else {
       // 오류 처리
       print('Failed to favorite: ${response.statusCode}');
@@ -152,12 +184,18 @@ class _DetailScreenState extends State<DetailScreen> {
 
   Future<void> fetchComments() async {
     if (isLoading) return;
+    String? token = await readAccess();
 
     setState(() {
       isLoading = true;
     });
 
-    final response = await http.get(Uri.parse('${ApiUrl.baseUrl}/api/comment/list?postID=${widget.post.id}'));
+    final response = await http.get(
+        Uri.parse('${ApiUrl.baseUrl}/api/comment/list?postID=${widget.post.id}'),
+      headers: <String, String>{
+        'access': '$token'
+      },
+    );
     setState(() {
       isLoading = false;
     });
@@ -178,7 +216,7 @@ class _DetailScreenState extends State<DetailScreen> {
 
   Future<void> _addComment(String content, int parentCommentId) async {
     String apiUrl = '${ApiUrl.baseUrl}/api/comment';
-    String? token = await readJwt();
+    String? token = await readAccess();
 
     try {
       final response = await http.post(
@@ -203,7 +241,7 @@ class _DetailScreenState extends State<DetailScreen> {
 
   Future<void> _getFavoriteComment(int commentID, int index) async {
     String apiUrl = await '${ApiUrl.baseUrl}/api/comment/favorite?commentID=${commentID}';
-    String? token = await readJwt();
+    String? token = await readAccess();
 
       final response = await http.get(Uri.parse(apiUrl),
         headers: <String, String>{
@@ -216,7 +254,7 @@ class _DetailScreenState extends State<DetailScreen> {
 
   Future<void> _getFavoriteReply(int commentID, int index, int replyIndex) async {
     String apiUrl = await '${ApiUrl.baseUrl}/api/comment/favorite?commentID=${commentID}';
-    String? token = await readJwt();
+    String? token = await readAccess();
 
     final response = await http.get(Uri.parse(apiUrl),
       headers: <String, String>{
@@ -229,7 +267,7 @@ class _DetailScreenState extends State<DetailScreen> {
 
   Future<void> _addFavoriteComment(CommentResult commentResult, int index) async {
     String apiUrl = '${ApiUrl.baseUrl}/api/comment/favorite?commentID=${commentResult.id}';
-    String? token = await readJwt();
+    String? token = await readAccess();
 
     try {
       final response = await http.post(
@@ -254,7 +292,7 @@ class _DetailScreenState extends State<DetailScreen> {
 
   Future<void> _deleteFavoriteComment(CommentResult commentResult, int index) async {
     String apiUrl = '${ApiUrl.baseUrl}/api/comment/favorite?commentID=${commentResult.id}';
-    String? token = await readJwt();
+    String? token = await readAccess();
 
     try {
       final response = await http.delete(
@@ -279,7 +317,7 @@ class _DetailScreenState extends State<DetailScreen> {
 
   Future<void> _addFavoriteReply(CommentResult commentResult, int index, int replyIndex) async {
     String apiUrl = '${ApiUrl.baseUrl}/api/comment/favorite?commentID=${commentResult.id}';
-    String? token = await readJwt();
+    String? token = await readAccess();
 
     try {
       final response = await http.post(
@@ -304,7 +342,7 @@ class _DetailScreenState extends State<DetailScreen> {
 
   Future<void> _deleteFavoriteReply(CommentResult commentResult, int index, int replyIndex) async {
     String apiUrl = '${ApiUrl.baseUrl}/api/comment/favorite?commentID=${commentResult.id}';
-    String? token = await readJwt();
+    String? token = await readAccess();
 
     try {
       final response = await http.delete(
@@ -464,17 +502,18 @@ class _DetailScreenState extends State<DetailScreen> {
                             Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => FullImageScreen(imageUrl: 'http://116.47.60.159:8080/images/' + imageName),
+                              builder: (context) => FullImageScreen(imageUrl: 'http://116.47.60.159:8080/image/' + imageName),
                               ),
                             );
                           },
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(8.0),
-                          child: AuthenticatedImage(
-                            imageUrl: 'http://116.47.60.159:8080/images/' + imageName,
+                          child: PublicImage(
+                            imageUrl: 'http://116.47.60.159:8080/image/' + imageName,
                             width: MediaQuery.of(context).size.width,
                             fit: BoxFit.cover,
                             placeholderPath: 'assets/icons/loading.gif',
+                            key: ValueKey('http://116.47.60.159:8080/image/' + imageName),
                           ),
                         ),
                       )
@@ -791,6 +830,7 @@ class _DetailScreenState extends State<DetailScreen> {
       ),
       //resizeToAvoidBottomInset: true,
       bottomNavigationBar: Container(
+
         decoration: BoxDecoration(
           color: Color(0xffffff),
           border: Border(
@@ -853,78 +893,3 @@ class _DetailScreenState extends State<DetailScreen> {
 
 }
 
-class AuthenticatedImage extends StatefulWidget {
-  final String imageUrl;
-  final String placeholderPath;
-  final double width;
-  final double? height;
-  final BoxFit fit;
-
-  AuthenticatedImage({
-    required this.imageUrl,
-    required this.placeholderPath,
-    required this.width,
-    this.height,
-    required this.fit,});
-
-  @override
-  _AuthenticatedImageState createState() => _AuthenticatedImageState();
-}
-
-class _AuthenticatedImageState extends State<AuthenticatedImage> {
-  late Future<Uint8List> _imageData;
-
-  Future<Uint8List> _fetchImage() async {
-
-    final token = await readJwt();
-
-    if (token == null) {
-      throw Exception('Token not found');
-    }
-
-    final response = await http.get(
-      Uri.parse(widget.imageUrl),
-      headers: {
-        'access': '$token',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      return response.bodyBytes;
-    } else {
-      throw Exception('Failed to load image');
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _imageData = _fetchImage();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<Uint8List>(
-      future: _imageData,
-      builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return Image.asset(
-          widget.placeholderPath,
-          width: widget.width,
-          height: widget.height,
-          fit: widget.fit,
-        );
-      } else if (snapshot.hasError) {
-        return Icon(Icons.error); // 오류 발생 시 표시할 아이콘
-      } else {
-        return Image.memory(
-          snapshot.data!,
-          width: widget.width,
-          height: widget.height,
-          fit: widget.fit,
-        );
-      }
-    },
-    );
-  }
-}
