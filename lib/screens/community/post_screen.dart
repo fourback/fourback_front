@@ -1,15 +1,26 @@
+import 'dart:io';
+
+import 'package:bemajor_frontend/models/commentWrite.dart';
+import 'package:bemajor_frontend/publicImage.dart';
+import 'package:bemajor_frontend/screens/community/post_update_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:bemajor_frontend/api_url.dart';
+import '../../models/commentResult.dart';
 import '/models/post.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
+import 'fullimage_screen.dart';
+import 'dart:typed_data';
+import 'package:bemajor_frontend/auth.dart';
 
 class DetailScreen extends StatefulWidget {
-  final Post post;
+  Post post;
   final String boardName;
 
-  DetailScreen({required this.post,required this.boardName});
+
+  DetailScreen({required this.post, required this.boardName});
+
   @override
   State<DetailScreen> createState() => _DetailScreenState();
 }
@@ -17,38 +28,391 @@ class DetailScreen extends StatefulWidget {
 
 
 class _DetailScreenState extends State<DetailScreen> {
+  final TextEditingController _commentController = TextEditingController();
+  bool isReplying = false;
+  int? replyingToCommentIndex;
 
+  bool isLoading = false;
+  List<CommentResult> commentsResult = [];
+
+  int size = 0;
+  int page = 0;
+
+  List<bool> _isReplyVisible = List.generate(12, (index) => false); // 글 갯수 12
+  bool isLiked = false; // 글 좋아요 상태를 나타내는 변수
+  int likeCount = 3; // 글 좋아요 수 goodCount
+
+  List<bool> _commentLikes = List.generate(12, (index) => false); // 댓글 좋아요 상태
+  List<int> _commentLikeCounts = List.generate(12, (index) => 3); // 댓글 좋아요 수
+
+  List<List<bool>> _replyLikes = List.generate(12, (index) => List.generate(3, (replyIndex) => false)); // 대댓글 좋아요 상태
+  List<List<int>> _replyLikeCounts = List.generate(12, (index) => List.generate(3, (replyIndex) => 3)); // 대댓글 좋아요 수 테이블 수정
+
+  @override
+  void initState() {
+    super.initState();
+    viewCountUp();
+
+
+
+    fetchComments();
+  }
+
+  Future<void> _updatePost() async {
+    String? access = await readAccess();
+    final response = await http.get(
+        Uri.parse('${ApiUrl.baseUrl}/api/post/${widget.post.id}'),
+      headers: {
+        'access': '$access'
+      },
+    );
+    if (response.statusCode == 200) {
+      final updatedData = jsonDecode(response.body);
+      setState(() {
+        widget.post.title = updatedData['title'];
+        widget.post.content = updatedData['content'];
+        widget.post.postDate = updatedData['updateDate'];
+        widget.post.imageName = List<String>.from(updatedData['imageName'] ?? []);
+      });
+
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await _updatePost();
+      } else {
+        print('토큰 재발급 실패');
+      }
+    } else {
+      throw Exception('Failed to load posts');
+    }
+  }
+
+  Future<void> _deletePost() async {
+    String? access = await readAccess();
+    final response = await http.delete(
+        Uri.parse('${ApiUrl.baseUrl}/api/post/${widget.post.id}'),
+      headers: {
+        'access': '$access'
+      },
+    );
+    if (response.statusCode == 200) {
+
+
+      Navigator.pop(context,true);
+
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await _deletePost();
+      } else {
+        print('토큰 재발급 실패');
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('삭제 실패')),
+      );
+    }
+  }
+
+  Future<void> _favoritePost() async {
+
+    // API 엔드포인트 설정
+    String apiUrl = "${ApiUrl.baseUrl}/api/post/${widget.post.id}/favorite";
+    String? token = await readAccess();
+
+
+    // POST 요청으로 즐겨찾기 토글 요청 보내기
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {'access': '$token'},
+      );
+
+      if (response.statusCode == 200) {
+        // 즐겨찾기 상태가 토글되었으므로 UI 갱신
+        setState(() {
+          widget.post.postGood = !widget.post.postGood;
+          if(widget.post.postGood) {
+            widget.post.goodCount += 1;
+          } else {
+            widget.post.goodCount -= 1;
+          }
+        });
+      } else if(response.statusCode == 401) {
+        bool success = await reissueToken(context);
+        if(success) {
+          await _favoritePost();
+        } else {
+          print('토큰 재발급 실패');
+        }
+      } else {
+        // 오류 발생 시 에러 메시지 출력
+        print('Failed to favorite: ${response.statusCode} ${response.body}');
+      }
+    } catch (error) {
+      // 네트워크 오류 발생 시 에러 메시지 출력
+      print('Network error: $error');
+    }
+  }
+
+  Future<void> viewCountUp() async {
+    String? token = await readAccess();
+    final url = Uri.parse('${ApiUrl.baseUrl}/api/post/${widget.post.id}/view');
+    final response = await http.patch(
+        url,
+      headers: {'access': '$token'}
+    );
+
+    if (response.statusCode == 200) {
+      setState(() {
+        widget.post.viewCount += 1; // 조회수를 증가시킵니다.
+      });
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await viewCountUp();
+      } else {
+        print('토큰 재발급 실패');
+      }
+    } else {
+      // 오류 처리
+      print('Failed to favorite: ${response.statusCode}');
+    }
+  }
+
+
+
+  Future<void> fetchComments() async {
+    if (isLoading) return;
+    String? token = await readAccess();
+
+    setState(() {
+      isLoading = true;
+    });
+
+    final response = await http.get(
+        Uri.parse('${ApiUrl.baseUrl}/api/comment/list?postID=${widget.post.id}'),
+      headers: <String, String>{
+        'access': '$token'
+      },
+    );
+    setState(() {
+      isLoading = false;
+    });
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> jsonMap = jsonDecode(response.body);
+
+      setState(() {
+        List<dynamic> jsonData = jsonMap['result'];
+        commentsResult = jsonData.map((data) => CommentResult.fromJson(data)).toList();
+
+        size = jsonMap['size'];
+        page++;
+      });
+    } else {
+      throw Exception('Failed to load comments');
+    }
+  }
+
+  Future<void> _addComment(String content, int parentCommentId) async {
+    String apiUrl = '${ApiUrl.baseUrl}/api/comment';
+    String? token = await readAccess();
+
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'access': '$token'
+        },
+        body: jsonEncode(CommentWrite(widget.post.id, content, parentCommentId)),
+      );
+
+      if (response.statusCode == 200) {
+        print('댓글이 성공적으로 전송되었습니다.');
+        await fetchComments(); // 새로운 댓글을 작성한 후 댓글 리스트를 다시 로드
+      } else {
+        print('API 요청이 실패했습니다.');
+      }
+    } catch (e) {
+      print('오류: $e');
+    }
+  }
+
+  Future<void> _getFavoriteComment(int commentID, int index) async {
+    String apiUrl = await '${ApiUrl.baseUrl}/api/comment/favorite?commentID=${commentID}';
+    String? token = await readAccess();
+
+      final response = await http.get(Uri.parse(apiUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'access': '$token'
+        },
+      );
+    _commentLikes[index] = jsonDecode(response.body);
+  }
+
+  Future<void> _getFavoriteReply(int commentID, int index, int replyIndex) async {
+    String apiUrl = await '${ApiUrl.baseUrl}/api/comment/favorite?commentID=${commentID}';
+    String? token = await readAccess();
+
+    final response = await http.get(Uri.parse(apiUrl),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'access': '$token'
+      },
+    );
+    _replyLikes[index][replyIndex] = jsonDecode(response.body);
+  }
+
+  Future<void> _addFavoriteComment(CommentResult commentResult, int index) async {
+    String apiUrl = '${ApiUrl.baseUrl}/api/comment/favorite?commentID=${commentResult.id}';
+    String? token = await readAccess();
+
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'access': '$token'
+        },
+      );
+
+      if (response.statusCode == 200) {
+        print('좋아요가 성공적으로 추가되었습니다.');
+        _getFavoriteComment(commentResult.id, index);
+        await fetchComments(); // 새로운 댓글을 작성한 후 댓글 리스트를 다시 로드
+      } else {
+        print('API 요청이 실패했습니다.');
+      }
+    } catch (e) {
+      print('오류: $e');
+    }
+  }
+
+  Future<void> _deleteFavoriteComment(CommentResult commentResult, int index) async {
+    String apiUrl = '${ApiUrl.baseUrl}/api/comment/favorite?commentID=${commentResult.id}';
+    String? token = await readAccess();
+
+    try {
+      final response = await http.delete(
+        Uri.parse(apiUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'access': '$token'
+        },
+      );
+
+      if (response.statusCode == 200) {
+        print('좋아요가 성공적으로 제거되었습니다.');
+        _getFavoriteComment(commentResult.id, index);
+        await fetchComments(); // 새로운 댓글을 작성한 후 댓글 리스트를 다시 로드
+      } else {
+        print('API 요청이 실패했습니다.');
+      }
+    } catch (e) {
+      print('오류: $e');
+    }
+  }
+
+  Future<void> _addFavoriteReply(CommentResult commentResult, int index, int replyIndex) async {
+    String apiUrl = '${ApiUrl.baseUrl}/api/comment/favorite?commentID=${commentResult.id}';
+    String? token = await readAccess();
+
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'access': '$token'
+        },
+      );
+
+      if (response.statusCode == 200) {
+        print('좋아요가 성공적으로 추가되었습니다.');
+        _getFavoriteReply(commentResult.id, index, replyIndex);
+        await fetchComments(); // 새로운 댓글을 작성한 후 댓글 리스트를 다시 로드
+      } else {
+        print('API 요청이 실패했습니다.');
+      }
+    } catch (e) {
+      print('오류: $e');
+    }
+  }
+
+  Future<void> _deleteFavoriteReply(CommentResult commentResult, int index, int replyIndex) async {
+    String apiUrl = '${ApiUrl.baseUrl}/api/comment/favorite?commentID=${commentResult.id}';
+    String? token = await readAccess();
+
+    try {
+      final response = await http.delete(
+        Uri.parse(apiUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'access': '$token'
+        },
+      );
+
+      if (response.statusCode == 200) {
+        print('좋아요가 성공적으로 제거되었습니다.');
+        _getFavoriteReply(commentResult.id, index, replyIndex);
+        await fetchComments(); // 새로운 댓글을 작성한 후 댓글 리스트를 다시 로드
+      } else {
+        print('API 요청이 실패했습니다.');
+      }
+    } catch (e) {
+      print('오류: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-          scrolledUnderElevation: 0
+        backgroundColor: Colors.white,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context,true);
+          },
+        ),
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(1.0),
+          child: Divider(
+            height: 1.0,
+            thickness: 1.0,
+          ),
+        ),
+        scrolledUnderElevation: 0,
       ),
       backgroundColor: Colors.white,
-      body:  SingleChildScrollView(
-
+      body: SingleChildScrollView(
         child: Padding(
-
           padding: const EdgeInsets.all(8.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // 글 내용 컨테이너
               Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey,width: 1
-                  ),
-                  borderRadius: BorderRadius.circular(10.0),
-                  color: Colors.white,
-                ),
                 padding: EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Posted in Be전공자 지식나눔', //이 부분에 데이터 받아와야함
-                      style: TextStyle(fontSize: 14.0),
+                    RichText(
+                      text: TextSpan(
+                        text: "Posted in ",
+                        style: TextStyle(color: Colors.black, fontSize: 14.0),
+                        children: [
+                          TextSpan(
+                            text: widget.boardName,
+                            style: TextStyle(
+                              color: Colors.purple,
+                              fontSize: 14.0,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     Divider(),
                     SizedBox(height: 8.0),
@@ -59,114 +423,473 @@ class _DetailScreenState extends State<DetailScreen> {
                           backgroundColor: Colors.blue,
                           child: Icon(Icons.person, color: Colors.white),
                         ),
-                        SizedBox(width: 8.0,),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(widget.post.memberName,style: TextStyle(fontWeight: FontWeight.bold),),
-                            Text('수원대학교 컴퓨터학부'
-                            ),
-                            SizedBox(height: 8.0,)
-                          ],
-                        )
+                        SizedBox(width: 8.0),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                widget.post.memberName,
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              Text('수원대학교 컴퓨터학부'), // 출신 및 과
+                              SizedBox(height: 8.0),
+                            ],
+                          ),
+                        ),
+                        if(widget.post.userCheck == true)
+                          PopupMenuButton<String>(
+                            onSelected: (String value) {
+                              // Edit 및 Delete 액션 처리
+                              if (value == 'edit') {
+                                // Edit action
+                              } else if (value == 'delete') {
+                                // Delete action
+                              }
+                            },
+                            itemBuilder: (BuildContext context) {
+                              return [
+                                PopupMenuItem<String>(
+
+                                  value: 'edit',
+                                  child: Text('수정'),
+                                  onTap: () async {
+                                    final updatedPost = await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (context) => PostUpdateScreen(widget.post)),
+                                    );
+
+
+                                    // 수정된 게시글 정보를 받아오고 상태를 업데이트
+
+                                      if (updatedPost == true) {
+                                        _updatePost();
+                                      }
+
+
+                                  },
+                                  // 수정 액션 Ontap 시 글 작성 화면 이동
+                                ),
+                                PopupMenuItem<String>(
+                                  onTap: () async {
+                                    await _deletePost();
+
+
+                                  },
+                                  value: 'delete',
+                                  child: Text('삭제'), // 삭제 액션 Ontap 시 글 삭제
+                                ),
+                              ];
+                            },
+                            icon: Icon(Icons.more_vert),
+                            color: Colors.white,
+                          ),
                       ],
                     ),
                     Text(
-                      widget.post.title,   //글 제목 넣기
-                      style: TextStyle(fontWeight: FontWeight.bold,fontSize: 25.0),
+                      widget.post.title, // 글 제목
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 25.0),
                     ),
                     Text(
-                      widget.post.content, //글 내용!
+                      widget.post.content, // 글 내용
                       style: TextStyle(fontSize: 18.0),
-                    )
+                    ),
+                    if (widget.post.imageName.isNotEmpty) ...widget.post.imageName.map((imageName) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => FullImageScreen(imageUrl: 'http://116.47.60.159:8080/image/' + imageName),
+                              ),
+                            );
+                          },
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8.0),
+                          child: PublicImage(
+                            imageUrl: 'http://116.47.60.159:8080/image/' + imageName,
+                            width: MediaQuery.of(context).size.width,
+                            fit: BoxFit.cover,
+                            placeholderPath: 'assets/icons/loading.gif',
+                            key: ValueKey('http://116.47.60.159:8080/image/' + imageName),
+                          ),
+                        ),
+                      )
+                      );
+                    }).toList(),
+
+                    SizedBox(height: 20.0),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.post.postDate, // 글 작성 날짜
+                          style: TextStyle(color: Colors.grey, fontSize: 14.0),
+                        ),
+                        Flexible(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              IconButton(
+                                icon: Icon(
+                                  widget.post.postGood ? Icons.favorite : Icons.favorite_border_outlined,
+                                  color:  widget.post.postGood ? Colors.purple : Colors.grey,
+                                ),
+                                onPressed: () async {
+                                  await _favoritePost();
+
+                                },
+                              ),
+                              Text(
+                                '좋아요 ${widget.post.goodCount}', // 좋아요 수
+                                style: TextStyle(color: Colors.grey, fontSize: 14.0),
+                              ),
+                              SizedBox(width: 16.0),
+                              Icon(Icons.visibility, color: Colors.grey, size: 16.0),
+                              SizedBox(width: 4.0),
+                              Text(
+                                '조회 수 ${widget.post.viewCount}', // 예시 조회 수 viewcount
+                                style: TextStyle(color: Colors.grey, fontSize: 14.0),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
+              Divider(),
               SizedBox(height: 20.0),
-              // Comment 글씨
+              // Comment 텍스트
               Text(
                 'Comment',
                 style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 10.0),
               // 댓글 리스트
-              Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey,width: 1
+              SingleChildScrollView(
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey, width: 1),
+                    borderRadius: BorderRadius.circular(10.0),
+                    color: Colors.white,
                   ),
-                  borderRadius: BorderRadius.circular(10.0),
-                  color: Colors.white,
-                ),
-                height: 300.0,
-                child: ListView.separated(
-                  itemCount: 3, // commet 갯수!
-                  itemBuilder: (context, index) {
-                    final memberId = '사용자${index + 1}'; //  memberid
-                    final comment = '${index + 1} 번째 댓글입니다.'; // comment
+                  child: Column(
+                    children: List.generate(size, (index) {
+                      List<dynamic> jsonData = commentsResult[index].reply?['result'];
+                      List<CommentResult> repliesResult = [];
+                      // 대댓글 리스트
+                      repliesResult.addAll(jsonData.map((data) => CommentResult.fromJson(data)).toList());
+                      final memberId = '${commentsResult[index].userName}';
+                      final comment = '${commentsResult[index].content}'; // comment
+                      _commentLikeCounts[index] = commentsResult[index].goodCount;
+                      _getFavoriteComment(commentsResult[index].id, index);
 
-                    return ListTile(
-                      contentPadding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
-                      title: Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
+                      final List<CommentResult> replies = List.generate(
+                          jsonData.length,
+                              (replyIndex) => repliesResult[replyIndex]);
+
+
+                      return Column(
                         children: [
-                          CircleAvatar(
-                            backgroundColor: Colors.blue,
-                            child: Icon(Icons.person, color: Colors.white),
-                          ),
-                          SizedBox(width: 8.0),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(memberId, style: TextStyle(fontWeight: FontWeight.bold),  //memberid 대입
-                              ),
-                              Text('수원대학교 컴퓨터학부'),
-                            ],
-                          ),
-                        ],
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(height: 16.0),
-                          Text(comment, style: TextStyle(fontSize: 16.0)),   //댓글 내용 대입
-                          SizedBox(height: 10.0),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              ElevatedButton(
-                                onPressed: () {
-                                  // Your onPressed logic here
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.white,
-                                  padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0), // Adjust the padding
-                                  textStyle: TextStyle(fontSize: 12), // Adjust the font size
-                                  minimumSize: Size(50, 30), // Adjust the minimum size
+                          ListTile(
+                            contentPadding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
+                            title: Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                CircleAvatar(
+                                  backgroundColor: Colors.blue,
+                                  child: Icon(Icons.person, color: Colors.white),
                                 ),
-                                child: Text('댓글(2)',style: TextStyle(color: Colors.black),), // Display the number of comments
-                              ),
-                              Spacer(),
-                              IconButton(
-                                onPressed: () {
-                                },
+                                SizedBox(width: 8.0),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      memberId,
+                                      style: TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                    Text('수원대학교 컴퓨터학부'),
+                                  ],
+                                ),
+                                Spacer(),
+                                PopupMenuButton<String>(
+                                  onSelected: (String value) {
+                                    // Edit 및 Delete 액션 처리
+                                    if (value == 'edit') {
+                                      // Edit action
+                                    } else if (value == 'delete') {
+                                      // Delete action
+                                    }
+                                  },
+                                  itemBuilder: (BuildContext context) {
+                                    return [
+                                      PopupMenuItem<String>(
+                                        value: 'edit',
+                                        child: Text('수정'), // 수정 액션
+                                      ),
+                                      PopupMenuItem<String>(
+                                        value: 'delete',
+                                        child: Text('삭제'), // 삭제 액션
+                                      ),
+                                    ];
+                                  },
+                                  icon: Icon(Icons.more_vert, color: Colors.grey),
+                                ),
+                              ],
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SizedBox(height: 16.0),
+                                Text(comment, style: TextStyle(fontSize: 16.0)),
+                                SizedBox(height: 10.0),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Text('${commentsResult[index].dateDiff}'), // 댓글 날짜 텍스트
+                                    Spacer(),
+                                    IconButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          if (replyingToCommentIndex == index) {
+                                            // 대댓글 작성 모드 종료
+                                            isReplying = false;
+                                            replyingToCommentIndex = null;
+                                          } else {
+                                            // 대댓글 작성 모드 시작
+                                            isReplying = true;
+                                            replyingToCommentIndex = index;
+                                          }
+                                          _isReplyVisible[index] = !_isReplyVisible[index];
+                                        });
+                                      },
+                                      icon: Icon(Icons.chat_bubble_outline, color: Colors.black),
+                                    ),
+                                    Text('${jsonData.length}'), // 대댓글 갯수 표시
+                                    SizedBox(width: 8),
+                                    IconButton(
+                                      icon: Icon(
+                                        _commentLikes[index]
+                                            ? Icons.favorite
+                                            : Icons.favorite_border_outlined,
+                                        color: _commentLikes[index] ? Colors.purple : Colors.grey,
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
 
-                                icon: Icon(Icons.favorite, color: Colors.red),
-                              ),
-                            ],
+                                          if(_commentLikes[index] == true) {
+                                            _deleteFavoriteComment(commentsResult[index], index);
+                                          } else {
+                                            _addFavoriteComment(commentsResult[index], index);
+                                          }
+                                        });
+                                      },
+                                    ),
+                                    Text("${commentsResult[index].goodCount}"), // 좋아요 숫자
+                                  ],
+                                ),
+                                // 대댓글 리스트 표시
+                                if (_isReplyVisible[index])
+                                  ...replies.map((reply) {
+                                    int replyIndex = replies.indexOf(reply);
+                                    _getFavoriteReply(replies[replyIndex].id, index, replyIndex);
+                                    return Padding(
+                                      padding: EdgeInsets.only(left: 20.0, top: 10.0),
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          border: Border.all(color: Colors.grey, width: 1),
+                                          borderRadius: BorderRadius.circular(10.0),
+                                        ),
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 15.0),
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  CircleAvatar(
+                                                    backgroundColor: Colors.grey,
+                                                    child: Icon(Icons.person, color: Colors.white),
+                                                    radius: 16,
+                                                  ),
+                                                  SizedBox(width: 8.0),
+                                                  Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text(
+                                                        '${replies[replyIndex].userName}',
+                                                        // 대댓글 사용자명
+                                                        style: TextStyle(
+                                                          fontWeight: FontWeight.bold,
+                                                          fontSize: 14.0,
+                                                        ),
+                                                      ),
+                                                      Text(
+                                                        '수원대학교 컴퓨터학부',
+                                                        style: TextStyle(fontSize: 12),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  Spacer(),
+                                                  PopupMenuButton<String>(
+                                                    onSelected: (String value) {
+                                                      // Edit 및 Delete 액션 처리
+                                                      if (value == 'edit') {
+                                                        // Edit action
+                                                      } else if (value == 'delete') {
+                                                        // Delete action
+                                                      }
+                                                    },
+                                                    itemBuilder: (BuildContext context) {
+                                                      return [
+                                                        PopupMenuItem<String>(
+                                                          value: 'edit',
+                                                          child: Text('수정'), // 수정 액션
+                                                        ),
+                                                        PopupMenuItem<String>(
+                                                          value: 'delete',
+                                                          child: Text('삭제'), // 삭제 액션
+                                                        ),
+                                                      ];
+                                                    },
+                                                    icon: Icon(Icons.more_vert, color: Colors.grey),
+                                                  ),
+                                                ],
+                                              ),
+                                              SizedBox(height: 16.0),
+                                              GestureDetector(
+                                                onTap: () {
+                                                  setState(() {
+                                                    isReplying = true;
+                                                    replyingToCommentIndex = index;
+                                                  });
+                                                },
+                                                child: Text(
+                                                  reply.content,
+                                                  style: TextStyle(fontSize: 14.0),
+                                                ),
+                                              ),
+                                              SizedBox(height: 8.0),
+                                              Align(
+                                                alignment: Alignment.bottomRight,
+                                                child: Row(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    IconButton(
+                                                      icon: Icon(
+                                                        _replyLikes[index][replyIndex]
+                                                            ? Icons.favorite
+                                                            : Icons.favorite_border_outlined,
+                                                        color: _replyLikes[index][replyIndex]
+                                                            ? Colors.purple
+                                                            : Colors.grey,
+                                                      ),
+                                                      onPressed: () {
+                                                        setState(() {
+                                                          _replyLikeCounts[index][replyIndex] = repliesResult[index].goodCount;
+                                                          if (_replyLikes[index][replyIndex] == true) {
+                                                            _deleteFavoriteReply(replies[replyIndex], index, replyIndex);
+                                                          } else {
+                                                            _addFavoriteReply(replies[replyIndex], index, replyIndex);
+                                                          }
+                                                        });
+                                                      },
+                                                    ),
+                                                    Text(
+                                                      "${replies[replyIndex].goodCount}",
+                                                      style: TextStyle(fontSize: 12.0), // 텍스트 크기 조정
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                              ],
+                            ),
                           ),
+                          Divider(color: Colors.grey),
                         ],
-                      ),
-                    );
-                  },
-                  separatorBuilder: (context, index) {
-                    return Divider(color: Colors.grey);
-                  },
+                      );
+                    }),
+                  ),
                 ),
-              )
+              ),
+            ],
+          ),
+        ),
+      ),
+      //resizeToAvoidBottomInset: true,
+      bottomNavigationBar: Container(
+
+        decoration: BoxDecoration(
+          color: Color(0xffffff),
+          border: Border(
+            top: BorderSide(color: Colors.grey, width: 1.0),
+          ),
+        ),
+        child: Padding(
+
+            padding: EdgeInsets.only(
+              left: 12.0,
+              right: 12.0,
+              top: 8.0,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 8.0,
+            ),
+
+
+
+
+          child: Row(
+            children: [
+              SizedBox(width: 12),
+              Expanded(
+                child: TextField(
+                  controller: _commentController,
+                  decoration: InputDecoration(
+                    hintText: isReplying ? '대댓글을 입력하세요.' : '댓글을 입력하세요.',
+                    hintStyle: TextStyle(color: Colors.grey),
+                    border: InputBorder.none,
+                  ),
+                  style: TextStyle(color: Colors.black),
+                ),
+              ),
+              SizedBox(width: 6),
+              IconButton(
+                icon: Icon(Icons.send, color: Colors.purple),
+                onPressed: () async {
+                  if (isReplying && replyingToCommentIndex != null) {
+                    // 대댓글 작성 로직
+                    int parentCommentId = commentsResult[replyingToCommentIndex!].id;
+                    await _addComment(_commentController.text, parentCommentId);
+                  } else {
+                    // 댓글 작성 로직
+                    await _addComment(_commentController.text, -1);
+                  }
+
+                  setState(() {
+                    if (!isReplying) {
+                      replyingToCommentIndex = null;
+                    }
+                    _commentController.clear();
+                  });
+                },
+              ),
             ],
           ),
         ),
       ),
     );
   }
+
 }
+

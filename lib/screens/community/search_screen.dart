@@ -1,10 +1,15 @@
+import 'package:bemajor_frontend/auth.dart';
+import 'package:bemajor_frontend/publicImage.dart';
+import 'package:bemajor_frontend/screens/community/post_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../../models/post.dart';
 import '/api_url.dart';
 import '/models/postsearch.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 
 
@@ -13,13 +18,15 @@ class SearchScreen extends StatefulWidget {
   _SearchScreenState createState() => _SearchScreenState();
 }
 
+
+
 class _SearchScreenState extends State<SearchScreen> {
   TextEditingController _searchController = TextEditingController();
   bool isLoading = false;
   bool beforeSearch = true;
   int page = 0;
   int pageSize = 10;
-  late List<PostSearch> posts = [];
+  late List<Post> posts = [];
   late ScrollController _scrollController;
   String currentQuery = '';
 
@@ -34,6 +41,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Future<void> fetchPostSearch(String keyword) async {
+    String? token = await readAccess();
     if (isLoading) return;
 
     setState(() {
@@ -42,16 +50,26 @@ class _SearchScreenState extends State<SearchScreen> {
 
 
 
-    final response = await http.get(Uri.parse('${ApiUrl.baseUrl}/api/post/search?page=$page&pageSize=$pageSize&keyword=$keyword'));
+    final response = await http.get(
+      Uri.parse('${ApiUrl.baseUrl}/api/post/search?page=$page&pageSize=$pageSize&keyword=$keyword'),
+      headers: {'access': '$token'},
+    );
     setState(() {
       isLoading = false;
     });
     if (response.statusCode == 200) {
       final List<dynamic> jsonData = jsonDecode(response.body);
       setState(() {
-        posts.addAll(jsonData.map((data) => PostSearch.fromJson(data)).toList());
+        posts.addAll(jsonData.map((data) => Post.fromJson(data)).toList());
         page++;
       });
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await fetchPostSearch(keyword);
+      } else {
+        print('토큰 재발급 실패');
+      }
     } else {
       throw Exception('Failed to load posts');
     }
@@ -243,18 +261,43 @@ class _SearchScreenState extends State<SearchScreen> {
 
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        posts[index].title,
-                        style: TextStyle(
-                          fontSize: 16.0,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-
-                      Text(
-                        posts[index].content,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  posts[index].title,
+                                  style: TextStyle(
+                                    fontSize: 16.0,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  posts[index].content,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (posts[index].imageName.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(left: 8.0),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8.0),
+                                child: PublicImage(
+                                  placeholderPath: 'assets/icons/loading.gif',
+                                  imageUrl: 'http://116.47.60.159:8080/image/' + posts[index].imageName[0],
+                                  width: 80,
+                                  height: 80,
+                                  fit: BoxFit.cover,
+                                  key: ValueKey('http://116.47.60.159:8080/image/' + posts[index].imageName[0]),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                       SizedBox(height: 5.0),
                       Divider(),
@@ -284,7 +327,22 @@ class _SearchScreenState extends State<SearchScreen> {
                       ),
                     ],
                   ),
-                  onTap: () {
+                  onTap: () async {
+                    final ifDelete = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => DetailScreen(
+                          post: posts[index],
+                          boardName: posts[index].boardName,
+                        ),
+                      ),
+                    );
+
+                    setState(()  {
+
+
+
+                    });
                     // 게시글을 눌렀을 때의 동작을 추가할 수 있습니다.
                   },
                 ),

@@ -16,27 +16,35 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
+Future<String?> readJwt() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getString('USERID');
+}
+
+Future<String?> readRefresh() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getString('REFRESH');
+}
+
+
 class _LoginScreenState extends State<LoginScreen> {
   late UserInfo user;
   String? userId;
-  String? userName;
-  String? userBirth;
-  int? userAge;
-  String? userGender;
-  String? userEmail;
-  String? userPhoneNumber;
   String? userID;
+  String? refresh;
 
   void _registerUserId() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('USERID', userID!);
-
   }
 
+  void _registerRefresh() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('REFRESH', refresh!);
+  }
 
-
-  void _sendUserInfo() async {
-    final url = Uri.http(address, "login");
+  Future<void> _sendUserInfo() async {
+    final url = Uri.http(address, "user");
     final response = await http.post(
       url,
       headers: {
@@ -45,32 +53,28 @@ class _LoginScreenState extends State<LoginScreen> {
       body: json.encode(
         {
           "userId": userId,
-          "birthYear": userBirth,
-          "email": userEmail,
-          "gender": userGender,
-          "name": userName,
           "registrationId": "KAKAO",
         },
       ),
     );
 
-    userID = response.headers["authorization"]!;
 
-    _registerUserId();
-    user = UserInfo(
-      userID: userID!,
-      name: userName!,
-      gender: userGender!,
-      email: userEmail!,
-      nickName: userName!,
-    );
-    // if (mounted) {
-    //   Navigator.of(context).pushReplacement(
-    //     MaterialPageRoute(
-    //       builder: (ctx) => TabsScreen(user: user),
-    //     ),
-    //   );
-    // }
+
+
+        userID = response.headers['access'];
+        refresh = response.headers['refresh'];
+        print("userID " + userID!);
+        print("refresh " + refresh!);
+        _registerUserId();
+        _registerRefresh();
+
+
+        user = UserInfo(
+          userID: userID!,
+        );
+        // _sendUserInfo 함수 호출
+
+
   }
 
   void _loginKakao() async {
@@ -106,11 +110,12 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     await getKakaoUserInfo();
-    _sendUserInfo();
+    await _sendUserInfo();
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => navigationScreen()),
     );
+
   }
 
   Future<void> getKakaoUserInfo() async {
@@ -129,28 +134,9 @@ class _LoginScreenState extends State<LoginScreen> {
     // 사용자의 추가 동의가 필요한 사용자 정보 동의항목 확인
     List<String> scopes = [];
 
-    if (user.kakaoAccount?.emailNeedsAgreement == true) {
-      scopes.add('account_email');
-    }
-    if (user.kakaoAccount?.birthdayNeedsAgreement == true) {
-      scopes.add("birthday");
-    }
-    if (user.kakaoAccount?.birthyearNeedsAgreement == true) {
-      scopes.add("birthyear");
-    }
     if (user.kakaoAccount?.ciNeedsAgreement == true) {
       scopes.add("account_ci");
     }
-    if (user.kakaoAccount?.phoneNumberNeedsAgreement == true) {
-      scopes.add("phone_number");
-    }
-    if (user.kakaoAccount?.profileNeedsAgreement == true) {
-      scopes.add("profile");
-    }
-    if (user.kakaoAccount?.ageRangeNeedsAgreement == true) {
-      scopes.add("age_range");
-    }
-
     if (scopes.isNotEmpty) {
       print('사용자에게 추가 동의 받아야 하는 항목이 있습니다');
 
@@ -181,14 +167,6 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       User user = await UserApi.instance.me();
       userId = user.id.toString();
-      userBirth = user.kakaoAccount?.birthyear!;
-      if (user.kakaoAccount?.gender == Gender.male) {
-        userGender = "m";
-      } else {
-        userGender = "f";
-      }
-      userName = user.kakaoAccount?.name!.toString();
-      userEmail = user.kakaoAccount?.email!.toString();
       setState(() {});
     } catch (error) {
       print('사용자 정보 요청 실패 $error');
@@ -204,23 +182,42 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Image.asset(
-              //   "assets/images/healthsenior_logo@4x.png",
-              //   width: 240,
-              //   height: 180,
-              //   fit: BoxFit.cover,
-              // ),
-              const SizedBox(height: 20),
-              // Image.asset(
-              //   "assets/images/healthsenior_slogan@4x.png",
-              //   width: 290,
-              //   height: 45,
-              //   fit: BoxFit.fill,
-              // ),
-              const SizedBox(height: 40),
+              Container(
+                width: 40,
+                height: 40,
+                decoration: const BoxDecoration(
+                  image: DecorationImage(
+                      image: AssetImage('assets/icons/Profile.png'),
+                      fit: BoxFit.fitWidth),
+                  borderRadius: BorderRadius.all(Radius.elliptical(40, 40)),
+                ),
+              ),
+              const SizedBox(
+                width: 280,
+                height: 100,
+                child: Stack(children: <Widget>[
+                  Positioned(
+                      top: 0,
+                      left: 0,
+                      child: Text(
+                        '비전공자 개발 커뮤니티\nBe전공자',
+                        textAlign: TextAlign.left,
+                        style: TextStyle(
+                            color: Color.fromRGBO(30, 35, 44, 1),
+                            fontFamily: 'Urbanist',
+                            fontSize: 29,
+                            letterSpacing:
+                                0 /*percentages not used in flutter. defaulting to zero*/,
+                            fontWeight: FontWeight.normal,
+                            height: 1.5 /*PERCENT not supported*/
+                            ),
+                      )),
+                ]),
+              ),
+              SizedBox(height: 250,),
               Container(
                 width: 280,
-                height: 50,
+                height: 40,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
                   color: const Color.fromARGB(255, 250, 220, 0),

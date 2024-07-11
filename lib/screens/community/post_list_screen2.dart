@@ -1,7 +1,7 @@
+import 'package:bemajor_frontend/publicImage.dart';
 import 'package:flutter/cupertino.dart';
 
-import '../../publicImage.dart';
-import '/auth.dart';
+import '../../auth.dart';
 import 'post_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -12,19 +12,19 @@ import '/api_url.dart';
 import '/models/post.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class PostListScreen extends StatefulWidget {
-  final String boardName;
-  final int boardId;
+class PostListScreen2 extends StatefulWidget {
 
-  PostListScreen(this.boardName, this.boardId);
+  final int boardId;
+  final String boardName;
+
+  PostListScreen2(this.boardId,this.boardName);
 
   @override
-  _PostListScreenState createState() => _PostListScreenState();
+  _PostListScreenState2 createState() => _PostListScreenState2();
 }
 
 
-
-class _PostListScreenState extends State<PostListScreen> {
+class _PostListScreenState2 extends State<PostListScreen2> {
   late ScrollController _scrollController;
   late List<Post> posts = [];
   bool isFavorite = false;
@@ -33,7 +33,6 @@ class _PostListScreenState extends State<PostListScreen> {
   bool isLoading = false;
   Color iconColor = Colors.grey;
   bool isUpdate = false;
-
 
   @override
   void initState() {
@@ -58,7 +57,7 @@ class _PostListScreenState extends State<PostListScreen> {
     });
 
     final response = await http.get(
-      Uri.parse('${ApiUrl.baseUrl}/api/post?page=$page&pageSize=$pageSize&boardId=${widget.boardId}'),
+      Uri.parse('${ApiUrl.baseUrl}/api/post2?page=$page&pageSize=$pageSize&boardId=${widget.boardId}'),
       headers: {'access': '$token'},);
 
     setState(() {
@@ -77,10 +76,9 @@ class _PostListScreenState extends State<PostListScreen> {
       } else {
         print('토큰 재발급 실패');
       }
-    } else {
-      print("${response.statusCode}");
+    }
+    else {
       throw Exception('Failed to load posts');
-
     }
   }
 
@@ -120,48 +118,69 @@ class _PostListScreenState extends State<PostListScreen> {
                 child: ListTile(
                   title: Container(
                     padding: EdgeInsets.only(top: 5.0, bottom: 5.0),
-                    child: Row(
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        CircleAvatar(
-                          backgroundColor: Colors.blue,
-                          child: Icon(Icons.person, color: Colors.white),
+                        RichText(
+                          text: TextSpan(
+                            text: 'Posted in ',
+                            style: DefaultTextStyle.of(context).style,
+                            children: <TextSpan>[
+                              TextSpan(
+                                text: posts[index].boardName,
+                                style: TextStyle(color: Color(0xff7C3AED),fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
                         ),
-                        SizedBox(width: 8), // CircleAvatar와 작성자 이름 사이의 간격 조절
-                        Column(
+
+                        Divider(),
+                        SizedBox(height: 4.0,),
+
+                        Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
+                            CircleAvatar(
+                              backgroundColor: Colors.blue,
+                              child: Icon(Icons.person, color: Colors.white),
+                            ),
+                            SizedBox(width: 8), // CircleAvatar와 작성자 이름 사이의 간격 조절
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      posts[index].memberName, // 작성자 이름 표시
+                                      style: TextStyle(
+                                        fontSize: 14.0,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                                 Text(
-                                  posts[index].memberName, // 작성자 이름 표시
+                                  '수원대학교', // 작성자 학교 표시
                                   style: TextStyle(
                                     fontSize: 14.0,
-                                    fontWeight: FontWeight.bold,
+                                    fontWeight: FontWeight.normal,
                                     color: Colors.black,
                                   ),
                                 ),
+                                SizedBox(height: 8), // 각 항목 사이의 간격 추가
                               ],
                             ),
+                            Spacer(), // 작성자 이름과 날짜 사이에 공간을 확장합니다.
                             Text(
-                              '수원대학교', // 작성자 학교 표시
+                              posts[index].postDate, // 날짜 표시 예시
                               style: TextStyle(
                                 fontSize: 14.0,
                                 fontWeight: FontWeight.normal,
-                                color: Colors.black,
+                                color: Colors.grey,
                               ),
                             ),
-                            SizedBox(height: 8), // 각 항목 사이의 간격 추가
                           ],
-                        ),
-                        Spacer(), // 작성자 이름과 날짜 사이에 공간을 확장합니다.
-                        Text(
-                          posts[index].postDate, // 날짜 표시 예시
-                          style: TextStyle(
-                            fontSize: 14.0,
-                            fontWeight: FontWeight.normal,
-                            color: Colors.grey,
-                          ),
                         ),
                       ],
                     ),
@@ -196,12 +215,13 @@ class _PostListScreenState extends State<PostListScreen> {
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(8.0),
                                 child: PublicImage(
-                                  imageUrl: 'http://116.47.60.159:8080/image/' + posts[index].imageName[0],
                                   placeholderPath: 'assets/icons/loading.gif',
+                                  imageUrl: 'http://116.47.60.159:8080/image/' + posts[index].imageName[0],
                                   width: 80,
                                   height: 80,
                                   fit: BoxFit.cover,
                                   key: ValueKey('http://116.47.60.159:8080/image/' + posts[index].imageName[0]),
+
                                 ),
                               ),
                             ),
@@ -249,7 +269,7 @@ class _PostListScreenState extends State<PostListScreen> {
                       MaterialPageRoute(
                         builder: (context) => DetailScreen(
                           post: posts[index],
-                          boardName: widget.boardName,
+                          boardName: posts[index].boardName,
                         ),
                       ),
                     );
@@ -275,20 +295,7 @@ class _PostListScreenState extends State<PostListScreen> {
         },
         controller: _scrollController,
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => WriteScreen(widget.boardId, widget.boardName)),
-          );
-          // 버튼을 눌렀을 때 수행할 작업을 추가할 수 있습니다.
-        },
-        child: SvgPicture.asset(
-          'assets/icons/pencil.svg',
-          width: 35,
-          color: Colors.white,
-        ),
-      ),
+
     );
   }
 

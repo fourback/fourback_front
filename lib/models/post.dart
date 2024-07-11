@@ -1,15 +1,20 @@
 class Post {
   final int id;
-  final String title;
-  final String content;
+  String title;
+  String content;
   final String memberName;
-  final int goodCount;
-  final int commentCount;
-  final int viewCount;
-  final String postDate;
+  int goodCount;
+  int commentCount;
+  int viewCount;
+  String postDate;
+  List<String> imageName;
+  bool postGood;
+  final String boardName;
+  final bool userCheck;
 
   Post({required this.id,required this.title, required this.content,required this.memberName,
-    required this.goodCount,required this.commentCount,required this.viewCount,required this.postDate});
+    required this.goodCount,required this.commentCount,required this.viewCount,required this.postDate,
+    required this.imageName,required this.postGood,required this.boardName,required this.userCheck});
 
   factory Post.fromJson(Map<String, dynamic> json) {
     return Post(
@@ -20,7 +25,11 @@ class Post {
         goodCount: json['goodCount'],
         commentCount: json['commentCount'],
         viewCount: json['viewCount'],
-        postDate: json['postDate']
+        postDate: json['postDate'],
+        imageName: List<String>.from(json['imageName'] ?? []),
+        postGood:  json['postGood'],
+        boardName: json['boardName'],
+        userCheck: json['userCheck'],
     );
   }
 }

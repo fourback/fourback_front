@@ -1,7 +1,11 @@
+import 'dart:async';
+import 'package:bemajor_frontend/screens/community/post_list_screen2.dart';
+import 'package:bemajor_frontend/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../../auth.dart';
 import 'post_list_screen.dart';
 import '/api_url.dart';
 import 'search_screen.dart';
@@ -9,10 +13,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/community.dart';
 
 
-Future<String?> readJwt() async {
-  final prefs = await SharedPreferences.getInstance();
-  return prefs.getString('USERID');
-}
 
 class BoardScreen extends StatefulWidget {
   const BoardScreen({super.key});
@@ -33,6 +33,9 @@ class _BoardState extends State<BoardScreen> {
     );
   }
 
+
+
+
   @override
   void initState() {
     super.initState();
@@ -49,19 +52,66 @@ class _BoardState extends State<BoardScreen> {
 
 
   Future<void> fetchBoards() async {
-    String? token = await readJwt();
+    String? token = await readAccess();
+
     final response = await http.get(
       Uri.parse('${ApiUrl.baseUrl}/api/board'),
-      headers: {'authorization': '$token'},
+      headers: {'access': '$token'},
     );
+
     if (response.statusCode == 200) {
       final List<dynamic> jsonData = jsonDecode(response.body);
       setState(() {
         boards = jsonData.map((data) => BoardDto.fromJson(data)).toList();
       });
-    } else {
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await fetchBoards();
+      } else {
+        print('토큰 재발급 실패');
+      }
+    }
+    else {
       throw Exception('Failed to load posts');
 
+    }
+  }
+
+  Future<void> favoriteBoard(String boardName) async {
+
+    // API 엔드포인트 설정
+    String apiUrl = "${ApiUrl.baseUrl}/api/board/favorite";
+    String? token = await readAccess();
+
+    // POST 요청으로 즐겨찾기 토글 요청 보내기
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'access': '$token'
+        },
+        body: jsonEncode(FavoriteBoard(boardName)),
+      );
+
+      if (response.statusCode == 200) {
+
+      } else if(response.statusCode == 401) {
+        bool success = await reissueToken(context);
+        if(success) {
+          await fetchBoards();
+        } else {
+          print('토큰 재발급 실패');
+        }
+      }
+      else {
+        // 오류 발생 시 에러 메시지 출력
+        print('Failed to favorite: ${response.statusCode}');
+      }
+    } catch (error) {
+      // 네트워크 오류 발생 시 에러 메시지 출력
+      print('Network error: $error');
     }
   }
 
@@ -125,28 +175,48 @@ class _BoardState extends State<BoardScreen> {
                     contentPadding: const EdgeInsets.symmetric(horizontal: 0),
                     leading: SvgPicture.asset('assets/icons/list.svg',width: 25,height: 25,),
                     title: Text('내가 쓴 글', style: TextStyle(fontWeight: FontWeight.normal,fontSize: 18),),
-                    onTap: (){print('내가 쓴글');},
+                    onTap: (){
+                      Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => PostListScreen2(1,'내가 쓴 글')),
+                    );
+                      },
                   ),
                   ListTile(
                     dense: true,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 0),
                     leading: SvgPicture.asset('assets/icons/chat.svg',width: 25,height: 25,),
                     title: Text('댓글 단 글', style: TextStyle(fontWeight: FontWeight.normal,fontSize: 18),),
-                    onTap: (){print('댓글 단 글');},
+                    onTap: (){
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => PostListScreen2(2,"댓글 단 글")),
+                      );
+                    },
                   ),
                   ListTile(
                     dense: true,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 0),
                     leading: SvgPicture.asset('assets/icons/good.svg',width: 25,height: 25,),
                     title: Text('좋아요 누른 글', style: TextStyle(fontWeight: FontWeight.normal,fontSize: 18),),
-                    onTap: (){print('좋아요 누른 글');},
+                    onTap: (){
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => PostListScreen2(3,'좋아요 누른 글')),
+                      );
+                    },
                   ),
                   ListTile(
                     dense: true,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 0),
                     leading: SvgPicture.asset('assets/icons/fire.svg',width: 25,height: 25,),
                     title: Text('실시간 인기글', style: TextStyle(fontWeight: FontWeight.normal,fontSize: 18),),
-                    onTap: (){print('HOT 게시글');},
+                    onTap: (){
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => PostListScreen2(4,'실시간 인기글')),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -172,7 +242,7 @@ class _BoardState extends State<BoardScreen> {
                     splashColor: Colors.transparent,
                     highlightColor: Colors.transparent,
                     onPressed: () async {
-                      await favoriteboard(boards[index].boardName);
+                      await favoriteBoard(boards[index].boardName);
                       await fetchBoards();
                       setState(() {});
                     },
@@ -204,31 +274,3 @@ class _BoardState extends State<BoardScreen> {
   }
 }
 
-Future<void> favoriteboard(String boardName) async {
-
-  // API 엔드포인트 설정
-  String apiUrl = "${ApiUrl.baseUrl}/api/board/favorite";
-  String? token = await readJwt();
-
-  // POST 요청으로 즐겨찾기 토글 요청 보내기
-  try {
-    final response = await http.post(
-      Uri.parse(apiUrl),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-        'authorization': '$token'
-      },
-      body: jsonEncode(FavoriteBoard(boardName)),
-    );
-
-    if (response.statusCode == 200) {
-      // 즐겨찾기 상태가 토글되었으므로 UI 갱신
-    } else {
-      // 오류 발생 시 에러 메시지 출력
-      print('Failed to favorite: ${response.statusCode}');
-    }
-  } catch (error) {
-    // 네트워크 오류 발생 시 에러 메시지 출력
-    print('Network error: $error');
-  }
-}

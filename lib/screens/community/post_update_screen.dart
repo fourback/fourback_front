@@ -1,69 +1,126 @@
+import 'dart:convert';
+
 import 'package:bemajor_frontend/auth.dart';
+import 'package:bemajor_frontend/publicImage.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'post_list_screen.dart';
 import '/api_url.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/write.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
 import 'dart:io';
+import '/models/post.dart';
 
 
-class WriteScreen extends StatefulWidget {
-  final int boardId;
-  final String boardName;
-  WriteScreen(this.boardId,this.boardName);
+class ImageItem {
+  final File? file;
+  final String? url;
+
+  ImageItem({this.file, this.url});
+}
+
+
+
+
+
+class PostUpdateScreen extends StatefulWidget {
+  final Post post;
+  PostUpdateScreen(this.post);
   @override
   _InputScreenState createState() => _InputScreenState();
 }
 
-class _InputScreenState extends State<WriteScreen> {
+class _InputScreenState extends State<PostUpdateScreen> {
 
   TextEditingController _textEditingController = TextEditingController();
   TextEditingController _textEditingController2 = TextEditingController();
-  List<File> images = [];
+  List<ImageItem> images = [];
+  List<String> deletedImages = [];
+  @override
+  void initState() {
+    super.initState();
+    // 기존 게시글 데이터로 텍스트 필드 초기화
+    _textEditingController.text = widget.post.title;
+    _textEditingController2.text = widget.post.content;
+    images.addAll(widget.post.imageName.map((imageName) => ImageItem(url: 'http://116.47.60.159:8080/image/$imageName')));
+  }
 
-  Future<void> _sendTextToAPI(Write textModel) async {
-    // 여기에 API 엔드포인트를 적절히 설정하세요.
-    String apiUrl = '${ApiUrl.baseUrl}/api/post';
+  Future<void> _deleteImage(List<String> fileNames) async {
+    final url = Uri.parse('${ApiUrl.baseUrl}/image');
     String? token = await readAccess();
-    final url = Uri.parse('${ApiUrl.baseUrl}/api/post');
-    final request = http.MultipartRequest('POST', url);
+    final response = await http.delete(
+        url,
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'access': '$token'
+        },
+        body: jsonEncode(fileNames),
+    );
+
+    if (response.statusCode == 200) {
+      print('이미지가 삭제되었습니다');
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await _deleteImage(fileNames);
+      } else {
+        print('토큰 재발급 실패');
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('이미지 삭제 오류')),
+      );
+    }
+  }
+
+  Future<void> _updatePost(Write textModel) async {
+    String? token = await readAccess();
+    final url = Uri.parse('${ApiUrl.baseUrl}/api/post/${widget.post.id}');
+    final request = http.MultipartRequest('PATCH', url);
 
     request.fields['title'] = textModel.title;
     request.fields['content'] = textModel.content;
-    request.fields['boardId'] = textModel.boardId.toString();
 
     request.headers['access'] = '$token';
 
 
     if (images.isNotEmpty) {
       for (var image in images) {
-        request.files.add(await http.MultipartFile.fromPath(
-          'images', // Assuming your server expects an array of images under the key 'images'
-          image.path,
-        ));
+        if(image.file != null) {
+          request.files.add(await http.MultipartFile.fromPath(
+            'images', // Assuming your server expects an array of images under the key 'images'
+            image.file!.path,
+          ));
+        }
+
+
       }
+
     }
+
 
     try {
       final response = await request.send();
       if (response.statusCode == 200) {
         print('텍스트가 성공적으로 전송되었습니다.');
+        if(deletedImages.isNotEmpty) {
+          await _deleteImage(deletedImages);
+        }
+
       } else if(response.statusCode == 401) {
         bool success = await reissueToken(context);
         if(success) {
-          await _sendTextToAPI(textModel);
+          await _updatePost(textModel);
         } else {
           print('토큰 재발급 실패');
         }
-      } else {
-        print('API 요청이 실패했습니다.');
-        print('상태 코드: ${response.statusCode}');
+      }else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('수정에 실패하였습니다.')),
+        );
       }
     } catch (e) {
       print('오류: $e');
@@ -71,10 +128,43 @@ class _InputScreenState extends State<WriteScreen> {
 
   }
 
-  void _removeImage(int index) {
-    setState(() {
-      images.removeAt(index);
-    });
+  void _removeImage(int index) async {
+    bool? confirmDelete = await showDialog<bool>(
+      context: context,
+
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          content: Text('삭제하시겠습니까?',style: TextStyle(fontSize: 18)),
+          actions: [
+            TextButton(
+              child: Text('취소'),
+              onPressed: () {
+                Navigator.of(context).pop(false);
+              },
+            ),
+            TextButton(
+              child: Text('삭제'),
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmDelete == true) {
+      if (images[index].url != null) {
+        Uri uri = Uri.parse(images[index].url!);
+        deletedImages.add(uri.pathSegments.last);
+      }
+      setState(() {
+        images.removeAt(index);
+      });
+    }
+
   }
 
   Future<void> pickImages() async {
@@ -87,7 +177,7 @@ class _InputScreenState extends State<WriteScreen> {
 
     final pickedFiles = await ImagePicker().pickMultiImage();
     if (pickedFiles != null && pickedFiles.isNotEmpty) {
-      List<File> tempImages = [];
+      List<ImageItem> tempImages = [];
       for (var pickedFile in pickedFiles) {
         final mimeType = lookupMimeType(pickedFile.path);
         if (images.length + tempImages.length >= 9) {
@@ -97,7 +187,7 @@ class _InputScreenState extends State<WriteScreen> {
           break;
         }
         if (mimeType != null && mimeType.startsWith('image/')) {
-          tempImages.add(File(pickedFile.path));
+          tempImages.add(ImageItem(file: File(pickedFile.path)));
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('이미지 파일을 업로드 해주세요.')),
@@ -120,7 +210,7 @@ class _InputScreenState extends State<WriteScreen> {
     return Scaffold(
 
       appBar: AppBar(
-        title: Text('글쓰기', style: TextStyle(color: Colors.black,fontWeight: FontWeight.bold,),),
+        title: Text('글 수정', style: TextStyle(color: Colors.black,fontWeight: FontWeight.bold,),),
         centerTitle: true,
         shape: Border(
           bottom: BorderSide(
@@ -143,32 +233,29 @@ class _InputScreenState extends State<WriteScreen> {
                 String inputText = _textEditingController.text;
                 String inputText2 = _textEditingController2.text;
                 if(inputText.trim().isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                          content: Text('제목을 입력해주세요.'),
-                          duration: Duration(seconds: 1),
-                      ),
-
-                    );
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('제목을 입력해주세요.'),
+                      duration: Duration(seconds: 1),
+                    ),
+                  );
                 } else if(inputText2.trim().isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                        content: Text('내용을 입력해주세요.'),
-                        duration: Duration(seconds: 1),
+                      content: Text('내용을 입력해주세요.'),
+                      duration: Duration(seconds: 1),
                     ),
 
                   );
-                }
-                else {
-                  // 모델을 사용하여 텍스트를 래핑하여 API로 전송
-                  await _sendTextToAPI(Write(inputText,inputText2,widget.boardId));
-                  // 입력 후에는 텍스트 필드를 초기화합니다.
-                  _textEditingController.clear();
-                  _textEditingController2.clear();
-                  Navigator.popUntil(context, ModalRoute.withName(Navigator.defaultRouteName));
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => PostListScreen(widget.boardName, widget.boardId)));
+                } else {
+                  await _updatePost(Write(inputText,inputText2,null));
+                  Navigator.pop(context, true);
+
+
                 }
 
+                // 모델을 사용하여 텍스트를 래핑하여 API로 전송
+                //await _sendTextToAPI(Write(inputText,inputText2,widget.boardId));
 
 
               },
@@ -196,7 +283,7 @@ class _InputScreenState extends State<WriteScreen> {
         padding: EdgeInsets.only(top: 10.0, left: 20.0, right:20.0 , bottom:20.0),
         child: Column(
           children: <Widget>[
-            TextFormField(
+            TextField(
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -231,61 +318,76 @@ class _InputScreenState extends State<WriteScreen> {
             ),
 
 
-
             images.isEmpty
                 ? SizedBox.shrink()
                 :
 
 
+
             Column(
-                  children: [
-                    Container(
+              children: [
+                Container(
 
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: images.asMap().entries.map((entry) {
-                          int index = entry.key;
-                          File image = entry.value;
-                          return Stack(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child:
 
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(16.0),
-                                  child: FadeInImage(
-                                    placeholder: AssetImage('assets/icons/loading.gif'),
-                                    image: FileImage(image),
-                                    width: screenSize.width / 3 - 10,
-                                    height: screenSize.height / 6 - 10,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                              ),
-                              Positioned(
-                                right: 0,
-                                child: IconButton(
-                                  icon: Icon(Icons.remove_circle_outline, color: Colors.red),
-                                  onPressed: () => _removeImage(index),
-                                  splashColor: Colors.transparent,
-                                  highlightColor: Colors.transparent,
-                                ),
-                              ),
-                            ],
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                    ),
+
                     Row(
-                      children: [
-                        Spacer(),
-                        Text("${images.length} / 9",style: TextStyle(fontWeight: FontWeight.bold),),
-                      ],
+                      children: images.asMap().entries.map((entry) {
+                        int index = entry.key;
+                        ImageItem imageItem = entry.value;
+                        return Stack(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(16.0),
+
+                                child:imageItem.url != null
+                                ?
+                                PublicImage(
+                                  placeholderPath: 'assets/icons/loading.gif',
+                                  imageUrl: imageItem.url!,
+                                  width: screenSize.width / 3 - 10,
+                                  height: screenSize.height / 6 - 10,
+                                  fit: BoxFit.cover,
+                                  key: ValueKey(imageItem.url),
+                                )
+                                    : FadeInImage(
+                                  placeholder: AssetImage('assets/icons/loading.gif'),
+                                  image: FileImage(imageItem.file!),
+                                  width: screenSize.width / 3 - 10,
+                                  height: screenSize.height / 6 - 10,
+                                  fit: BoxFit.cover,
+                                ),
+
+                              ),
+                            ),
+                            Positioned(
+                              right: 0,
+                              child: IconButton(
+                                icon: Icon(Icons.remove_circle_outline, color: Colors.red),
+                                onPressed: () => _removeImage(index),
+                                splashColor: Colors.transparent,
+                                highlightColor: Colors.transparent,
+                              ),
+                            ),
+                          ],
+                        );
+                      }).toList(),
                     ),
+                  ),
+                ),
+                Row(
+                  children: [
+                    Spacer(),
+                    Text("${images.length} / 9",style: TextStyle(fontWeight: FontWeight.bold),),
                   ],
                 ),
+              ],
+            ),
 
           ],
 
