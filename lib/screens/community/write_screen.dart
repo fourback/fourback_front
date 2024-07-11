@@ -47,6 +47,7 @@ class _InputScreenState extends State<WriteScreen> {
       } else {
         // API 요청이 실패한 경우 처리할 내용
         print('API 요청이 실패했습니다.');
+        print('상태 코드: ${response.statusCode}');
       }
     } catch (e) {
       // 오류 발생 시 처리
