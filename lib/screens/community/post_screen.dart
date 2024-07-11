@@ -286,7 +286,7 @@ class _DetailScreenState extends State<DetailScreen> {
         },
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 && commentsResult[index].status != 1) {
         print('좋아요가 성공적으로 추가되었습니다.');
         _getFavoriteComment(commentResult.id, index);
         await fetchComments(); // 새로운 댓글을 작성한 후 댓글 리스트를 다시 로드
@@ -308,7 +308,7 @@ class _DetailScreenState extends State<DetailScreen> {
           headers: {'access': '$token'}
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 && commentsResult[index].status != 1) {
         print('좋아요가 성공적으로 제거되었습니다.');
         _getFavoriteComment(commentResult.id, index);
         await fetchComments(); // 새로운 댓글을 작성한 후 댓글 리스트를 다시 로드
@@ -636,8 +636,11 @@ class _DetailScreenState extends State<DetailScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 SizedBox(height: 16.0),
-                                Text(comment, style: TextStyle(fontSize: 16.0)),
-                                SizedBox(height: 10.0),
+                               commentsResult[index].status != 1 ?
+                                  Text(comment, style: TextStyle(fontSize: 16.0)) :
+                                  Text(comment, style: TextStyle(fontSize: 14.0, color: Colors.grey))
+
+                                ,SizedBox(height: 10.0),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.start,
                                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -727,7 +730,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                                     ],
                                                   ),
                                                   Spacer(),
-                                                  if(replies[replyIndex].userCheck == false && replies[replyIndex].status == 0)
+                                                  if(replies[replyIndex].userCheck == true && replies[replyIndex].status == 0)
                                                   PopupMenuButton<String>(
                                                     onSelected: (String value) {
                                                       // Edit 및 Delete 액션 처리
@@ -772,10 +775,12 @@ class _DetailScreenState extends State<DetailScreen> {
                                                     replyingToCommentIndex = index;
                                                   });
                                                 },
-                                                child: Text(
-                                                  reply.content,
-                                                  style: TextStyle(fontSize: 14.0),
-                                                ),
+                                                child:
+                                                  Text(reply.content,
+                                                      style: replies[replyIndex].status != 1 ?
+                                                      TextStyle(fontSize: 14.0) :
+                                                      TextStyle(fontSize: 12.0, color: Colors.grey)
+                                                  ),
                                               ),
                                               SizedBox(height: 8.0),
                                               Align(
