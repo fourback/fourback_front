@@ -1,3 +1,5 @@
+import 'package:bemajor_frontend/auth.dart';
+import 'package:bemajor_frontend/publicImage.dart';
 import 'package:bemajor_frontend/screens/community/post_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -16,10 +18,7 @@ class SearchScreen extends StatefulWidget {
   _SearchScreenState createState() => _SearchScreenState();
 }
 
-Future<String?> readJwt() async {
-  final prefs = await SharedPreferences.getInstance();
-  return prefs.getString('USERID');
-}
+
 
 class _SearchScreenState extends State<SearchScreen> {
   TextEditingController _searchController = TextEditingController();
@@ -42,7 +41,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Future<void> fetchPostSearch(String keyword) async {
-    String? token = await readJwt();
+    String? token = await readAccess();
     if (isLoading) return;
 
     setState(() {
@@ -64,6 +63,13 @@ class _SearchScreenState extends State<SearchScreen> {
         posts.addAll(jsonData.map((data) => Post.fromJson(data)).toList());
         page++;
       });
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await fetchPostSearch(keyword);
+      } else {
+        print('토큰 재발급 실패');
+      }
     } else {
       throw Exception('Failed to load posts');
     }
@@ -281,20 +287,13 @@ class _SearchScreenState extends State<SearchScreen> {
                               padding: const EdgeInsets.only(left: 8.0),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(8.0),
-                                child: FadeInImage.assetNetwork(
-                                  placeholder: 'assets/icons/loading.gif',
-                                  image: 'http://116.47.60.159:8080/images/' + posts[index].imageName[0],
+                                child: PublicImage(
+                                  placeholderPath: 'assets/icons/loading.gif',
+                                  imageUrl: 'http://116.47.60.159:8080/image/' + posts[index].imageName[0],
                                   width: 80,
                                   height: 80,
                                   fit: BoxFit.cover,
-                                  imageErrorBuilder: (context, error, stackTrace) {
-                                    return Container(
-                                      width: 80,
-                                      height: 80,
-                                      color: Colors.grey[200],
-                                      child: Icon(Icons.error, color: Colors.red),
-                                    );
-                                  },
+                                  key: ValueKey('http://116.47.60.159:8080/image/' + posts[index].imageName[0]),
                                 ),
                               ),
                             ),

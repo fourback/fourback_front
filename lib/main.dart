@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:bemajor_frontend/screens/splash_screen.dart';
 import 'package:flutter/material.dart';
 import '../screens/login_screen.dart';
 import 'package:kakao_flutter_sdk_common/kakao_flutter_sdk_common.dart';
@@ -33,7 +34,7 @@ class MyApp extends StatelessWidget {
           titleLarge: const TextStyle(color: Colors.black),
         ),
       ),
-      home: const LoginScreen(),
+      home: SplashScreen(),
 
       //   community: const Community(
       //       title: "asdasd",

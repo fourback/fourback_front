@@ -16,17 +16,34 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
+Future<String?> readJwt() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getString('USERID');
+}
+
+Future<String?> readRefresh() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getString('REFRESH');
+}
+
+
 class _LoginScreenState extends State<LoginScreen> {
   late UserInfo user;
   String? userId;
   String? userID;
+  String? refresh;
 
   void _registerUserId() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('USERID', userID!);
   }
 
-  void _sendUserInfo() async {
+  void _registerRefresh() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('REFRESH', refresh!);
+  }
+
+  Future<void> _sendUserInfo() async {
     final url = Uri.http(address, "user");
     final response = await http.post(
       url,
@@ -41,23 +58,28 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
 
-    userID = response.headers["access"]!;
-    print("userID" + userID!);
 
-    _registerUserId();
-    user = UserInfo(
-      userID: userID!,
-    );
-    // if (mounted) {
-    //   Navigator.of(context).pushReplacement(
-    //     MaterialPageRoute(
-    //       builder: (ctx) => TabsScreen(user: user),
-    //     ),
-    //   );
-    // }
+
+
+        userID = response.headers['access'];
+        refresh = response.headers['refresh'];
+        print("userID " + userID!);
+        print("refresh " + refresh!);
+        _registerUserId();
+        _registerRefresh();
+
+
+        user = UserInfo(
+          userID: userID!,
+        );
+        // _sendUserInfo 함수 호출
+
+
   }
 
   void _loginKakao() async {
+    // String? fcmToken = await FirebaseMessaging.instance.getToken();
+    // print("token : $fcmToken");
     if (await isKakaoTalkInstalled()) {
       try {
         await UserApi.instance.loginWithKakaoTalk();
@@ -88,11 +110,12 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     await getKakaoUserInfo();
-    _sendUserInfo();
+    await _sendUserInfo();
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => navigationScreen()),
     );
+
   }
 
   Future<void> getKakaoUserInfo() async {
@@ -178,7 +201,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       left: 0,
                       child: Text(
                         '비전공자 개발 커뮤니티\nBe전공자',
-                        textAlign: TextAlign.center,
+                        textAlign: TextAlign.left,
                         style: TextStyle(
                             color: Color.fromRGBO(30, 35, 44, 1),
                             fontFamily: 'Urbanist',
@@ -191,7 +214,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       )),
                 ]),
               ),
-              const SizedBox(height: 250,),
+              SizedBox(height: 250,),
               Container(
                 width: 280,
                 height: 40,

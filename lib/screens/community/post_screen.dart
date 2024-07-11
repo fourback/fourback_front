@@ -1,31 +1,25 @@
-//import 'dart:html';
+import 'dart:io';
 
 import 'package:bemajor_frontend/models/commentWrite.dart';
+import 'package:bemajor_frontend/screens/community/post_update_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:bemajor_frontend/api_url.dart';
-import '../../models/commentModify.dart';
 import '../../models/commentResult.dart';
 import '/models/post.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
-
 import 'fullimage_screen.dart';
 
 class DetailScreen extends StatefulWidget {
   Post post;
   final String boardName;
 
+
   DetailScreen({required this.post, required this.boardName});
 
   @override
   State<DetailScreen> createState() => _DetailScreenState();
-}
-
-Future<int?> readUserId() async {
-  User user = await UserApi.instance.me();
-  return user.id;
 }
 
 Future<String?> readJwt() async {
@@ -66,7 +60,13 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   Future<void> _updatePost() async {
-    final response = await http.get(Uri.parse('${ApiUrl.baseUrl}/api/post/${widget.post.id}'));
+    String? access = await readAccess();
+    final response = await http.get(
+      Uri.parse('${ApiUrl.baseUrl}/api/post/${widget.post.id}'),
+      headers: {
+        'access': '$access'
+      },
+    );
     if (response.statusCode == 200) {
       final updatedData = jsonDecode(response.body);
       setState(() {
@@ -74,21 +74,40 @@ class _DetailScreenState extends State<DetailScreen> {
         widget.post.content = updatedData['content'];
         widget.post.postDate = updatedData['updateDate'];
         widget.post.imageName = List<String>.from(updatedData['imageName'] ?? []);
-
       });
 
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await _updatePost();
+      } else {
+        print('토큰 재발급 실패');
+      }
     } else {
       throw Exception('Failed to load posts');
     }
   }
 
   Future<void> _deletePost() async {
-    final response = await http.delete(Uri.parse('${ApiUrl.baseUrl}/api/post/${widget.post.id}'));
+    String? access = await readAccess();
+    final response = await http.delete(
+      Uri.parse('${ApiUrl.baseUrl}/api/post/${widget.post.id}'),
+      headers: {
+        'access': '$access'
+      },
+    );
     if (response.statusCode == 200) {
 
 
       Navigator.pop(context,true);
 
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await _deletePost();
+      } else {
+        print('토큰 재발급 실패');
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('삭제 실패')),
@@ -120,6 +139,13 @@ class _DetailScreenState extends State<DetailScreen> {
             widget.post.goodCount -= 1;
           }
         });
+      } else if(response.statusCode == 401) {
+        bool success = await reissueToken(context);
+        if(success) {
+          await _favoritePost();
+        } else {
+          print('토큰 재발급 실패');
+        }
       } else {
         // 오류 발생 시 에러 메시지 출력
         print('Failed to favorite: ${response.statusCode}');
@@ -132,32 +158,40 @@ class _DetailScreenState extends State<DetailScreen> {
 
   Future<void> viewCountUp() async {
     final url = Uri.parse('${ApiUrl.baseUrl}/api/post/${widget.post.id}/view');
-    final response = await http.patch(url);
+    final response = await http.patch(
+        url,
+        headers: {'access': '$token'}
+    );
 
     if (response.statusCode == 200) {
       setState(() {
         widget.post.viewCount += 1; // 조회수를 증가시킵니다.
       });
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await viewCountUp();
+      } else {
+        print('토큰 재발급 실패');
+      }
     } else {
       // 오류 처리
       print('Failed to favorite: ${response.statusCode}');
     }
   }
 
+
+
   Future<void> fetchComments() async {
-    String? token = await readJwt();
     if (isLoading) return;
 
     setState(() {
       isLoading = true;
     });
 
-
-
     final response = await http.get(
-        Uri.parse('${ApiUrl.baseUrl}/api/comment/list?postID=${widget.post.id}'),
-      headers: {'access': '$token'},);
-    setState(() {
+      Uri.parse('${ApiUrl.baseUrl}/api/comment/list?postID=${widget.post.id}'),
+      headers: {'access': '$token'},);setState(() {
       isLoading = false;
     });
     if (response.statusCode == 200) {
@@ -177,7 +211,7 @@ class _DetailScreenState extends State<DetailScreen> {
 
   Future<void> _addComment(String content, int parentCommentId) async {
     String apiUrl = '${ApiUrl.baseUrl}/api/comment';
-    String? token = await readJwt();
+    String? token = await readAccess();
 
     try {
       final response = await http.post(
@@ -186,8 +220,8 @@ class _DetailScreenState extends State<DetailScreen> {
           'Content-Type': 'application/json; charset=UTF-8',
           'access': '$token'
         },
-      body: jsonEncode(CommentWrite(widget.post.id, content, parentCommentId)),
-    );
+        body: jsonEncode(CommentWrite(widget.post.id, content, parentCommentId)),
+      );
 
       if (response.statusCode == 200) {
         print('댓글이 성공적으로 전송되었습니다.');
@@ -195,9 +229,9 @@ class _DetailScreenState extends State<DetailScreen> {
       } else {
         print('API 요청이 실패했습니다.');
       }
-  } catch (e) {
-  print('오류: $e');
-  }
+    } catch (e) {
+      print('오류: $e');
+    }
   }
 
   Future<void> _modifyComment(String content, int commentId) async {
@@ -251,23 +285,24 @@ class _DetailScreenState extends State<DetailScreen> {
 
   Future<void> _getFavoriteComment(int commentID, int index) async {
     String apiUrl = await '${ApiUrl.baseUrl}/api/comment/favorite?commentID=${commentID}';
-    String? token = await readJwt();
+    String? token = await readAccess();
 
-    final response = await http.get(
-        Uri.parse(apiUrl),
-        headers: {'access': '$token'}
-    );
-
+      final response = await http.get(Uri.parse(apiUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'authorization': '$token'
+        },
+      );
     _commentLikes[index] = jsonDecode(response.body);
   }
 
   Future<void> _getFavoriteReply(int commentID, int index, int replyIndex) async {
     String apiUrl = await '${ApiUrl.baseUrl}/api/comment/favorite?commentID=${commentID}';
-    String? token = await readJwt();
+    String? token = await readAccess();
 
-    final response = await http.get(
-        Uri.parse(apiUrl),
-        headers: {
+    final response = await http.get(Uri.parse(apiUrl),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
         'access': '$token'
       },
     );
@@ -280,8 +315,9 @@ class _DetailScreenState extends State<DetailScreen> {
 
     try {
       final response = await http.post(
-          Uri.parse(apiUrl),
-          headers: {
+        Uri.parse(apiUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
           'access': '$token'
         },
       );
@@ -300,12 +336,15 @@ class _DetailScreenState extends State<DetailScreen> {
 
   Future<void> _deleteFavoriteComment(CommentResult commentResult, int index) async {
     String apiUrl = '${ApiUrl.baseUrl}/api/comment/favorite?commentID=${commentResult.id}';
-    String? token = await readJwt();
+    String? token = await readAccess();
 
     try {
       final response = await http.delete(
-          Uri.parse(apiUrl),
-          headers: {'access': '$token'}
+        Uri.parse(apiUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'access': '$token'
+        },
       );
 
       if (response.statusCode == 200 && commentsResult[index].status != 1) {
@@ -322,12 +361,15 @@ class _DetailScreenState extends State<DetailScreen> {
 
   Future<void> _addFavoriteReply(CommentResult commentResult, int index, int replyIndex) async {
     String apiUrl = '${ApiUrl.baseUrl}/api/comment/favorite?commentID=${commentResult.id}';
-    String? token = await readJwt();
+    String? token = await readAccess();
 
     try {
-        final response = await http.post(
-            Uri.parse(apiUrl),
-            headers: {'access': '$token'}
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'access': '$token'
+        },
       );
 
       if (response.statusCode == 200) {
@@ -344,12 +386,15 @@ class _DetailScreenState extends State<DetailScreen> {
 
   Future<void> _deleteFavoriteReply(CommentResult commentResult, int index, int replyIndex) async {
     String apiUrl = '${ApiUrl.baseUrl}/api/comment/favorite?commentID=${commentResult.id}';
-    String? token = await readJwt();
+    String? token = await readAccess();
 
     try {
       final response = await http.delete(
-          Uri.parse(apiUrl),
-          headers: {'access': '$token'}
+        Uri.parse(apiUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'access': '$token'
+        },
       );
 
       if (response.statusCode == 200) {
@@ -372,7 +417,7 @@ class _DetailScreenState extends State<DetailScreen> {
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () {
-            Navigator.pop(context, true);
+            Navigator.pop(context,true);
           },
         ),
         bottom: PreferredSize(
@@ -437,30 +482,52 @@ class _DetailScreenState extends State<DetailScreen> {
                           ),
                         ),
                         if(widget.post.userCheck == true)
-                        PopupMenuButton<String>(
-                          onSelected: (String value) {
-                            // Edit 및 Delete 액션 처리
-                            if (value == 'edit') {
-                              // Edit action
-                            } else if (value == 'delete') {
-                              // Delete action
-                            }
-                          },
-                          itemBuilder: (BuildContext context) {
-                            return [
-                              PopupMenuItem<String>(
-                                value: 'edit',
-                                child: Text('수정'), // 수정 액션 Ontap 시 글 작성 화면 이동
-                              ),
-                              PopupMenuItem<String>(
-                                value: 'delete',
-                                child: Text('삭제'), // 삭제 액션 Ontap 시 글 삭제
-                              ),
-                            ];
-                          },
-                          icon: Icon(Icons.more_vert),
-                          color: Colors.white,
-                        ),
+                          PopupMenuButton<String>(
+                            onSelected: (String value) {
+                              // Edit 및 Delete 액션 처리
+                              if (value == 'edit') {
+                                // Edit action
+                              } else if (value == 'delete') {
+                                // Delete action
+                              }
+                            },
+                            itemBuilder: (BuildContext context) {
+                              return [
+                                PopupMenuItem<String>(
+
+                                  value: 'edit',
+                                  child: Text('수정'),
+                                  onTap: () async {
+                                    final updatedPost = await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (context) => PostUpdateScreen(widget.post)),
+                                    );
+
+
+                                    // 수정된 게시글 정보를 받아오고 상태를 업데이트
+
+                                    if (updatedPost == true) {
+                                      _updatePost();
+                                    }
+
+
+                                  },
+                                  // 수정 액션 Ontap 시 글 작성 화면 이동
+                                ),
+                                PopupMenuItem<String>(
+                                  onTap: () async {
+                                    await _deletePost();
+
+
+                                  },
+                                  value: 'delete',
+                                  child: Text('삭제'), // 삭제 액션 Ontap 시 글 삭제
+                                ),
+                              ];
+                            },
+                            icon: Icon(Icons.more_vert),
+                            color: Colors.white,
+                          ),
                       ],
                     ),
                     Text(
@@ -479,17 +546,18 @@ class _DetailScreenState extends State<DetailScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => FullImageScreen(imageUrl: 'http://116.47.60.159:8080/images/' + imageName),
+                                  builder: (context) => FullImageScreen(imageUrl: 'http://116.47.60.159:8080/image/' + imageName),
                                 ),
                               );
                             },
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(8.0),
-                              child: FadeInImage.assetNetwork(
-                                placeholder: 'assets/icons/loading.gif',
-                                image: 'http://116.47.60.159:8080/images/' + imageName,
+                              child: PublicImage(
+                                imageUrl: 'http://116.47.60.159:8080/image/' + imageName,
                                 width: MediaQuery.of(context).size.width,
                                 fit: BoxFit.cover,
+                                placeholderPath: 'assets/icons/loading.gif',
+                                key: ValueKey('http://116.47.60.159:8080/image/' + imageName),
                               ),
                             ),
                           )
@@ -594,51 +662,48 @@ class _DetailScreenState extends State<DetailScreen> {
                                 ),
                                 Spacer(),
                                 if(commentsResult[index].userCheck == true && commentsResult[index].status == 0)
-                                PopupMenuButton<String>(
-                                  onSelected: (String value) {
-                                    // Edit 및 Delete 액션 처리
-                                    if (value == 'edit') {
-                                      // Edit action
-                                      if (modifyingToCommentId == commentsResult[index].id) {
-                                        isModifying = false;
-                                        _commentController.text = '';
+                                  PopupMenuButton<String>(
+                                    onSelected: (String value) {
+                                      // Edit 및 Delete 액션 처리
+                                      if (value == 'edit') {
+                                        // Edit action
+                                        if (modifyingToCommentId == commentsResult[index].id) {
+                                          isModifying = false;
+                                          _commentController.text = '';
+                                        }
+                                        else {
+                                          isModifying = true;
+                                          modifyingToCommentId = commentsResult[index].id;
+                                          _commentController.text = commentsResult[index].content;
+                                        }
+                                      } else if (value == 'delete') {
+                                        _deleteComment(commentsResult[index].id);
+                                        // Delete action
                                       }
-                                      else {
-                                        isModifying = true;
-                                        modifyingToCommentId = commentsResult[index].id;
-                                        _commentController.text = commentsResult[index].content;
-                                      }
-                                    } else if (value == 'delete') {
-                                      _deleteComment(commentsResult[index].id);
-                                      // Delete action
-                                    }
-                                  },
-
+                                    },
                                   itemBuilder: (BuildContext context) {
-//                                    if(readUserId() == commentsResult[index].userName) {
-                                      return [
-                                        PopupMenuItem<String>(
-                                          value: 'edit',
-                                          child: Text('수정'), // 댓글 수정 액션
-                                        ),
-                                        PopupMenuItem<String>(
-                                          value: 'delete',
-                                          child: Text('삭제'), // 댓글 삭제 액션
-                                        ),
-                                      ];
+                                    return [
+                                      PopupMenuItem<String>(
+                                        value: 'edit',
+                                        child: Text('수정'), // 수정 액션
+                                      ),
+                                      PopupMenuItem<String>(
+                                        value: 'delete',
+                                        child: Text('삭제'), // 삭제 액션
+                                      ),
+                                    ];
                                   },
                                   icon: Icon(Icons.more_vert, color: Colors.grey),
                                 ),
-
                               ],
                             ),
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 SizedBox(height: 16.0),
-                               commentsResult[index].status != 1 ?
-                                  Text(comment, style: TextStyle(fontSize: 16.0)) :
-                                  Text(comment, style: TextStyle(fontSize: 14.0, color: Colors.grey))
+                                commentsResult[index].status != 1 ?
+                                Text(comment, style: TextStyle(fontSize: 16.0)) :
+                                Text(comment, style: TextStyle(fontSize: 14.0, color: Colors.grey))
 
                                 ,SizedBox(height: 10.0),
                                 Row(
@@ -691,7 +756,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                 if (_isReplyVisible[index])
                                   ...replies.map((reply) {
                                     int replyIndex = replies.indexOf(reply);
-                                    _replyLikes[index][replyIndex] = repliesResult[replyIndex].isFavorite;
+                                    __replyLikes[index][replyIndex] = repliesResult[replyIndex].isFavorite;
                                     return Padding(
                                       padding: EdgeInsets.only(left: 20.0, top: 10.0),
                                       child: Container(
@@ -731,26 +796,26 @@ class _DetailScreenState extends State<DetailScreen> {
                                                   ),
                                                   Spacer(),
                                                   if(replies[replyIndex].userCheck == true && replies[replyIndex].status == 0)
-                                                  PopupMenuButton<String>(
-                                                    onSelected: (String value) {
-                                                      // Edit 및 Delete 액션 처리
-                                                      if (value == 'edit') {
-                                                        // Edit action
-                                                        if (modifyingToCommentId == replies[replyIndex].id) {
-                                                          isModifying = false;
-                                                          _commentController.text = '';
+                                                    PopupMenuButton<String>(
+                                                      onSelected: (String value) {
+                                                        // Edit 및 Delete 액션 처리
+                                                        if (value == 'edit') {
+                                                          // Edit action
+                                                          if (modifyingToCommentId == replies[replyIndex].id) {
+                                                            isModifying = false;
+                                                            _commentController.text = '';
+                                                          }
+                                                          else {
+                                                            isModifying = true;
+                                                            modifyingToCommentId = replies[replyIndex].id;
+                                                            modifyingToReply = replies;
+                                                            _commentController.text = replies[replyIndex].content;
+                                                          }
+                                                        } else if (value == 'delete') {
+                                                          _deleteComment(replies[replyIndex].id);
+                                                          // Delete action
                                                         }
-                                                        else {
-                                                          isModifying = true;
-                                                          modifyingToCommentId = replies[replyIndex].id;
-                                                          modifyingToReply = replies;
-                                                          _commentController.text = replies[replyIndex].content;
-                                                        }
-                                                      } else if (value == 'delete') {
-                                                        _deleteComment(replies[replyIndex].id);
-                                                        // Delete action
-                                                      }
-                                                    },
+                                                      },
                                                     itemBuilder: (BuildContext context) {
                                                       return [
                                                         PopupMenuItem<String>(
@@ -776,11 +841,11 @@ class _DetailScreenState extends State<DetailScreen> {
                                                   });
                                                 },
                                                 child:
-                                                  Text(reply.content,
-                                                      style: replies[replyIndex].status != 1 ?
-                                                      TextStyle(fontSize: 14.0) :
-                                                      TextStyle(fontSize: 12.0, color: Colors.grey)
-                                                  ),
+                                                Text(reply.content,
+                                                    style: replies[replyIndex].status != 1 ?
+                                                    TextStyle(fontSize: 14.0) :
+                                                    TextStyle(fontSize: 12.0, color: Colors.grey)
+                                                ),
                                               ),
                                               SizedBox(height: 8.0),
                                               Align(
@@ -835,6 +900,7 @@ class _DetailScreenState extends State<DetailScreen> {
           ),
         ),
       ),
+      //resizeToAvoidBottomInset: true,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: Color(0xffffff),
@@ -843,12 +909,12 @@ class _DetailScreenState extends State<DetailScreen> {
           ),
         ),
         child: Padding(
-          padding: EdgeInsets.only(
-            left: 12.0,
-            right: 12.0,
-            top: 8.0,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 8.0,
-          ),
+            padding: EdgeInsets.only(
+              left: 12.0,
+              right: 12.0,
+              top: 8.0,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 8.0,
+            ),
           child: Row(
             children: [
               SizedBox(width: 12),
@@ -856,7 +922,6 @@ class _DetailScreenState extends State<DetailScreen> {
                 child: TextField(
                   controller: _commentController,
                   decoration: InputDecoration(
-
                     hintText: isReplying ? '대댓글을 입력하세요.' : '댓글을 입력하세요.',
                     hintStyle: TextStyle(color: Colors.grey),
                     border: InputBorder.none,

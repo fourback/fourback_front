@@ -1,3 +1,4 @@
+import 'package:bemajor_frontend/publicImage.dart';
 import 'package:flutter/material.dart';
 
 class FullImageScreen extends StatelessWidget {
@@ -18,18 +19,11 @@ class FullImageScreen extends StatelessWidget {
         minScale: 0.5, // 최소 확대/축소 비율
         maxScale: 4.0, // 최대 확대/축소 비율
         child: Center(
-          child: FadeInImage.assetNetwork(
-            placeholder: 'assets/icons/loading.gif',
-            image: imageUrl,
+          child: PublicImage(
+            placeholderPath: 'assets/icons/loading.gif',
+            imageUrl: imageUrl,
             fit: BoxFit.contain,
-            imageErrorBuilder: (context, error, stackTrace) {
-              return Center(
-                child: Text(
-                  'Failed to load image',
-                  style: TextStyle(color: Colors.white),
-                ),
-              );
-            },
+
           ),
         ),
       ),
