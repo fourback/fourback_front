@@ -593,6 +593,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                   ],
                                 ),
                                 Spacer(),
+                                if(commentsResult[index].userCheck == true && commentsResult[index].status == 0)
                                 PopupMenuButton<String>(
                                   onSelected: (String value) {
                                     // Edit 및 Delete 액션 처리
@@ -612,8 +613,9 @@ class _DetailScreenState extends State<DetailScreen> {
                                       // Delete action
                                     }
                                   },
+
                                   itemBuilder: (BuildContext context) {
-                                    if(readUserId() == commentsResult[index].userName) {
+//                                    if(readUserId() == commentsResult[index].userName) {
                                       return [
                                         PopupMenuItem<String>(
                                           value: 'edit',
@@ -624,12 +626,10 @@ class _DetailScreenState extends State<DetailScreen> {
                                           child: Text('삭제'), // 댓글 삭제 액션
                                         ),
                                       ];
-                                    }
-                                    else
-                                      return false;
                                   },
                                   icon: Icon(Icons.more_vert, color: Colors.grey),
                                 ),
+
                               ],
                             ),
                             subtitle: Column(
@@ -727,6 +727,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                                     ],
                                                   ),
                                                   Spacer(),
+                                                  if(replies[replyIndex].userCheck == false && replies[replyIndex].status == 0)
                                                   PopupMenuButton<String>(
                                                     onSelected: (String value) {
                                                       // Edit 및 Delete 액션 처리

@@ -9,6 +9,7 @@ class CommentResult {
   final String? dateDiff;
   final bool isFavorite;
   final int status;
+  final bool userCheck;
 
   final Map<String, dynamic>? reply;
 
@@ -23,7 +24,8 @@ class CommentResult {
   required this.dateDiff,
   required this.isFavorite,
   required this.status,
-  required this.reply
+  required this.reply,
+  required this.userCheck
   });
 
   factory CommentResult.fromJson(Map<String, dynamic> json) {
@@ -38,7 +40,8 @@ class CommentResult {
   dateDiff: json['dateDiff'],
   isFavorite: json['favorite'],
   status: json['status'],
-  reply: json['reply']
+  reply: json['reply'],
+  userCheck: json['userCheck']
   );
   }
 
@@ -54,7 +57,8 @@ class CommentResult {
   'dateDiff': dateDiff,
   'status': status,
   'Favorite': isFavorite,
-  'reply': reply
+  'reply': reply,
+   'userCehck': userCheck
   };
   }
   }
