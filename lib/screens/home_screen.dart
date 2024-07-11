@@ -1,8 +1,11 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../auth.dart';
+import '../publicImage.dart';
 import 'community/post_list_screen.dart';
 import '/api_url.dart';
 import '../../models/community.dart';
@@ -46,6 +49,13 @@ class _HomeScreenState extends State<HomeScreen> {
         boards = jsonData.map((data) => BoardDto.fromJson(data)).toList();
       });
       fetchAllPosts(); // 게시판 목록을 불러온 후 게시글을 불러옵니다.
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await fetchBoards();
+      } else {
+        print('토큰 재발급 실패');
+      }
     } else {
       throw Exception('Failed to load boards');
     }
@@ -62,10 +72,17 @@ class _HomeScreenState extends State<HomeScreen> {
       if (response.statusCode == 200) {
         final List<dynamic> jsonData = jsonDecode(response.body);
         allFetchedPosts.addAll(jsonData.map((data) => Post.fromJson(data)).toList());
+      } else if(response.statusCode == 401) {
+        bool success = await reissueToken(context);
+        if(success) {
+          await fetchAllPosts();
+        } else {
+          print('토큰 재발급 실패');
+        }
       }
     }
 
-    allFetchedPosts.sort((a, b) => b.postDate.compareTo(a.postDate));
+    allFetchedPosts.sort((a, b) => b.id.compareTo(a.id));
 
     setState(() {
       allPosts = allFetchedPosts;
@@ -350,17 +367,44 @@ class _HomeBodyState extends State<_HomeBody> {
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            widget.posts[index].title,
-                            style: TextStyle(
-                              fontSize: 16.0,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            widget.posts[index].content,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      widget.posts[index].title,
+                                      style: TextStyle(
+                                        fontSize: 16.0,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      widget.posts[index].content,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+
+                                  ],
+                                ),
+                              ),
+                              if (widget.posts[index].imageName.isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 8.0),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8.0),
+                                    child: PublicImage(
+                                      placeholderPath: 'assets/icons/loading.gif',
+                                      imageUrl: 'http://116.47.60.159:8080/image/' + widget.posts[index].imageName[0],
+                                      width: 80,
+                                      height: 80,
+                                      fit: BoxFit.cover,
+                                      key: ValueKey('http://116.47.60.159:8080/image/' + widget.posts[index].imageName[0]),
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                           SizedBox(height: 4.0),
                           Divider(),
