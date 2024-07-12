@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:bemajor_frontend/screens/community/post_list_screen2.dart';
 import 'package:bemajor_frontend/screens/home_screen.dart';
 import 'package:flutter/material.dart';

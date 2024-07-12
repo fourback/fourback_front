@@ -68,10 +68,14 @@ class _LoginScreenState extends State<LoginScreen> {
         _registerUserId();
         _registerRefresh();
 
-
         user = UserInfo(
           userID: userID!,
         );
+
+
+
+
+
         // _sendUserInfo 함수 호출
 
 

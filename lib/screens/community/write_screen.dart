@@ -63,6 +63,7 @@ class _InputScreenState extends State<WriteScreen> {
         }
       } else {
         print('API 요청이 실패했습니다.');
+        print('상태 코드: ${response.statusCode}');
       }
     } catch (e) {
       print('오류: $e');
