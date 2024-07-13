@@ -68,9 +68,9 @@ class _LoginScreenState extends State<LoginScreen> {
         _registerUserId();
         _registerRefresh();
 
-        user = UserInfo(
+        /*user = UserInfo(
           userID: userID!,
-        );
+        );*/
 
 
 

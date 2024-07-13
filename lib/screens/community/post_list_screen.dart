@@ -209,12 +209,6 @@ class _PostListScreenState extends State<PostListScreen> {
                       ),
 
 
-
-
-
-
-
-
                       SizedBox(height: 5.0),
                       Divider(),
                       SizedBox(height: 5.0),
