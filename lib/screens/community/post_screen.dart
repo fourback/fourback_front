@@ -6,7 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:bemajor_frontend/api_url.dart';
+import '../../auth.dart';
+import '../../models/commentModify.dart';
 import '../../models/commentResult.dart';
+import '../../publicImage.dart';
 import '/models/post.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'fullimage_screen.dart';
@@ -157,6 +160,7 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   Future<void> viewCountUp() async {
+    String? token = await readAccess();
     final url = Uri.parse('${ApiUrl.baseUrl}/api/post/${widget.post.id}/view');
     final response = await http.patch(
         url,
@@ -184,6 +188,7 @@ class _DetailScreenState extends State<DetailScreen> {
 
   Future<void> fetchComments() async {
     if (isLoading) return;
+    String? token = await readAccess();
 
     setState(() {
       isLoading = true;
@@ -677,10 +682,32 @@ class _DetailScreenState extends State<DetailScreen> {
                                           _commentController.text = commentsResult[index].content;
                                         }
                                       } else if (value == 'delete') {
-                                        _deleteComment(commentsResult[index].id);
-                                        // Delete action
-                                      }
-                                    },
+                                        showDialog(
+                                        context: context,
+                                         builder: (BuildContext context) {
+                                            return AlertDialog(
+                                              content: Text("댓글을 삭제하시겠습니까?"),
+                                              actions: [
+                                                TextButton(
+                                                    child: Text("예"),
+                                                    // Delete action
+                                                    onPressed: () {
+                                                      Navigator.of(context).pop();
+                                                      _deleteComment(commentsResult[index].id);
+                                                      },
+                                                ),
+                                                TextButton(
+                                                    child: Text("아니오"),
+                                                    onPressed: () {
+                                                      Navigator.of(context).pop();
+                                                    },
+                                                ),
+                                              ],
+                                            );
+                                        },
+                                        );
+                                      };
+                                      },
                                   itemBuilder: (BuildContext context) {
                                     return [
                                       PopupMenuItem<String>(
@@ -756,7 +783,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                 if (_isReplyVisible[index])
                                   ...replies.map((reply) {
                                     int replyIndex = replies.indexOf(reply);
-                                    __replyLikes[index][replyIndex] = repliesResult[replyIndex].isFavorite;
+                                    _replyLikes[index][replyIndex] = repliesResult[replyIndex].isFavorite;
                                     return Padding(
                                       padding: EdgeInsets.only(left: 20.0, top: 10.0),
                                       child: Container(
@@ -812,7 +839,30 @@ class _DetailScreenState extends State<DetailScreen> {
                                                             _commentController.text = replies[replyIndex].content;
                                                           }
                                                         } else if (value == 'delete') {
-                                                          _deleteComment(replies[replyIndex].id);
+                                                          showDialog(
+                                                            context: context,
+                                                            builder: (BuildContext context) {
+                                                              return AlertDialog(
+                                                                content: Text("대댓글을 삭제하시겠습니까?"),
+                                                                actions: [
+                                                                  TextButton(
+                                                                    child: Text("예"),
+                                                                    // Delete action
+                                                                    onPressed: () {
+                                                                      Navigator.of(context).pop();
+                                                                      _deleteComment(replies[replyIndex].id);
+                                                                    },
+                                                                  ),
+                                                                  TextButton(
+                                                                    child: Text("아니오"),
+                                                                    onPressed: () {
+                                                                      Navigator.of(context).pop();
+                                                                    },
+                                                                  ),
+                                                                ],
+                                                              );
+                                                            },
+                                                          );
                                                           // Delete action
                                                         }
                                                       },
