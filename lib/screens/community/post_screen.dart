@@ -1,18 +1,19 @@
 import 'dart:io';
 
 import 'package:bemajor_frontend/models/commentWrite.dart';
-import 'package:bemajor_frontend/publicImage.dart';
+import 'package:bemajor_frontend/models/user_info.dart';
 import 'package:bemajor_frontend/screens/community/post_update_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:bemajor_frontend/api_url.dart';
+import '../../auth.dart';
+import '../../models/commentModify.dart';
 import '../../models/commentResult.dart';
+import '../../publicImage.dart';
 import '/models/post.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'fullimage_screen.dart';
-import 'dart:typed_data';
-import 'package:bemajor_frontend/auth.dart';
 
 class DetailScreen extends StatefulWidget {
   Post post;
@@ -25,7 +26,10 @@ class DetailScreen extends StatefulWidget {
   State<DetailScreen> createState() => _DetailScreenState();
 }
 
-
+Future<String?> readJwt() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getString('USERID');
+}
 
 class _DetailScreenState extends State<DetailScreen> {
   final TextEditingController _commentController = TextEditingController();
@@ -34,6 +38,10 @@ class _DetailScreenState extends State<DetailScreen> {
 
   bool isLoading = false;
   List<CommentResult> commentsResult = [];
+
+  bool isModifying = false;
+  int? modifyingToCommentId;
+  List<CommentResult> modifyingToReply = [];
 
   int size = 0;
   int page = 0;
@@ -52,16 +60,13 @@ class _DetailScreenState extends State<DetailScreen> {
   void initState() {
     super.initState();
     viewCountUp();
-
-
-
     fetchComments();
   }
 
   Future<void> _updatePost() async {
     String? access = await readAccess();
     final response = await http.get(
-        Uri.parse('${ApiUrl.baseUrl}/api/post/${widget.post.id}'),
+      Uri.parse('${ApiUrl.baseUrl}/api/post/${widget.post.id}'),
       headers: {
         'access': '$access'
       },
@@ -90,7 +95,7 @@ class _DetailScreenState extends State<DetailScreen> {
   Future<void> _deletePost() async {
     String? access = await readAccess();
     final response = await http.delete(
-        Uri.parse('${ApiUrl.baseUrl}/api/post/${widget.post.id}'),
+      Uri.parse('${ApiUrl.baseUrl}/api/post/${widget.post.id}'),
       headers: {
         'access': '$access'
       },
@@ -118,7 +123,7 @@ class _DetailScreenState extends State<DetailScreen> {
 
     // API 엔드포인트 설정
     String apiUrl = "${ApiUrl.baseUrl}/api/post/${widget.post.id}/favorite";
-    String? token = await readAccess();
+    String? token = await readJwt();
 
 
     // POST 요청으로 즐겨찾기 토글 요청 보내기
@@ -147,7 +152,7 @@ class _DetailScreenState extends State<DetailScreen> {
         }
       } else {
         // 오류 발생 시 에러 메시지 출력
-        print('Failed to favorite: ${response.statusCode} ${response.body}');
+        print('Failed to favorite: ${response.statusCode}');
       }
     } catch (error) {
       // 네트워크 오류 발생 시 에러 메시지 출력
@@ -160,7 +165,7 @@ class _DetailScreenState extends State<DetailScreen> {
     final url = Uri.parse('${ApiUrl.baseUrl}/api/post/${widget.post.id}/view');
     final response = await http.patch(
         url,
-      headers: {'access': '$token'}
+        headers: {'access': '$token'}
     );
 
     if (response.statusCode == 200) {
@@ -191,12 +196,8 @@ class _DetailScreenState extends State<DetailScreen> {
     });
 
     final response = await http.get(
-        Uri.parse('${ApiUrl.baseUrl}/api/comment/list?postID=${widget.post.id}'),
-      headers: <String, String>{
-        'access': '$token'
-      },
-    );
-    setState(() {
+      Uri.parse('${ApiUrl.baseUrl}/api/comment/list?postID=${widget.post.id}'),
+      headers: {'access': '$token'},);setState(() {
       isLoading = false;
     });
     if (response.statusCode == 200) {
@@ -239,6 +240,55 @@ class _DetailScreenState extends State<DetailScreen> {
     }
   }
 
+  Future<void> _modifyComment(String content, int commentId) async {
+    String apiUrl = '${ApiUrl.baseUrl}/api/comment';
+    String? token = await readJwt();
+
+    try {
+      final response = await http.put(
+        Uri.parse(apiUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'access': '$token'
+        },
+        body: jsonEncode(CommentModify(commentId, content)),
+      );
+
+      if (response.statusCode == 200) {
+        print('댓글이 성공적으로 수정되었습니다.');
+        await fetchComments(); // 댓글을 수정한 후 댓글 리스트를 다시 로드
+      } else {
+        print('API 요청이 실패했습니다.');
+      }
+    } catch (e) {
+      print('오류: $e');
+    }
+  }
+
+  Future<void> _deleteComment(int commentId) async {
+    String apiUrl = '${ApiUrl.baseUrl}/api/comment?commentID=${commentId}';
+    String? token = await readJwt();
+
+    try {
+      final response = await http.delete(
+        Uri.parse(apiUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'access': '$token'
+        },
+      );
+
+      if (response.statusCode == 200) {
+        print('댓글이 성공적으로 삭제되었습니다.');
+        await fetchComments(); // 댓글을 수정한 후 댓글 리스트를 다시 로드
+      } else {
+        print('API 요청이 실패했습니다.');
+      }
+    } catch (e) {
+      print('오류: $e');
+    }
+  }
+
   Future<void> _getFavoriteComment(int commentID, int index) async {
     String apiUrl = await '${ApiUrl.baseUrl}/api/comment/favorite?commentID=${commentID}';
     String? token = await readAccess();
@@ -246,7 +296,7 @@ class _DetailScreenState extends State<DetailScreen> {
       final response = await http.get(Uri.parse(apiUrl),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
-          'access': '$token'
+          'authorization': '$token'
         },
       );
     _commentLikes[index] = jsonDecode(response.body);
@@ -267,7 +317,7 @@ class _DetailScreenState extends State<DetailScreen> {
 
   Future<void> _addFavoriteComment(CommentResult commentResult, int index) async {
     String apiUrl = '${ApiUrl.baseUrl}/api/comment/favorite?commentID=${commentResult.id}';
-    String? token = await readAccess();
+    String? token = await readJwt();
 
     try {
       final response = await http.post(
@@ -278,7 +328,7 @@ class _DetailScreenState extends State<DetailScreen> {
         },
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 && commentsResult[index].status != 1) {
         print('좋아요가 성공적으로 추가되었습니다.');
         _getFavoriteComment(commentResult.id, index);
         await fetchComments(); // 새로운 댓글을 작성한 후 댓글 리스트를 다시 로드
@@ -303,7 +353,7 @@ class _DetailScreenState extends State<DetailScreen> {
         },
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 && commentsResult[index].status != 1) {
         print('좋아요가 성공적으로 제거되었습니다.');
         _getFavoriteComment(commentResult.id, index);
         await fetchComments(); // 새로운 댓글을 작성한 후 댓글 리스트를 다시 로드
@@ -429,10 +479,10 @@ class _DetailScreenState extends State<DetailScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                widget.post.memberName,
+                                widget.post.memberName, // User 가져와서 수정해야함
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
-                              Text('수원대학교 컴퓨터학부'), // 출신 및 과
+                              Text('수원대학교 컴퓨터학부'), // 출신 및 과 // User 가져와서 수정해야함
                               SizedBox(height: 8.0),
                             ],
                           ),
@@ -462,9 +512,9 @@ class _DetailScreenState extends State<DetailScreen> {
 
                                     // 수정된 게시글 정보를 받아오고 상태를 업데이트
 
-                                      if (updatedPost == true) {
-                                        _updatePost();
-                                      }
+                                    if (updatedPost == true) {
+                                      _updatePost();
+                                    }
 
 
                                   },
@@ -496,27 +546,27 @@ class _DetailScreenState extends State<DetailScreen> {
                     ),
                     if (widget.post.imageName.isNotEmpty) ...widget.post.imageName.map((imageName) {
                       return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0),
-                        child: GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => FullImageScreen(imageUrl: 'http://116.47.60.159:8080/image/' + imageName),
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => FullImageScreen(imageUrl: 'http://116.47.60.159:8080/image/' + imageName),
+                                ),
+                              );
+                            },
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8.0),
+                              child: PublicImage(
+                                imageUrl: 'http://116.47.60.159:8080/image/' + imageName,
+                                width: MediaQuery.of(context).size.width,
+                                fit: BoxFit.cover,
+                                placeholderPath: 'assets/icons/loading.gif',
+                                key: ValueKey('http://116.47.60.159:8080/image/' + imageName),
                               ),
-                            );
-                          },
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8.0),
-                          child: PublicImage(
-                            imageUrl: 'http://116.47.60.159:8080/image/' + imageName,
-                            width: MediaQuery.of(context).size.width,
-                            fit: BoxFit.cover,
-                            placeholderPath: 'assets/icons/loading.gif',
-                            key: ValueKey('http://116.47.60.159:8080/image/' + imageName),
-                          ),
-                        ),
-                      )
+                            ),
+                          )
                       );
                     }).toList(),
 
@@ -584,10 +634,10 @@ class _DetailScreenState extends State<DetailScreen> {
                       List<CommentResult> repliesResult = [];
                       // 대댓글 리스트
                       repliesResult.addAll(jsonData.map((data) => CommentResult.fromJson(data)).toList());
-                      final memberId = '${commentsResult[index].userName}';
+                      final memberId = '${commentsResult[index].user?['userName']}';
                       final comment = '${commentsResult[index].content}'; // comment
                       _commentLikeCounts[index] = commentsResult[index].goodCount;
-                      _getFavoriteComment(commentsResult[index].id, index);
+                      _commentLikes[index] = commentsResult[index].isFavorite;
 
                       final List<CommentResult> replies = List.generate(
                           jsonData.length,
@@ -613,19 +663,52 @@ class _DetailScreenState extends State<DetailScreen> {
                                       memberId,
                                       style: TextStyle(fontWeight: FontWeight.bold),
                                     ),
-                                    Text('수원대학교 컴퓨터학부'),
+                                    Text('${commentsResult[index].user?['belong']} ${commentsResult[index].user?['department']}'),
                                   ],
                                 ),
                                 Spacer(),
-                                PopupMenuButton<String>(
-                                  onSelected: (String value) {
-                                    // Edit 및 Delete 액션 처리
-                                    if (value == 'edit') {
-                                      // Edit action
-                                    } else if (value == 'delete') {
-                                      // Delete action
-                                    }
-                                  },
+                                if(commentsResult[index].userCheck == true && commentsResult[index].status == 0)
+                                  PopupMenuButton<String>(
+                                    onSelected: (String value) {
+                                      // Edit 및 Delete 액션 처리
+                                      if (value == 'edit') {
+                                        // Edit action
+                                        if (modifyingToCommentId == commentsResult[index].id) {
+                                          isModifying = false;
+                                          _commentController.text = '';
+                                        }
+                                        else {
+                                          isModifying = true;
+                                          modifyingToCommentId = commentsResult[index].id;
+                                          _commentController.text = commentsResult[index].content;
+                                        }
+                                      } else if (value == 'delete') {
+                                        showDialog(
+                                        context: context,
+                                         builder: (BuildContext context) {
+                                            return AlertDialog(
+                                              content: Text("댓글을 삭제하시겠습니까?"),
+                                              actions: [
+                                                TextButton(
+                                                    child: Text("예"),
+                                                    // Delete action
+                                                    onPressed: () {
+                                                      Navigator.of(context).pop();
+                                                      _deleteComment(commentsResult[index].id);
+                                                      },
+                                                ),
+                                                TextButton(
+                                                    child: Text("아니오"),
+                                                    onPressed: () {
+                                                      Navigator.of(context).pop();
+                                                    },
+                                                ),
+                                              ],
+                                            );
+                                        },
+                                        );
+                                      };
+                                      },
                                   itemBuilder: (BuildContext context) {
                                     return [
                                       PopupMenuItem<String>(
@@ -646,8 +729,11 @@ class _DetailScreenState extends State<DetailScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 SizedBox(height: 16.0),
-                                Text(comment, style: TextStyle(fontSize: 16.0)),
-                                SizedBox(height: 10.0),
+                                commentsResult[index].status != 1 ?
+                                Text(comment, style: TextStyle(fontSize: 16.0)) :
+                                Text(comment, style: TextStyle(fontSize: 14.0, color: Colors.grey))
+
+                                ,SizedBox(height: 10.0),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.start,
                                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -698,7 +784,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                 if (_isReplyVisible[index])
                                   ...replies.map((reply) {
                                     int replyIndex = replies.indexOf(reply);
-                                    _getFavoriteReply(replies[replyIndex].id, index, replyIndex);
+                                    _replyLikes[index][replyIndex] = repliesResult[replyIndex].isFavorite;
                                     return Padding(
                                       padding: EdgeInsets.only(left: 20.0, top: 10.0),
                                       child: Container(
@@ -723,7 +809,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                                     crossAxisAlignment: CrossAxisAlignment.start,
                                                     children: [
                                                       Text(
-                                                        '${replies[replyIndex].userName}',
+                                                        '${replies[replyIndex].user?['userName']}',
                                                         // 대댓글 사용자명
                                                         style: TextStyle(
                                                           fontWeight: FontWeight.bold,
@@ -731,30 +817,65 @@ class _DetailScreenState extends State<DetailScreen> {
                                                         ),
                                                       ),
                                                       Text(
-                                                        '수원대학교 컴퓨터학부',
+                                                        '${replies[replyIndex].user?['belong']} ${replies[replyIndex].user?['department']}',
                                                         style: TextStyle(fontSize: 12),
                                                       ),
                                                     ],
                                                   ),
                                                   Spacer(),
-                                                  PopupMenuButton<String>(
-                                                    onSelected: (String value) {
-                                                      // Edit 및 Delete 액션 처리
-                                                      if (value == 'edit') {
-                                                        // Edit action
-                                                      } else if (value == 'delete') {
-                                                        // Delete action
-                                                      }
-                                                    },
+                                                  if(replies[replyIndex].userCheck == true && replies[replyIndex].status == 0)
+                                                    PopupMenuButton<String>(
+                                                      onSelected: (String value) {
+                                                        // Edit 및 Delete 액션 처리
+                                                        if (value == 'edit') {
+                                                          // Edit action
+                                                          if (modifyingToCommentId == replies[replyIndex].id) {
+                                                            isModifying = false;
+                                                            _commentController.text = '';
+                                                          }
+                                                          else {
+                                                            isModifying = true;
+                                                            modifyingToCommentId = replies[replyIndex].id;
+                                                            modifyingToReply = replies;
+                                                            _commentController.text = replies[replyIndex].content;
+                                                          }
+                                                        } else if (value == 'delete') {
+                                                          showDialog(
+                                                            context: context,
+                                                            builder: (BuildContext context) {
+                                                              return AlertDialog(
+                                                                content: Text("대댓글을 삭제하시겠습니까?"),
+                                                                actions: [
+                                                                  TextButton(
+                                                                    child: Text("예"),
+                                                                    // Delete action
+                                                                    onPressed: () {
+                                                                      Navigator.of(context).pop();
+                                                                      _deleteComment(replies[replyIndex].id);
+                                                                    },
+                                                                  ),
+                                                                  TextButton(
+                                                                    child: Text("아니오"),
+                                                                    onPressed: () {
+                                                                      Navigator.of(context).pop();
+                                                                    },
+                                                                  ),
+                                                                ],
+                                                              );
+                                                            },
+                                                          );
+                                                          // Delete action
+                                                        }
+                                                      },
                                                     itemBuilder: (BuildContext context) {
                                                       return [
                                                         PopupMenuItem<String>(
                                                           value: 'edit',
-                                                          child: Text('수정'), // 수정 액션
+                                                          child: Text('수정'), // 대댓글 수정 액션
                                                         ),
                                                         PopupMenuItem<String>(
                                                           value: 'delete',
-                                                          child: Text('삭제'), // 삭제 액션
+                                                          child: Text('삭제'), // 대댓글 삭제 액션
                                                         ),
                                                       ];
                                                     },
@@ -770,9 +891,11 @@ class _DetailScreenState extends State<DetailScreen> {
                                                     replyingToCommentIndex = index;
                                                   });
                                                 },
-                                                child: Text(
-                                                  reply.content,
-                                                  style: TextStyle(fontSize: 14.0),
+                                                child:
+                                                Text(reply.content,
+                                                    style: replies[replyIndex].status != 1 ?
+                                                    TextStyle(fontSize: 14.0) :
+                                                    TextStyle(fontSize: 12.0, color: Colors.grey)
                                                 ),
                                               ),
                                               SizedBox(height: 8.0),
@@ -792,7 +915,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                                       ),
                                                       onPressed: () {
                                                         setState(() {
-                                                          _replyLikeCounts[index][replyIndex] = repliesResult[index].goodCount;
+                                                          _replyLikeCounts[index][replyIndex] = repliesResult[replyIndex].goodCount;
                                                           if (_replyLikes[index][replyIndex] == true) {
                                                             _deleteFavoriteReply(replies[replyIndex], index, replyIndex);
                                                           } else {
@@ -830,7 +953,6 @@ class _DetailScreenState extends State<DetailScreen> {
       ),
       //resizeToAvoidBottomInset: true,
       bottomNavigationBar: Container(
-
         decoration: BoxDecoration(
           color: Color(0xffffff),
           border: Border(
@@ -838,17 +960,12 @@ class _DetailScreenState extends State<DetailScreen> {
           ),
         ),
         child: Padding(
-
             padding: EdgeInsets.only(
               left: 12.0,
               right: 12.0,
               top: 8.0,
               bottom: MediaQuery.of(context).viewInsets.bottom + 8.0,
             ),
-
-
-
-
           child: Row(
             children: [
               SizedBox(width: 12),
@@ -867,13 +984,19 @@ class _DetailScreenState extends State<DetailScreen> {
               IconButton(
                 icon: Icon(Icons.send, color: Colors.purple),
                 onPressed: () async {
-                  if (isReplying && replyingToCommentIndex != null) {
+                  if (isReplying == true && isModifying == false && replyingToCommentIndex != null) {
                     // 대댓글 작성 로직
                     int parentCommentId = commentsResult[replyingToCommentIndex!].id;
                     await _addComment(_commentController.text, parentCommentId);
-                  } else {
+                  } else if (isReplying == false && isModifying == false) {
                     // 댓글 작성 로직
                     await _addComment(_commentController.text, -1);
+                  } else if (isReplying == false && isModifying == true) {
+                    // 댓글 수정 로직
+                    await _modifyComment(_commentController.text, modifyingToCommentId!);
+                  } else if (isReplying == true && isModifying == true) {
+                    // 대댓글 수정 로직
+                    await _modifyComment(_commentController.text, modifyingToCommentId!);
                   }
 
                   setState(() {
@@ -890,6 +1013,4 @@ class _DetailScreenState extends State<DetailScreen> {
       ),
     );
   }
-
 }
-
