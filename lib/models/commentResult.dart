@@ -1,7 +1,6 @@
 class CommentResult {
   final int id;
   final String content;
-  final String userName;
   final int goodCount;
   final String commentDate;
   final int postId;
@@ -12,10 +11,10 @@ class CommentResult {
   final bool userCheck;
 
   final Map<String, dynamic>? reply;
+  final Map<String, dynamic>? user;
 
   CommentResult({
   required this.id,
-  required this.userName,
   required this.content,
   required this.goodCount,
   required this.commentDate,
@@ -25,13 +24,13 @@ class CommentResult {
   required this.isFavorite,
   required this.status,
   required this.reply,
+  required this.user,
   required this.userCheck
   });
 
   factory CommentResult.fromJson(Map<String, dynamic> json) {
   return CommentResult(
   id: json['id'],
-  userName: json['userName'],
   content: json['content'],
   goodCount: json['goodCount'],
   commentDate: json['commentDate'],
@@ -41,6 +40,7 @@ class CommentResult {
   isFavorite: json['favorite'],
   status: json['status'],
   reply: json['reply'],
+  user: json['user'],
   userCheck: json['userCheck']
   );
   }
@@ -48,7 +48,6 @@ class CommentResult {
   Map<String, dynamic> toJson() {
   return {
   'id': id,
-  'userName': userName,
   'content': content,
   'goodCount': goodCount,
   'commentDate': commentDate,
@@ -58,6 +57,7 @@ class CommentResult {
   'status': status,
   'Favorite': isFavorite,
   'reply': reply,
+  'user': user,
    'userCehck': userCheck
   };
   }

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:bemajor_frontend/models/commentWrite.dart';
+import 'package:bemajor_frontend/models/user_info.dart';
 import 'package:bemajor_frontend/screens/community/post_update_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -478,10 +479,10 @@ class _DetailScreenState extends State<DetailScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                widget.post.memberName,
+                                widget.post.memberName, // User 가져와서 수정해야함
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
-                              Text('수원대학교 컴퓨터학부'), // 출신 및 과
+                              Text('수원대학교 컴퓨터학부'), // 출신 및 과 // User 가져와서 수정해야함
                               SizedBox(height: 8.0),
                             ],
                           ),
@@ -633,7 +634,7 @@ class _DetailScreenState extends State<DetailScreen> {
                       List<CommentResult> repliesResult = [];
                       // 대댓글 리스트
                       repliesResult.addAll(jsonData.map((data) => CommentResult.fromJson(data)).toList());
-                      final memberId = '${commentsResult[index].userName}';
+                      final memberId = '${commentsResult[index].user?['userName']}';
                       final comment = '${commentsResult[index].content}'; // comment
                       _commentLikeCounts[index] = commentsResult[index].goodCount;
                       _commentLikes[index] = commentsResult[index].isFavorite;
@@ -662,7 +663,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                       memberId,
                                       style: TextStyle(fontWeight: FontWeight.bold),
                                     ),
-                                    Text('수원대학교 컴퓨터학부'),
+                                    Text('${commentsResult[index].user?['belong']} ${commentsResult[index].user?['department']}'),
                                   ],
                                 ),
                                 Spacer(),
@@ -808,7 +809,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                                     crossAxisAlignment: CrossAxisAlignment.start,
                                                     children: [
                                                       Text(
-                                                        '${replies[replyIndex].userName}',
+                                                        '${replies[replyIndex].user?['userName']}',
                                                         // 대댓글 사용자명
                                                         style: TextStyle(
                                                           fontWeight: FontWeight.bold,
@@ -816,7 +817,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                                         ),
                                                       ),
                                                       Text(
-                                                        '수원대학교 컴퓨터학부',
+                                                        '${replies[replyIndex].user?['belong']} ${replies[replyIndex].user?['department']}',
                                                         style: TextStyle(fontSize: 12),
                                                       ),
                                                     ],
