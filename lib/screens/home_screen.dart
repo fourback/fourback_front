@@ -38,7 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> fetchBoards() async {
-    String? token = await readAccess();
+    String? token = await readJwt();
     final response = await http.get(
       Uri.parse('${ApiUrl.baseUrl}/api/board'),
       headers: {'access': '$token'},
