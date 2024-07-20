@@ -288,6 +288,7 @@ class _MypageScreenState extends State<MypageScreen> {
                         decoration: const InputDecoration(
                           border: OutlineInputBorder(),
                           labelText: '이름',
+                          floatingLabelBehavior: FloatingLabelBehavior.never,
                           contentPadding: EdgeInsets.symmetric(
                               vertical: 12.0, horizontal: 16.0),
                         ),
@@ -303,6 +304,7 @@ class _MypageScreenState extends State<MypageScreen> {
                         decoration: const InputDecoration(
                           border: OutlineInputBorder(),
                           labelText: '이메일',
+                          floatingLabelBehavior: FloatingLabelBehavior.never,
                           contentPadding: EdgeInsets.symmetric(
                               vertical: 12.0, horizontal: 16.0),
                         ),
@@ -318,6 +320,7 @@ class _MypageScreenState extends State<MypageScreen> {
                         decoration: const InputDecoration(
                           border: OutlineInputBorder(),
                           labelText: '대학교/소속기관',
+                          floatingLabelBehavior: FloatingLabelBehavior.never,
                           contentPadding: EdgeInsets.symmetric(
                               vertical: 12.0, horizontal: 16.0),
                         ),
@@ -333,6 +336,7 @@ class _MypageScreenState extends State<MypageScreen> {
                         decoration: const InputDecoration(
                           border: OutlineInputBorder(),
                           labelText: '생년월일',
+                          floatingLabelBehavior: FloatingLabelBehavior.never,
                           contentPadding: EdgeInsets.symmetric(
                               vertical: 12.0, horizontal: 16.0),
                         ),
@@ -348,6 +352,7 @@ class _MypageScreenState extends State<MypageScreen> {
                         decoration: const InputDecoration(
                           border: OutlineInputBorder(),
                           labelText: '학과',
+                          floatingLabelBehavior: FloatingLabelBehavior.never,
                           contentPadding: EdgeInsets.symmetric(
                               vertical: 12.0, horizontal: 16.0),
                         ),
@@ -363,6 +368,7 @@ class _MypageScreenState extends State<MypageScreen> {
                         decoration: const InputDecoration(
                           border: OutlineInputBorder(),
                           labelText: '취미',
+                          floatingLabelBehavior: FloatingLabelBehavior.never,
                           contentPadding: EdgeInsets.symmetric(
                               vertical: 12.0, horizontal: 16.0),
                         ),
@@ -378,6 +384,7 @@ class _MypageScreenState extends State<MypageScreen> {
                         decoration: const InputDecoration(
                           border: OutlineInputBorder(),
                           labelText: '희망 직무',
+                          floatingLabelBehavior: FloatingLabelBehavior.never,
                           contentPadding: EdgeInsets.symmetric(
                               vertical: 12.0, horizontal: 16.0),
                         ),
@@ -393,6 +400,7 @@ class _MypageScreenState extends State<MypageScreen> {
                         decoration: const InputDecoration(
                           border: OutlineInputBorder(),
                           labelText: '거주 지역',
+                          floatingLabelBehavior: FloatingLabelBehavior.never,
                           contentPadding: EdgeInsets.symmetric(
                               vertical: 12.0, horizontal: 16.0),
                         ),
@@ -408,6 +416,7 @@ class _MypageScreenState extends State<MypageScreen> {
                         decoration: const InputDecoration(
                           border: OutlineInputBorder(),
                           labelText: '기술 스택',
+                          floatingLabelBehavior: FloatingLabelBehavior.never,
                           contentPadding: EdgeInsets.symmetric(
                               vertical: 12.0, horizontal: 16.0),
                         ),
