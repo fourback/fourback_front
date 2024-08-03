@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class StudyGroup {
   final int id;
   final String studyName;
@@ -26,15 +28,30 @@ class StudyGroup {
   factory StudyGroup.fromJson(Map<String, dynamic> json) {
     return StudyGroup(
       id: json['id'],
-      studyName: json['studyName'],
-      startDate: DateTime.parse(json['startDate']),
-      endDate: DateTime.parse(json['endDate']),
-      teamSize: json['teamSize'],
-      studyLocation: json['studyLocation'],
-      category: json['category'],
-      studyCycle: json['studyCycle'],
-      studyRule: json['studyRule'],
-      ownerOauth2Id: json['ownerOauth2Id'],
+      studyName: json['studyName'] ?? '',
+      startDate: json['startDate'] != null ? DateTime.parse(json['startDate']) : DateTime.now(),
+      endDate: json['endDate'] != null ? DateTime.parse(json['endDate']) : DateTime.now(),
+      teamSize: json['teamSize'] ?? 0,
+      studyLocation: json['studyLocation'] ?? '',
+      category: json['category'] ?? '',
+      studyCycle: json['studyCycle'] ?? '',
+      studyRule: json['studyRule'] ?? '',
+      ownerOauth2Id: json['ownerOauth2Id'] ?? '',
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'studyName': studyName,
+      'startDate': startDate.toIso8601String(),
+      'endDate': endDate.toIso8601String(),
+      'teamSize': teamSize,
+      'studyLocation': studyLocation,
+      'category': category,
+      'studyCycle': studyCycle,
+      'studyRule': studyRule,
+      'ownerOauth2Id': ownerOauth2Id,
+    };
   }
 }
