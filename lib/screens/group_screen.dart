@@ -1,3 +1,4 @@
+import 'package:bemajor_frontend/screens/group/group_create_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'dart:async';
@@ -77,7 +78,12 @@ class _GroupScreenState extends State<GroupScreen> {
                 Padding(
                   padding: const EdgeInsets.only(top: 4.0),
                   child: IconButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => GroupCreateScreen()),
+                      );
+                    },
                     icon: Image.asset(
                       'assets/icons/More.png',
                       height: 50,
