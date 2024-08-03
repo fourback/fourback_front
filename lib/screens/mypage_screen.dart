@@ -41,6 +41,7 @@ class _MypageScreenState extends State<MypageScreen> {
         selectImage = image;
       });
     }
+    uploadImage(image!);
   }
 
   Future<void> fetchUserInfo() async {
@@ -104,7 +105,7 @@ class _MypageScreenState extends State<MypageScreen> {
         "techStack": techStackController.text
       },
     );
-    final headers = {"Content-Type": "multipart/form-data"};
+    final headers = {"Content-Type": "application/json"};
     try {
       final response = await http.put(url, headers: headers);
       if (response.statusCode == 200) {
@@ -136,6 +137,35 @@ class _MypageScreenState extends State<MypageScreen> {
         print('logout successfully');
       } else {
         print('Failed logout');
+      }
+    } catch (e) {
+      print('Error: $e');
+    }
+  }
+
+  Future<void> uploadImage(XFile image) async {
+    final url = Uri.http(
+      "localhost:8080",
+      "image",
+    );
+    var request = http.MultipartRequest('POST', url);
+    /*  ***
+      access token, refresh token 없애는 로직 구현
+      + 헤더에 access token, refresh token 전송해줘야 함
+     */
+    request.files.add(
+      await http.MultipartFile.fromPath('file', image.path)
+    );
+    try {
+      final response = await request.send();
+      if (response.statusCode == 200) {
+        var responseBody = await response.stream.bytesToString();
+        setState(() {
+          userImage=responseBody;
+        });
+        print('upload successfully');
+      } else {
+        print('Failed');
       }
     } catch (e) {
       print('Error: $e');
