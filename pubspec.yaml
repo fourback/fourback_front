@@ -34,6 +34,12 @@ dependencies:
     sdk: flutter
 
 
+  syncfusion_flutter_datepicker: ^22.1.36
+  flutter_date_pickers: ^0.4.3
+  intl: ^0.18.1
+
+
+
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -56,6 +62,9 @@ dev_dependencies:
   mime: ^1.0.0
   image_picker: ^0.8.4+4
   flutter_native_splash: ^2.0.7
+
+
+
 
 flutter_native_splash:
   color: "#FFFFFF" # 스플래시 화면의 배경 색상

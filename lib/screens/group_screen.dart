@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'package:bemajor_frontend/api_url.dart';
+import 'package:bemajor_frontend/screens/group/group_create_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:convert';
 import 'navigation_screen.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
@@ -161,7 +162,12 @@ class _GroupScreenState extends State<GroupScreen> {
               Padding(
                 padding: const EdgeInsets.only(top: 4.0),
                 child: IconButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => GroupCreateScreen()),
+                    );
+                  },
                   icon: Image.asset(
                     'assets/icons/More.png',
                     height: 50,
@@ -185,7 +191,7 @@ class _GroupScreenState extends State<GroupScreen> {
       children: [
         Container(
           width: screenWidth,
-          height: screenHeight*0.24,
+          height: screenHeight * 0.24,
           decoration: BoxDecoration(
             color: Colors.white,
           ),
@@ -202,8 +208,8 @@ class _GroupScreenState extends State<GroupScreen> {
         Align(
           alignment: Alignment.centerLeft,
           child: Container(
-            width: screenWidth*0.5, // 절반의 너비
-            height: screenHeight*0.24,
+            width: screenWidth * 0.5, // 절반의 너비
+            height: screenHeight * 0.24,
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.9),
             ),
@@ -225,16 +231,16 @@ class _GroupScreenState extends State<GroupScreen> {
                         ),
                       ),
                     ),
-                    Text(
-                        "전공자가 되자!",
-                        style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15)
-                    ),
+                    Text("전공자가 되자!",
+                        style: GoogleFonts.inter(
+                            fontWeight: FontWeight.w600, fontSize: 15)),
                     SizedBox(height: 24),
                     ElevatedButton(
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => navigationScreen()),
+                          MaterialPageRoute(
+                              builder: (context) => navigationScreen()),
                         );
                       },
                       style: ElevatedButton.styleFrom(
@@ -242,7 +248,10 @@ class _GroupScreenState extends State<GroupScreen> {
                       ),
                       child: Text(
                         '커뮤니티로 가기',
-                        style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 12,color: Colors.white),
+                        style: GoogleFonts.inter(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                            color: Colors.white),
                       ),
                     ),
                   ],
@@ -272,8 +281,8 @@ class _GroupScreenState extends State<GroupScreen> {
     double screenWidth = screenSize.width;
     double screenHeight = screenSize.height;
     return Container(
-      width: screenWidth*0.98,
-      height: screenHeight*0.1,
+      width: screenWidth * 0.98,
+      height: screenHeight * 0.1,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(30),
         color: Colors.white,
@@ -309,7 +318,9 @@ class _GroupScreenState extends State<GroupScreen> {
           Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: isSelected ? Color(0xFF7C3AED).withOpacity(0.2) : Colors.transparent,
+              color: isSelected
+                  ? Color(0xFF7C3AED).withOpacity(0.2)
+                  : Colors.transparent,
             ),
             child: IconButton(
               onPressed: null, // GestureDetector의 onTap 사용
@@ -370,7 +381,8 @@ class _GroupScreenState extends State<GroupScreen> {
                 Container(
                   width: itemWidth * 0.9,
                   height: itemHeight * 0.48,
-                  child: Image.asset("assets/icons/eximage.png", fit: BoxFit.cover),
+                  child: Image.asset("assets/icons/eximage.png",
+                      fit: BoxFit.cover),
                 ),
                 Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -381,7 +393,8 @@ class _GroupScreenState extends State<GroupScreen> {
                       Text(
                         studyGroup.studyName,
                         textAlign: TextAlign.start, // study_name
-                        style: GoogleFonts.inter(fontSize: 16,fontWeight: FontWeight.w600),
+                        style: GoogleFonts.inter(
+                            fontSize: 16, fontWeight: FontWeight.w600),
                       ), // 스터디 그룹 이름
                       SizedBox(height: 8),
                       Text(
@@ -395,7 +408,8 @@ class _GroupScreenState extends State<GroupScreen> {
                       ), // 모임 장소
                       Text(
                         studyGroup.studyCycle, // study_cycle
-                        style: GoogleFonts.inter(fontSize: 16,fontWeight: FontWeight.w600),
+                        style: GoogleFonts.inter(
+                            fontSize: 16, fontWeight: FontWeight.w600),
                       ), // 시간
                     ],
                   ),
