@@ -146,7 +146,7 @@ class _MypageScreenState extends State<MypageScreen> {
   Future<void> uploadImage(XFile image) async {
     final url = Uri.http(
       "localhost:8080",
-      "image",
+      "api/users/image",
     );
     var request = http.MultipartRequest('POST', url);
     /*  ***
@@ -175,10 +175,7 @@ class _MypageScreenState extends State<MypageScreen> {
   Future<void> deleteImage() async {
     final url = Uri.http(
       "localhost:8080",
-      "image",
-      {
-        "fileNames": [userImage],
-      },
+      "api/users/image",
     );
     /*  ***
       access token, refresh token 없애는 로직 구현
@@ -264,7 +261,7 @@ class _MypageScreenState extends State<MypageScreen> {
                       userImage != null
                           ? PublicImage(
                         imageUrl:
-                        'http://localhost:8080/image/$userImage',
+                        'http://localhost:8080/api/images/$userImage',
                         placeholderPath: 'assets/icons/loading.gif',
                         width: 80,
                         height: 80,
