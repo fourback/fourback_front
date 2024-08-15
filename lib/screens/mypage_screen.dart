@@ -47,7 +47,7 @@ class _MypageScreenState extends State<MypageScreen> {
   Future<void> fetchUserInfo() async {
     if (isLoading) return;
     final url = Uri.http(
-      "localhost:8080",
+      "116.47.60.159:8080",
       "user",
       {
         "username": "naver123",
@@ -90,7 +90,7 @@ class _MypageScreenState extends State<MypageScreen> {
     * multipartfile 보내는 양식으로 고쳐야 함
     * */
     final url = Uri.http(
-      "localhost:8080",
+      "116.47.60.159:8080",
       "user",
       {
         "username": "naver123",
@@ -120,7 +120,7 @@ class _MypageScreenState extends State<MypageScreen> {
 
   Future<void> logout() async {
     final url = Uri.http(
-      "localhost:8080",
+      "116.47.60.159:8080",
       "logout",
     );
     /*  ***
@@ -145,7 +145,7 @@ class _MypageScreenState extends State<MypageScreen> {
 
   Future<void> uploadImage(XFile image) async {
     final url = Uri.http(
-      "localhost:8080",
+      "116.47.60.159:8080",
       "api/users/image",
     );
     var request = http.MultipartRequest('POST', url);
@@ -174,7 +174,7 @@ class _MypageScreenState extends State<MypageScreen> {
 
   Future<void> deleteImage() async {
     final url = Uri.http(
-      "localhost:8080",
+      "116.47.60.159:8080",
       "api/users/image",
     );
     /*  ***
@@ -261,7 +261,7 @@ class _MypageScreenState extends State<MypageScreen> {
                       userImage != null
                           ? PublicImage(
                         imageUrl:
-                        'http://localhost:8080/api/images/$userImage',
+                        'http://116.47.60.159:8080/api/images/$userImage',
                         placeholderPath: 'assets/icons/loading.gif',
                         width: 80,
                         height: 80,
