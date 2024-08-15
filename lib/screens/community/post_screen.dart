@@ -488,10 +488,10 @@ class _DetailScreenState extends State<DetailScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                widget.post.memberName, // User 가져와서 수정해야함
+                                widget.post.memberName,
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
-                              Text('수원대학교 컴퓨터학부'), // 출신 및 과 // User 가져와서 수정해야함
+                              Text('수원대학교 컴퓨터학부'), // 출신 및 과 // User.belong, dapartment 가져와서 수정해야함
                               SizedBox(height: 8.0),
                             ],
                           ),
