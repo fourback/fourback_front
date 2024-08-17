@@ -7,7 +7,6 @@ import 'chat_screen.dart';
 import 'community/community_screen.dart';
 import 'group_screen.dart';
 import 'mypage_screen.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 
 class navigationScreen extends StatefulWidget {
   @override
@@ -30,17 +29,6 @@ class _MyAppState extends State<navigationScreen> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-
-      ],
-      supportedLocales:  [
-        const Locale('ko', 'KR'),
-
-      ],
-      locale: const Locale('ko', 'KR'),
 
       home: Scaffold(
         backgroundColor: Colors.white,

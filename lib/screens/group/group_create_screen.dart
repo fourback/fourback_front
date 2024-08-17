@@ -115,12 +115,8 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
                   children: [
                     Text('기간', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     Text(dateRangeText, style: TextStyle(fontSize: 14)),
-                    SizedBox(height: 6.0,),
                     SfDateRangePicker(
-                      backgroundColor: Color(0xfff8f8f8),
-                      headerStyle: DateRangePickerHeaderStyle(
-                        backgroundColor: Color(0xfff8f8f8),
-                      ),
+
                       controller: _controller,
                       selectionMode: DateRangePickerSelectionMode.range,
                       minDate: minDate,
@@ -137,7 +133,6 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
                           });
                         }
                       },
-
                     ),
 
                     Text('그룹 이름', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),

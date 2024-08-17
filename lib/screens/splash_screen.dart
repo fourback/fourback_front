@@ -29,10 +29,7 @@ class _SplashScreenState extends State<SplashScreen> {
     if (token != null) {
       // bool isValid = await verifyToken(jwtToken);
       // if (isValid) {
-      Navigator.of(context).pushReplacement(MaterialPageRoute(
-          builder: (context) => navigationScreen()),
-
-      );
+      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => navigationScreen()));
       //Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => LoginScreen()));
       // } else {
       //   await prefs.remove('jwt_token');
