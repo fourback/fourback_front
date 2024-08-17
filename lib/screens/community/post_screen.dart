@@ -561,18 +561,18 @@ class _DetailScreenState extends State<DetailScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => FullImageScreen(imageUrl: 'http://116.47.60.159:8080/api/images/' + imageName),
+                                  builder: (context) => FullImageScreen(imageUrl: 'http://116.47.60.159:8080/image/' + imageName),
                                 ),
                               );
                             },
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(8.0),
                               child: PublicImage(
-                                imageUrl: 'http://116.47.60.159:8080/api/images/' + imageName,
+                                imageUrl: 'http://116.47.60.159:8080/image/' + imageName,
                                 width: MediaQuery.of(context).size.width,
                                 fit: BoxFit.cover,
                                 placeholderPath: 'assets/icons/loading.gif',
-                                key: ValueKey('http://116.47.60.159:8080/api/images/' + imageName),
+                                key: ValueKey('http://116.47.60.159:8080/image/' + imageName),
                               ),
                             ),
                           )

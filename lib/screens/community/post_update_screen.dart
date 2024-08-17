@@ -45,11 +45,11 @@ class _InputScreenState extends State<PostUpdateScreen> {
     // 기존 게시글 데이터로 텍스트 필드 초기화
     _textEditingController.text = widget.post.title;
     _textEditingController2.text = widget.post.content;
-    images.addAll(widget.post.imageName.map((imageName) => ImageItem(url: 'http://116.47.60.159:8080/api/images/$imageName')));
+    images.addAll(widget.post.imageName.map((imageName) => ImageItem(url: 'http://116.47.60.159:8080/image/$imageName')));
   }
 
   Future<void> _deleteImage(List<String> fileNames) async {
-    final url = Uri.parse('${ApiUrl.baseUrl}/api/images');
+    final url = Uri.parse('${ApiUrl.baseUrl}/image');
     String? token = await readAccess();
     final response = await http.delete(
         url,

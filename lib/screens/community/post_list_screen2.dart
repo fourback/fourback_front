@@ -216,11 +216,11 @@ class _PostListScreenState2 extends State<PostListScreen2> {
                                 borderRadius: BorderRadius.circular(8.0),
                                 child: PublicImage(
                                   placeholderPath: 'assets/icons/loading.gif',
-                                  imageUrl: 'http://116.47.60.159:8080/api/images/' + posts[index].imageName[0],
+                                  imageUrl: 'http://116.47.60.159:8080/image/' + posts[index].imageName[0],
                                   width: 80,
                                   height: 80,
                                   fit: BoxFit.cover,
-                                  key: ValueKey('http://116.47.60.159:8080/api/images/' + posts[index].imageName[0]),
+                                  key: ValueKey('http://116.47.60.159:8080/image/' + posts[index].imageName[0]),
 
                                 ),
                               ),

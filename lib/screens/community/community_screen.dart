@@ -161,7 +161,6 @@ class _BoardState extends State<BoardScreen> {
             child: Container(
 
 
-
               height: 200,
               width: 341,
               decoration: BoxDecoration(
@@ -171,7 +170,6 @@ class _BoardState extends State<BoardScreen> {
               ),
               child: ListView(
                 children: [
-
                   ListTile(
                     dense: true,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 0),
