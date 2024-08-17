@@ -44,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _sendUserInfo() async {
-    final url = Uri.http(address, "user");
+    final url = Uri.http(address, "api/users");
     final response = await http.post(
       url,
       headers: {
