@@ -7,6 +7,8 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:bemajor_frontend/publicImage.dart';
 
+import '../auth.dart';
+
 class MypageScreen extends StatefulWidget {
   const MypageScreen({super.key});
 
@@ -46,15 +48,20 @@ class _MypageScreenState extends State<MypageScreen> {
 
   Future<void> fetchUserInfo() async {
     if (isLoading) return;
+    String? accessToken = await readAccess();
+
     final url = Uri.http(
-      "localhost:8080",
+      "116.47.60.159:8080",
       "user",
       {
         "username": "naver123",
       },
     );
     try {
-      final response = await http.get(url);
+      final response = await http.get(
+        url,
+        headers: {'access': '$accessToken'},
+      );
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonData = jsonDecode(response.body);
         setState(() {
@@ -90,7 +97,7 @@ class _MypageScreenState extends State<MypageScreen> {
     * multipartfile 보내는 양식으로 고쳐야 함
     * */
     final url = Uri.http(
-      "localhost:8080",
+      "116.47.60.159:8080",
       "user",
       {
         "username": "naver123",
@@ -120,14 +127,14 @@ class _MypageScreenState extends State<MypageScreen> {
 
   Future<void> logout() async {
     final url = Uri.http(
-      "localhost:8080",
+      "116.47.60.159:8080",
       "logout",
     );
     /*  ***
       access token, refresh token 없애는 로직 구현
       + 헤더에 access token, refresh token 전송해줘야 함
      */
-    final headers = {"Content-Type": "application/json"};
+    final headers = {"Content-Type": "application/json", };
     try {
       final response = await http.post(
         url,
@@ -144,11 +151,16 @@ class _MypageScreenState extends State<MypageScreen> {
   }
 
   Future<void> uploadImage(XFile image) async {
+    String? accessToken = await readAccess();
     final url = Uri.http(
-      "localhost:8080",
-      "image",
+      "116.47.60.159:8080",
+
+      "api/users/image",
+
+
     );
     var request = http.MultipartRequest('POST', url);
+    request.headers['access'] = '$accessToken';
     /*  ***
       access token, refresh token 없애는 로직 구현
       + 헤더에 access token, refresh token 전송해줘야 함
@@ -164,6 +176,7 @@ class _MypageScreenState extends State<MypageScreen> {
           userImage=responseBody;
         });
         print('upload successfully');
+        print(userImage);
       } else {
         print('Failed');
       }
@@ -173,22 +186,22 @@ class _MypageScreenState extends State<MypageScreen> {
   }
 
   Future<void> deleteImage() async {
+    String? accessToken = await readAccess();
     final url = Uri.http(
-      "localhost:8080",
-      "image",
-      {
-        "fileNames": [userImage],
-      },
+      "116.47.60.159:8080",
+
+      "api/users/image",
     );
     /*  ***
       access token, refresh token 없애는 로직 구현
       + 헤더에 access token, refresh token 전송해줘야 함
      */
-    final headers = {"Content-Type": "application/json"};
+    final headers = {"Content-Type": "application/json", 'access': '$accessToken'};
     try {
       final response = await http.delete(
         url,
         headers: headers,
+        body: jsonEncode([userImage])
       );
       if (response.statusCode == 200) {
         setState(() {
@@ -197,6 +210,7 @@ class _MypageScreenState extends State<MypageScreen> {
         });
         print('delete successfully');
       } else {
+        print("${response.body},${response.statusCode}");
         print('Failed');
       }
     } catch (e) {
@@ -240,12 +254,7 @@ class _MypageScreenState extends State<MypageScreen> {
       appBar: AppBar(
         scrolledUnderElevation: 0,
         backgroundColor: Colors.white,
-        leading: IconButton(
-          icon: Icon(Icons.navigate_before_outlined,),
-          onPressed: (){
-            Navigator.pop(context, MaterialPageRoute(builder: (context) => HomeScreen()));
-          },
-        ),
+
         title: Text('프로필',
             style: TextStyle(
               fontSize: 25,fontWeight: FontWeight.bold,
@@ -264,7 +273,7 @@ class _MypageScreenState extends State<MypageScreen> {
                       userImage != null
                           ? PublicImage(
                         imageUrl:
-                        'http://localhost:8080/image/$userImage',
+                        'http://116.47.60.159:8080/api/images/$userImage',
                         placeholderPath: 'assets/icons/loading.gif',
                         width: 80,
                         height: 80,
@@ -285,6 +294,20 @@ class _MypageScreenState extends State<MypageScreen> {
                           ),
                         ),
                       ),
+
+                      if(userImage != null)
+                        Positioned(
+                          right: 0,
+                          child: IconButton(
+                            icon: Icon(Icons.remove_circle_outline, color: Colors.red),
+                            onPressed: () {
+                              print("asdasd");
+                              deleteImage();
+                            },
+                            splashColor: Colors.transparent,
+                            highlightColor: Colors.transparent,
+                          ),
+                        ),
                       Positioned(
                         top: 140,
                         left: 140,
@@ -298,6 +321,7 @@ class _MypageScreenState extends State<MypageScreen> {
                               : Image.asset(
                             'assets/icons/x.png',
                             color: Colors.red,
+                            width: 50,
                           ),
                         ),
                       ),

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:bemajor_frontend/api_url.dart';
 import 'package:bemajor_frontend/screens/group/group_ alarm_screen.dart';
 import 'package:bemajor_frontend/screens/group/group_create_screen.dart';
+import 'package:bemajor_frontend/screens/group/group_search_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:convert';
@@ -139,7 +140,7 @@ class _GroupScreenState extends State<GroupScreen> {
                   height: screenHeight*0.05,
                   child: Center(
                     child: Text(
-                      '1개의 스터디 그룹 초대가 승인을 기다리고 있어요!', //알람 받은 스터디 그룹갯수! 3개 (alarmlength) 넣기!
+                      '3개의 스터디 그룹 초대가 승인을 기다리고 있어요!', //알람 받은 스터디 그룹갯수! 3개 (alarmlength) 넣기!
                       style: GoogleFonts.inter(
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
@@ -184,7 +185,14 @@ class _GroupScreenState extends State<GroupScreen> {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               IconButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => GroupSearchScreen(studyGroups: studyGroups),
+                    ),
+                  );
+                },
                 icon: SvgPicture.asset(
                   'assets/icons/search.svg',
                   width: 30,

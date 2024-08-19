@@ -196,12 +196,12 @@ class _PostListScreenState extends State<PostListScreen> {
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(8.0),
                                 child: PublicImage(
-                                  imageUrl: 'http://116.47.60.159:8080/image/' + posts[index].imageName[0],
+                                  imageUrl: 'http://116.47.60.159:8080/api/images/' + posts[index].imageName[0],
                                   placeholderPath: 'assets/icons/loading.gif',
                                   width: 80,
                                   height: 80,
                                   fit: BoxFit.cover,
-                                  key: ValueKey('http://116.47.60.159:8080/image/' + posts[index].imageName[0]),
+                                  key: ValueKey('http://116.47.60.159:8080/api/images/' + posts[index].imageName[0]),
                                 ),
                               ),
                             ),

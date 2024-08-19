@@ -20,6 +20,7 @@ class _GroupAlarmScreenState extends State<GroupAlarmScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+        scrolledUnderElevation: 0,
         backgroundColor: Colors.white,
         title: Text(
           "받은 스터디 그룹 초대",
@@ -30,7 +31,7 @@ class _GroupAlarmScreenState extends State<GroupAlarmScreen> {
         children: [
           Expanded(
             child: ListView.builder(
-              itemCount: 1, // This should be dynamic based on your data
+              itemCount: 3, // This should be dynamic based on your data
               itemBuilder: (context, index) {
                 return GestureDetector(
                   onTap: () {
