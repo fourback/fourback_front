@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:bemajor_frontend/api_url.dart';
+import 'package:bemajor_frontend/screens/group/group_ alarm_screen.dart';
 import 'package:bemajor_frontend/screens/group/group_create_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -108,6 +109,10 @@ class _GroupScreenState extends State<GroupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Size screenSize = MediaQuery.of(context).size;
+    double screenWidth = screenSize.width;
+    double screenHeight = screenSize.height;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: _appbarWidget(),
@@ -118,6 +123,33 @@ class _GroupScreenState extends State<GroupScreen> {
           padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
           child: Column(
             children: [
+              GestureDetector(
+                onTap: (){
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => GroupAlarmScreen()),
+                  );
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                    color: Colors.black
+                  ),
+                  width: screenWidth*0.9,
+                  height: screenHeight*0.05,
+                  child: Center(
+                    child: Text(
+                      '1개의 스터디 그룹 초대가 승인을 기다리고 있어요!', //알람 받은 스터디 그룹갯수! 3개 (alarmlength) 넣기!
+                      style: GoogleFonts.inter(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: Colors.white),
+                    ),
+                  ),
+
+                ),
+              ),
+              SizedBox(height: 10),
               _buildPageView(),
               SizedBox(height: 20),
               _buildCategoryIcons(),
