@@ -1,9 +1,9 @@
 import 'dart:io';
-
+import 'package:bemajor_frontend/screens/group/group_create_screen.dart';
 import 'package:bemajor_frontend/screens/splash_screen.dart';
 import 'package:flutter/material.dart';
-import '../screens/login_screen.dart';
 import 'package:kakao_flutter_sdk_common/kakao_flutter_sdk_common.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() async {
   // 웹 환경에서 카카오 로그인을 정상적으로 완료하려면 runApp() 호출 전 아래 메서드 호출 필요
@@ -26,6 +26,17 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+
+      ],
+      supportedLocales:  [
+        const Locale('ko', 'KR'),
+
+      ],
+      locale: const Locale('ko', 'KR'),
       debugShowCheckedModeBanner: false,
       theme: ThemeData.light().copyWith(
         primaryColor: const Color.fromARGB(255, 0, 200, 188),
@@ -36,15 +47,7 @@ class MyApp extends StatelessWidget {
       ),
       home: SplashScreen(),
 
-      //   community: const Community(
-      //       title: "asdasd",
-      //       averageAge: 20.1,
-      //       descrition: "d",
-      //       count: 10,
-      //       address: "das",
-      //       birth: "10/1",
-      //       chatRoomId: "123"),
-      // ),
+
     );
   }
 }
