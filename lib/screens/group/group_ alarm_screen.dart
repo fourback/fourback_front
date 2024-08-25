@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import '../../models/study_group_invitation.dart';
+import '../../api_url.dart';
+import '../../auth.dart';
 
 class GroupAlarmScreen extends StatefulWidget {
   const GroupAlarmScreen({super.key});
@@ -9,7 +14,104 @@ class GroupAlarmScreen extends StatefulWidget {
 }
 
 class _GroupAlarmScreenState extends State<GroupAlarmScreen> {
-  int? _selectedIndex; // Variable to keep track of the selected index
+  int? _selectedIndex;
+  List<StudyGroupInvitation> invitations = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchInvitedStudyGroups();
+  }
+
+  Future<void> _fetchInvitedStudyGroups() async {
+    try {
+      List<StudyGroupInvitation> fetchedInvitations = await fetchInvitedStudyGroups(context);
+      setState(() {
+        invitations = fetchedInvitations;
+        isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching invitations: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('초대 목록을 불러오는 중 오류가 발생했습니다.')),
+      );
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  Future<List<StudyGroupInvitation>> fetchInvitedStudyGroups(BuildContext context) async {
+    String? token = await readAccess();
+    final url = '${ApiUrl.baseUrl}/studygroup/invitations';
+
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'access': '$token',
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(utf8.decode(response.bodyBytes));
+        return data.map((json) => StudyGroupInvitation.fromJson(json)).toList();
+      } else if (response.statusCode == 401) {
+        bool success = await reissueToken(context);
+        if (success) {
+          return await fetchInvitedStudyGroups(context);
+        } else {
+          throw Exception('토큰 재발급 실패');
+        }
+      } else {
+        throw Exception('Failed to fetch invited study groups: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error: $e');
+      throw Exception('Failed to fetch invited study groups');
+    }
+  }
+
+  Future<void> acceptInvitation(BuildContext context, String invitationId) async {
+    String? token = await readAccess();
+    final url = '${ApiUrl.baseUrl}/studygroup/invitations/accept/$invitationId'; // Path Variable로 수정
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'access': '$token',
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          invitations.removeWhere((invitation) => invitation.invitationId == invitationId);
+          _selectedIndex = null;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('초대 수락이 완료되었습니다.')),
+        );
+      } else if (response.statusCode == 401) {
+        bool success = await reissueToken(context);
+        if (success) {
+          return await acceptInvitation(context, invitationId);
+        } else {
+          throw Exception('토큰 재발급 실패');
+        }
+      } else {
+        throw Exception('Failed to accept invitation: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('초대 수락에 실패했습니다.')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,20 +129,23 @@ class _GroupAlarmScreenState extends State<GroupAlarmScreen> {
           style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w600),
         ),
       ),
-      body: Column(
+      body: isLoading
+          ? Center(child: CircularProgressIndicator())
+          : invitations.isEmpty
+          ? Center(child: Text('받은 초대가 없습니다.', style: GoogleFonts.inter(fontSize: 16)))
+          : Column(
         children: [
           Expanded(
             child: ListView.builder(
-              itemCount: 3, // This should be dynamic based on your data
+              itemCount: invitations.length,
               itemBuilder: (context, index) {
                 return GestureDetector(
                   onTap: () {
                     setState(() {
-                      // Toggle selection: if the same item is clicked again, deselect it
                       if (_selectedIndex == index) {
-                        _selectedIndex = null; // Deselect if already selected
+                        _selectedIndex = null;
                       } else {
-                        _selectedIndex = index; // Select the new item
+                        _selectedIndex = index;
                       }
                     });
                   },
@@ -52,7 +157,7 @@ class _GroupAlarmScreenState extends State<GroupAlarmScreen> {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(15),
                         color: _selectedIndex == index
-                            ? Colors.blue.shade50 // Highlight selected item
+                            ? Colors.blue.shade50
                             : Colors.white,
                         boxShadow: [
                           BoxShadow(
@@ -73,9 +178,6 @@ class _GroupAlarmScreenState extends State<GroupAlarmScreen> {
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(15),
                                 child: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(15),
-                                  ),
                                   width: itemWidth * 1.8,
                                   height: itemHeight * 0.53,
                                   child: Image.asset(
@@ -92,28 +194,28 @@ class _GroupAlarmScreenState extends State<GroupAlarmScreen> {
                                 mainAxisAlignment: MainAxisAlignment.start,
                                 children: [
                                   Text(
-                                    "선릉역 모각코 모임",
+                                    invitations[index].studyName,
                                     style: GoogleFonts.inter(
                                       fontSize: 18,
                                       fontWeight: FontWeight.w600,
                                     ),
-                                  ), // 스터디 그룹 이름
+                                  ),
                                   SizedBox(height: 8),
                                   Text(
-                                    "카테고리 : 스터디",
+                                    "카테고리 : ${invitations[index].category}",
                                     style: GoogleFonts.inter(fontSize: 14),
-                                  ), // 카테고리
+                                  ),
                                   Text(
-                                    "모임 장소 : 선릉역",
+                                    "모임 장소 : ${invitations[index].studyLocation}",
                                     style: GoogleFonts.inter(fontSize: 14),
-                                  ), // 모임 장소
+                                  ),
                                   Text(
-                                    "월/수/금 12:00", // study_cycle
+                                    invitations[index].studyCycle,
                                     style: GoogleFonts.inter(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
                                     ),
-                                  ), // 시간
+                                  ),
                                 ],
                               ),
                             ),
@@ -129,8 +231,11 @@ class _GroupAlarmScreenState extends State<GroupAlarmScreen> {
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: ElevatedButton(
-              onPressed: () {
-                // 버튼 클릭 시 실행할 코드
+              onPressed: _selectedIndex == null
+                  ? null // 선택된 그룹이 없으면 버튼 비활성화
+                  : () {
+                // 초대 수락 API 호출
+                acceptInvitation(context, invitations[_selectedIndex!].invitationId.toString());
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.black,
@@ -142,9 +247,7 @@ class _GroupAlarmScreenState extends State<GroupAlarmScreen> {
               child: Text(
                 "스터디 그룹 초대 수락하기",
                 style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white),
+                    fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
               ),
             ),
           ),

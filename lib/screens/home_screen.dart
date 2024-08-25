@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -12,6 +13,7 @@ import '../../models/community.dart';
 import 'community/post_screen.dart';
 import 'community/search_screen.dart';
 import '../../models/post.dart';
+import '../fonts.dart'; // fonts.dart 파일을 import
 
 Future<String?> readJwt() async {
   final prefs = await SharedPreferences.getInstance();
@@ -169,7 +171,7 @@ PreferredSizeWidget _HomeAppbar({
       ),
     ),
     title: Container(
-      child: Text("Be전공자"),
+      child: Text("Be전공자", style: AppFonts.appBarTitle), // 폰트 스타일 적용
     ),
     actions: [
       Padding(
@@ -245,7 +247,7 @@ class _HomeBodyState extends State<_HomeBody> {
                     ),
                     child: Text(
                       'All',
-                      style: TextStyle(color: Colors.white),
+                      style: AppFonts.buttonText, // 폰트 스타일 적용
                     ),
                   ),
                 ),
@@ -262,7 +264,7 @@ class _HomeBodyState extends State<_HomeBody> {
                       ),
                       child: Text(
                         widget.boards[index].boardName,
-                        style: TextStyle(color: Colors.white),
+                        style: AppFonts.filterButton, // 폰트 스타일 적용
                       ),
                     ),
                   );
@@ -302,7 +304,7 @@ class _HomeBodyState extends State<_HomeBody> {
                             RichText(
                               text: TextSpan(
                                 text: 'Posted in ',
-                                style: DefaultTextStyle.of(context).style,
+                                style: AppFonts.subtitle, // 폰트 스타일 적용
                                 children: <TextSpan>[
                                   TextSpan(
                                     text: widget.posts[index].boardName,
@@ -331,21 +333,13 @@ class _HomeBodyState extends State<_HomeBody> {
                                       children: [
                                         Text(
                                           widget.posts[index].memberName, // 작성자 이름 표시
-                                          style: TextStyle(
-                                            fontSize: 14.0,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.black,
-                                          ),
+                                          style: AppFonts.subtitle, // 폰트 스타일 적용
                                         ),
                                       ],
                                     ),
                                     Text(
-                                      '수원대학교', // 작성자 학교 표시
-                                      style: TextStyle(
-                                        fontSize: 14.0,
-                                        fontWeight: FontWeight.normal,
-                                        color: Colors.black,
-                                      ),
+                                      '수원대학교, 컴퓨터공학과', // 작성자 학교 표시
+                                      style: AppFonts.smallText, // 폰트 스타일 적용
                                     ),
                                     SizedBox(height: 8), // 각 항목 사이의 간격 추가
                                   ],
@@ -353,11 +347,7 @@ class _HomeBodyState extends State<_HomeBody> {
                                 Spacer(), // 작성자 이름과 날짜 사이에 공간을 확장합니다.
                                 Text(
                                   widget.posts[index].postDate, // 날짜 표시 예시
-                                  style: TextStyle(
-                                    fontSize: 14.0,
-                                    fontWeight: FontWeight.normal,
-                                    color: Colors.grey,
-                                  ),
+                                  style: AppFonts.greyText, // 폰트 스타일 적용
                                 ),
                               ],
                             ),
@@ -375,17 +365,13 @@ class _HomeBodyState extends State<_HomeBody> {
                                   children: [
                                     Text(
                                       widget.posts[index].title,
-                                      style: TextStyle(
-                                        fontSize: 16.0,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                      style: AppFonts.title, // 폰트 스타일 적용
                                     ),
                                     Text(
                                       widget.posts[index].content,
-                                      maxLines: 1,
+                                      maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                     ),
-
                                   ],
                                 ),
                               ),

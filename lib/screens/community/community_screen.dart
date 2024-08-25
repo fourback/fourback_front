@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:bemajor_frontend/screens/community/post_list_screen2.dart';
 import 'package:bemajor_frontend/screens/home_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -121,9 +122,9 @@ class _BoardState extends State<BoardScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         title: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 0.0),
+          padding: const EdgeInsets.symmetric(horizontal: 8.0),
           child: Text('커뮤니티',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),),
+            style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold),),
         ),
         actions: [
           Padding(
@@ -176,7 +177,7 @@ class _BoardState extends State<BoardScreen> {
                     dense: true,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 0),
                     leading: SvgPicture.asset('assets/icons/list.svg',width: 25,height: 25,),
-                    title: Text('내가 쓴 글', style: TextStyle(fontWeight: FontWeight.normal,fontSize: 18),),
+                    title: Text('내가 쓴 글', style: GoogleFonts.inter(fontWeight: FontWeight.w600,fontSize: 18),),
                     onTap: (){
                       Navigator.push(
                       context,
@@ -188,7 +189,7 @@ class _BoardState extends State<BoardScreen> {
                     dense: true,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 0),
                     leading: SvgPicture.asset('assets/icons/chat.svg',width: 25,height: 25,),
-                    title: Text('댓글 단 글', style: TextStyle(fontWeight: FontWeight.normal,fontSize: 18),),
+                    title: Text('댓글 단 글', style: GoogleFonts.inter(fontWeight: FontWeight.w600,fontSize: 18),),
                     onTap: (){
                       Navigator.push(
                         context,
@@ -200,7 +201,7 @@ class _BoardState extends State<BoardScreen> {
                     dense: true,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 0),
                     leading: SvgPicture.asset('assets/icons/good.svg',width: 25,height: 25,),
-                    title: Text('좋아요 누른 글', style: TextStyle(fontWeight: FontWeight.normal,fontSize: 18),),
+                    title: Text('좋아요 누른 글', style: GoogleFonts.inter(fontWeight: FontWeight.w600,fontSize: 18),),
                     onTap: (){
                       Navigator.push(
                         context,
@@ -212,7 +213,7 @@ class _BoardState extends State<BoardScreen> {
                     dense: true,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 0),
                     leading: SvgPicture.asset('assets/icons/fire.svg',width: 25,height: 25,),
-                    title: Text('실시간 인기글', style: TextStyle(fontWeight: FontWeight.normal,fontSize: 18),),
+                    title: Text('실시간 인기글', style: GoogleFonts.inter(fontWeight: FontWeight.w600,fontSize: 18),),
                     onTap: (){
                       Navigator.push(
                         context,
@@ -252,8 +253,8 @@ class _BoardState extends State<BoardScreen> {
                   title: Text(
                     boards[index].boardName,
 
-                    style: TextStyle(
-                      fontWeight: FontWeight.normal,
+                    style: GoogleFonts.inter(
+                      fontWeight: FontWeight.w600,
                       fontSize: 18,
                     ),
                   ),
