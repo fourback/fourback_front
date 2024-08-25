@@ -9,6 +9,7 @@ class PublicImage extends StatefulWidget {
   final double? width;
   final double? height;
   final BoxFit fit;
+  final bool isCircular;
 
   PublicImage({
     required this.imageUrl,
@@ -16,6 +17,7 @@ class PublicImage extends StatefulWidget {
     this.width,
     this.height,
     required this.fit,
+    this.isCircular = false,
     Key? key,
   }) : super(key: key);
 
@@ -62,7 +64,7 @@ class _PublicImageState extends State<PublicImage> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Uint8List>(
+    Widget imageWidget = FutureBuilder<Uint8List>(
       future: _imageData,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -84,5 +86,10 @@ class _PublicImageState extends State<PublicImage> {
         }
       },
     );
+    if (widget.isCircular) {
+      return ClipOval(child: imageWidget);
+    } else {
+      return imageWidget;
+    }
   }
 }

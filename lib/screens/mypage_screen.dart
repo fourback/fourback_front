@@ -34,9 +34,9 @@ class _MypageScreenState extends State<MypageScreen> {
   Future<void> _pickImg() async {
     XFile? image = await _picker.pickImage(
       source: ImageSource.gallery, //위치는 갤러리
-      maxHeight: 75,
-      maxWidth: 75,
-      imageQuality: 30, // 이미지 크기 압축을 위해 퀄리티를 30으로 낮춤.
+      maxHeight: 150,
+      maxWidth: 150,
+      imageQuality: 70, // 이미지 크기 압축을 위해 퀄리티를 30으로 낮춤.
     );
     if (image != null) {
       setState(() {
@@ -275,9 +275,10 @@ class _MypageScreenState extends State<MypageScreen> {
                         imageUrl:
                         'http://116.47.60.159:8080/api/images/$userImage',
                         placeholderPath: 'assets/icons/loading.gif',
-                        width: 80,
-                        height: 80,
+                        width: 150,
+
                         fit: BoxFit.cover,
+                        isCircular: true,
                       )
                           : selectImage == null
                           ? Image.asset("assets/icons/basic_image.png")
@@ -308,6 +309,7 @@ class _MypageScreenState extends State<MypageScreen> {
                             highlightColor: Colors.transparent,
                           ),
                         ),
+
                       Positioned(
                         top: 140,
                         left: 140,
