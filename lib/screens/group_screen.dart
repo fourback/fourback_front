@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:bemajor_frontend/api_url.dart';
 import 'package:bemajor_frontend/screens/group/group_create_screen.dart';
+import 'package:bemajor_frontend/screens/study/study_inner_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:convert';
@@ -80,7 +81,8 @@ class _GroupScreenState extends State<GroupScreen> {
           print('토큰 재발급 실패');
         }
       } else {
-        print('Failed to load study groups: ${response.statusCode} ${response.body}');
+        print('Failed to load study groups: ${response.statusCode} ${response
+            .body}');
         throw Exception('Failed to load study groups');
       }
     } catch (e) {
@@ -90,7 +92,8 @@ class _GroupScreenState extends State<GroupScreen> {
   }
 
   List<StudyGroup> parseStudyGroups(String responseBody) {
-    final parsed = json.decode(utf8.decode(responseBody.codeUnits)).cast<Map<String, dynamic>>();
+    final parsed = json.decode(utf8.decode(responseBody.codeUnits)).cast<
+        Map<String, dynamic>>();
     return parsed.map<StudyGroup>((json) => StudyGroup.fromJson(json)).toList();
   }
 
@@ -101,7 +104,8 @@ class _GroupScreenState extends State<GroupScreen> {
         filteredStudyGroups = studyGroups;
       } else {
         selectedCategory = category;
-        filteredStudyGroups = studyGroups.where((group) => group.category == category).toList();
+        filteredStudyGroups =
+            studyGroups.where((group) => group.category == category).toList();
       }
     });
   }
@@ -165,7 +169,8 @@ class _GroupScreenState extends State<GroupScreen> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => GroupCreateScreen()),
+                      MaterialPageRoute(
+                          builder: (context) => GroupCreateScreen()),
                     );
                   },
                   icon: Image.asset(
@@ -183,7 +188,9 @@ class _GroupScreenState extends State<GroupScreen> {
   }
 
   Widget _buildPageView() {
-    Size screenSize = MediaQuery.of(context).size;
+    Size screenSize = MediaQuery
+        .of(context)
+        .size;
     double screenWidth = screenSize.width;
     double screenHeight = screenSize.height;
     print(screenHeight);
@@ -277,7 +284,9 @@ class _GroupScreenState extends State<GroupScreen> {
   }
 
   Widget _buildCategoryIcons() {
-    Size screenSize = MediaQuery.of(context).size;
+    Size screenSize = MediaQuery
+        .of(context)
+        .size;
     double screenWidth = screenSize.width;
     double screenHeight = screenSize.height;
     return Container(
@@ -343,7 +352,9 @@ class _GroupScreenState extends State<GroupScreen> {
   }
 
   Widget _buildStudyGroupGrid() {
-    var screenSize = MediaQuery.of(context).size;
+    var screenSize = MediaQuery
+        .of(context)
+        .size;
     var itemWidth = (screenSize.width - 20) / 2;
     var itemHeight = itemWidth * 1.5;
 
@@ -359,62 +370,74 @@ class _GroupScreenState extends State<GroupScreen> {
       ),
       itemBuilder: (context, index) {
         final studyGroup = filteredStudyGroups[index];
-        return Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Container(
-            width: itemWidth,
-            height: itemHeight,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(15),
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.2),
-                  spreadRadius: 2,
-                  blurRadius: 5,
-                  offset: Offset(0, 2),
-                )
-              ],
-            ),
-            child: Column(
-              children: [
-                Container(
-                  width: itemWidth * 0.9,
-                  height: itemHeight * 0.48,
-                  child: Image.asset("assets/icons/eximage.png",
-                      fit: BoxFit.cover),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Text(
-                        studyGroup.studyName,
-                        textAlign: TextAlign.start, // study_name
-                        style: GoogleFonts.inter(
-                            fontSize: 16, fontWeight: FontWeight.w600),
-                      ), // 스터디 그룹 이름
-                      SizedBox(height: 8),
-                      Text(
-                        "카테고리 : ${studyGroup.category}",
-                        textAlign: TextAlign.start, // category
-                        style: GoogleFonts.inter(fontSize: 14),
-                      ), // 카테고리
-                      Text(
-                        "모임 장소 : ${studyGroup.studyLocation}",
-                        style: GoogleFonts.inter(fontSize: 14),
-                      ), // 모임 장소
-                      Text(
-                        studyGroup.studyCycle, // study_cycle
-                        style: GoogleFonts.inter(
-                            fontSize: 16, fontWeight: FontWeight.w600),
-                      ), // 시간
-                    ],
+
+        return GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => StudyInnerScreen(studyGroup: studyGroup),
+              ),
+            );
+          },
+
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Container(
+              width: itemWidth,
+              height: itemHeight,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(15),
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.2),
+                    spreadRadius: 2,
+                    blurRadius: 5,
+                    offset: Offset(0, 2),
+                  )
+                ],
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    width: itemWidth * 0.9,
+                    height: itemHeight * 0.48,
+                    child: Image.asset("assets/icons/eximage.png",
+                        fit: BoxFit.cover),
                   ),
-                ),
-              ],
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Text(
+                          studyGroup.studyName,
+                          textAlign: TextAlign.start, // study_name
+                          style: GoogleFonts.inter(
+                              fontSize: 16, fontWeight: FontWeight.w600),
+                        ), // 스터디 그룹 이름
+                        SizedBox(height: 8),
+                        Text(
+                          "카테고리 : ${studyGroup.category}",
+                          textAlign: TextAlign.start, // category
+                          style: GoogleFonts.inter(fontSize: 14),
+                        ), // 카테고리
+                        Text(
+                          "모임 장소 : ${studyGroup.studyLocation}",
+                          style: GoogleFonts.inter(fontSize: 14),
+                        ), // 모임 장소
+                        Text(
+                          studyGroup.studyCycle, // study_cycle
+                          style: GoogleFonts.inter(
+                              fontSize: 16, fontWeight: FontWeight.w600),
+                        ), // 시간
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         );

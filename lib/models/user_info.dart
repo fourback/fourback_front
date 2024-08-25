@@ -18,14 +18,14 @@ class UserInfo {
         required this.techStack});
 
   final String userName;
-  final String email;
-  final String birth;
-  final String belong;
-  final String department;
-  final String hobby;
-  final String objective;
-  final String address;
-  final String techStack;
+  final String? email;
+  final String? birth;
+  final String? belong;
+  final String? department;
+  final String? hobby;
+  final String? objective;
+  final String? address;
+  final String? techStack;
 
   factory UserInfo.fromJson(Map<String, dynamic> json) {
     return UserInfo(
