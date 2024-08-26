@@ -3,7 +3,7 @@ import 'package:bemajor_frontend/api_url.dart';
 import 'package:bemajor_frontend/screens/group/group_chat_screen.dart';
 import 'package:bemajor_frontend/screens/group/group_create_screen.dart';
 import 'package:bemajor_frontend/screens/group/group_search_screen.dart';
-import 'group/group_ alarm_screen.dart';
+import 'package:bemajor_frontend/screens/group/group_ alarm_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:convert';
@@ -30,28 +30,27 @@ class _GroupScreenState extends State<GroupScreen> {
   @override
   void initState() {
     super.initState();
-    fetchStudyGroups().then((_) {
-      fetchInvitationCount().then((count) {
-        setState(() {
-          invitationCount = count; // 초대 개수 업데이트
-        });
-      });
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        timer = Timer.periodic(Duration(seconds: 5), (timer) {
-          if (!mounted || !controller.hasClients) return;
+    _fetchInitialData();
+  }
 
-          int currentPage = controller.page?.toInt() ?? 0;
-          int nextPage = currentPage + 1;
+  Future<void> _fetchInitialData() async {
+    await fetchStudyGroups();
+    await fetchInvitationCount();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      timer = Timer.periodic(Duration(seconds: 5), (timer) {
+        if (!mounted || !controller.hasClients) return;
 
-          if (nextPage > 3) {
-            nextPage = 0;
-          }
-          controller.animateToPage(
-            nextPage,
-            duration: Duration(milliseconds: 500),
-            curve: Curves.linear,
-          );
-        });
+        int currentPage = controller.page?.toInt() ?? 0;
+        int nextPage = currentPage + 1;
+
+        if (nextPage > 3) {
+          nextPage = 0;
+        }
+        controller.animateToPage(
+          nextPage,
+          duration: Duration(milliseconds: 500),
+          curve: Curves.linear,
+        );
       });
     });
   }
@@ -146,6 +145,9 @@ class _GroupScreenState extends State<GroupScreen> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        setState(() {
+          invitationCount = data['invitationCount']; // 초대 개수 업데이트
+        });
         return data['invitationCount']; // 백엔드에서 invitationCount 값을 반환
       } else if (response.statusCode == 401) {
         bool success = await reissueToken(context);
@@ -182,6 +184,12 @@ class _GroupScreenState extends State<GroupScreen> {
     });
   }
 
+  Future<void> _refreshData() async {
+    // 데이터를 다시 불러옵니다.
+    await fetchStudyGroups();
+    await fetchInvitationCount();
+  }
+
   @override
   Widget build(BuildContext context) {
     Size screenSize = MediaQuery.of(context).size;
@@ -191,46 +199,50 @@ class _GroupScreenState extends State<GroupScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: _appbarWidget(),
-      body: studyGroups.isEmpty
-          ? Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
-          child: Column(
-            children: [
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => GroupAlarmScreen()),
-                  );
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    color: Colors.black,
-                  ),
-                  width: screenWidth * 0.9,
-                  height: screenHeight * 0.05,
-                  child: Center(
-                    child: Text(
-                      '$invitationCount개의 스터디 그룹 초대가 승인을 기다리고 있어요!',
-                      style: GoogleFonts.inter(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                        color: Colors.white,
+      body: RefreshIndicator(
+        onRefresh: _refreshData, // 당겨서 새로고침
+        child: studyGroups.isEmpty
+            ? Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
+          physics: AlwaysScrollableScrollPhysics(),
+          child: Padding(
+            padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+            child: Column(
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => GroupAlarmScreen()),
+                    );
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      color: Colors.black,
+                    ),
+                    width: screenWidth * 0.9,
+                    height: screenHeight * 0.05,
+                    child: Center(
+                      child: Text(
+                        '$invitationCount개의 스터디 그룹 초대가 승인을 기다리고 있어요!',
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              SizedBox(height: 10),
-              _buildPageView(),
-              SizedBox(height: 20),
-              _buildCategoryIcons(),
-              SizedBox(height: 20),
-              _buildStudyGroupGrid(),
-            ],
+                SizedBox(height: 10),
+                _buildPageView(),
+                SizedBox(height: 20),
+                _buildCategoryIcons(),
+                SizedBox(height: 20),
+                _buildStudyGroupGrid(),
+              ],
+            ),
           ),
         ),
       ),
@@ -249,7 +261,9 @@ class _GroupScreenState extends State<GroupScreen> {
             width: 28,
             height: 28,
           ),
-          onPressed: () {}, // 미정
+          onPressed: () async {
+            await _refreshData(); // 로고 버튼을 눌렀을 때 새로고침
+          },
         ),
       ),
       actions: [
@@ -279,7 +293,7 @@ class _GroupScreenState extends State<GroupScreen> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => GroupChatScreen()),
+                      MaterialPageRoute(builder: (context) => GroupCreateScreen()),
                     );
                   },
                   icon: Image.asset(
