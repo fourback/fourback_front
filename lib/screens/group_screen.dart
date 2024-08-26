@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'package:bemajor_frontend/api_url.dart';
-import 'group/group_ alarm_screen.dart';
+import 'package:bemajor_frontend/screens/group/group_chat_screen.dart';
 import 'package:bemajor_frontend/screens/group/group_create_screen.dart';
 import 'package:bemajor_frontend/screens/group/group_search_screen.dart';
+import 'group/group_ alarm_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:convert';
@@ -96,6 +97,40 @@ class _GroupScreenState extends State<GroupScreen> {
     }
   }
 
+  Future<void> fetchMyStudyGroups() async {
+    String? token = await readAccess();
+    final url = '${ApiUrl.baseUrl}/studygroup/mygroups';
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'access': '$token',
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          filteredStudyGroups = parseStudyGroups(response.body);
+          selectedCategory = "내 그룹"; // 선택된 카테고리 상태 업데이트
+        });
+      } else if (response.statusCode == 401) {
+        bool success = await reissueToken(context);
+        if (success) {
+          await fetchMyStudyGroups();
+        } else {
+          print('토큰 재발급 실패');
+        }
+      } else {
+        print('Failed to load my study groups: ${response.statusCode} ${response.body}');
+        throw Exception('Failed to load my study groups');
+      }
+    } catch (e) {
+      print('Error: $e');
+      throw Exception('Failed to load my study groups');
+    }
+  }
+
   Future<int> fetchInvitationCount() async {
     String? token = await readAccess();
     final url = '${ApiUrl.baseUrl}/studygroup/invitation/count';
@@ -140,7 +175,9 @@ class _GroupScreenState extends State<GroupScreen> {
         filteredStudyGroups = studyGroups;
       } else {
         selectedCategory = category;
-        filteredStudyGroups = studyGroups.where((group) => group.category == category).toList();
+        if (category != "내 그룹") {
+          filteredStudyGroups = studyGroups.where((group) => group.category == category).toList();
+        }
       }
     });
   }
@@ -242,7 +279,7 @@ class _GroupScreenState extends State<GroupScreen> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => GroupCreateScreen()),
+                      MaterialPageRoute(builder: (context) => GroupChatScreen()),
                     );
                   },
                   icon: Image.asset(
@@ -389,7 +426,13 @@ class _GroupScreenState extends State<GroupScreen> {
   Widget _buildIconColumn(String assetPath, String label, String category) {
     bool isSelected = selectedCategory == category;
     return GestureDetector(
-      onTap: () => filterStudyGroups(category),
+      onTap: () {
+        if (category == "내 그룹") {
+          fetchMyStudyGroups(); // 내 그룹 API 호출
+        } else {
+          filterStudyGroups(category); // 기존 카테고리 필터링
+        }
+      },
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
