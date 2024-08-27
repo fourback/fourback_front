@@ -3,6 +3,7 @@ import 'package:bemajor_frontend/api_url.dart';
 import 'package:bemajor_frontend/screens/group/group_ alarm_screen.dart';
 import 'package:bemajor_frontend/screens/group/group_create_screen.dart';
 import 'package:bemajor_frontend/screens/group/group_search_screen.dart';
+import 'package:bemajor_frontend/screens/study/study_inner_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:convert';
@@ -263,7 +264,7 @@ class _GroupScreenState extends State<GroupScreen> {
           ),
           onPressed: () async {
             await _refreshData(); // 로고 버튼을 눌렀을 때 새로고침
-          }, // 미정
+          },
         ),
       ),
       actions: [
@@ -439,7 +440,7 @@ class _GroupScreenState extends State<GroupScreen> {
   Widget _buildIconColumn(String assetPath, String label, String category) {
     bool isSelected = selectedCategory == category;
     return GestureDetector(
-      nTap: () {
+      onTap: () {
         if (category == "내 그룹") {
           fetchMyStudyGroups(); // 내 그룹 API 호출
         } else {
@@ -493,8 +494,18 @@ class _GroupScreenState extends State<GroupScreen> {
       ),
       itemBuilder: (context, index) {
         final studyGroup = filteredStudyGroups[index];
-        return Padding(
-          padding: const EdgeInsets.all(8.0),
+        return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => StudyInnerScreen(studyGroup: studyGroup),
+                ),
+              );
+            },
+
+        child: Padding(
+        padding: const EdgeInsets.all(8.0),
           child: Container(
             width: itemWidth,
             height: itemHeight,
@@ -551,6 +562,7 @@ class _GroupScreenState extends State<GroupScreen> {
               ],
             ),
           ),
+        )
         );
       },
     );
