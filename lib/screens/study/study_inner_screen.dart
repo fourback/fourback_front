@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:bemajor_frontend/models/user_info.dart';
+import 'package:bemajor_frontend/screens/group/group_chat_screen.dart';
 import 'package:bemajor_frontend/screens/group_screen.dart';
 import 'package:bemajor_frontend/screens/study/study_invitation_screen.dart';
 import 'package:bemajor_frontend/screens/study/study_schedule_screen.dart';
@@ -114,7 +115,9 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
         padding: const EdgeInsets.only(right: 8.0),
         child: IconButton(
           icon: Icon(Icons.navigate_before_outlined,),
-          onPressed: () => onLogoPressed(),
+          onPressed: () {
+            Navigator.pop(context);
+          }
         ),
       ),
       title: Container(
@@ -616,6 +619,11 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
     widgets.add(
       GestureDetector(
         onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => GroupChatScreen()),
+          );
+
           // 그룹 톡 관련 기능 구현
         },
         child: Container(

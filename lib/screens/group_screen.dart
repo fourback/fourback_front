@@ -4,6 +4,7 @@ import 'package:bemajor_frontend/screens/group/group_ alarm_screen.dart';
 import 'package:bemajor_frontend/screens/group/group_create_screen.dart';
 import 'package:bemajor_frontend/screens/group/group_search_screen.dart';
 import 'package:bemajor_frontend/screens/study/study_inner_screen.dart';
+import 'package:bemajor_frontend/screens/group/group_chat_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:convert';
@@ -297,7 +298,7 @@ class _GroupScreenState extends State<GroupScreen> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => GroupChatScreen()),
+                      MaterialPageRoute(builder: (context) => GroupCreateScreen()),
                     );
                   },
                   icon: Image.asset(

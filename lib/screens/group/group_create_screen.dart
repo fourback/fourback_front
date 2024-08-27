@@ -55,7 +55,7 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
           'teamSize': maxMembers,
           'startDate': selectedDateRange!.start.toIso8601String(),
           'endDate': selectedDateRange!.end.toIso8601String(),
-          'studySchedule': '',
+          'studySchedule': [],
         }),
       );
 
