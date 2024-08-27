@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -7,8 +9,10 @@ import 'package:stomp_dart_client/stomp.dart';
 import 'package:stomp_dart_client/stomp_frame.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'dart:convert';
+import 'package:intl/intl.dart';
 
 import '../../auth.dart';
+import '../../chat_database_helper.dart';
 
 class GroupChatScreen extends StatefulWidget {
 
@@ -20,15 +24,63 @@ class GroupChatScreen extends StatefulWidget {
 }
 
 class _GroupChatScreenState extends State<GroupChatScreen> {
+  final ScrollController _scrollController = ScrollController();
   StompClient? stompClient;
-  final List<ChatMessage> _messages = [];
+  List<ChatMessage> _messages = [];
   final TextEditingController _controller = TextEditingController();
   late WebSocketChannel _channel;
+  StreamSubscription? _chatSubscription;
 
   @override
   void initState() {
     super.initState();
+
+    _loadMessages();
     _connectWebSocket();
+  }
+
+  String formatTime(String isoString) {
+    DateTime dateTime = DateTime.parse(isoString);
+    String formattedTime = DateFormat('a hh:mm').format(dateTime); // "a hh:mm"은 "오전/오후 00:00" 형식
+    return formattedTime.replaceFirst('AM', '오전').replaceFirst('PM', '오후'); // "AM" -> "오전", "PM" -> "오후"
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _chatSubscription?.cancel(); // 화면이 종료될 때 리스너를 해제합니다.
+    _channel.sink.close(); // WebSocket 연결 닫기
+    super.dispose();
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    });
+  }
+
+  void _loadMessages() async {
+    String? accessToken = await readAccess();
+    Map<String, dynamic> decodedToken = JwtDecoder.decode(accessToken!);
+    int userId = decodedToken['userId'];// 사용자 ID 가져오기
+
+    List<Map<String, dynamic>> savedMessages = await ChatDatabaseHelper().getMessages();
+    setState(() {
+      _messages = savedMessages.map((message) {
+        // 데이터베이스에서 가져온 각 메시지 맵을 ChatMessage 객체로 변환
+        return ChatMessage(
+          sender: message['sender'],
+          text: message['message'],
+          time: message['timestamp'], // 저장된 시간을 그대로 사용
+          studyGroupName: message['studyGroupName'] ?? 'Unknown Group', // studyGroupName이 없을 경우 기본값 사용
+          isMine: message['userId'] == userId, // 사용자 본인 여부 판단
+        );
+      }).toList();
+    });
   }
 
   Future<void> _connectWebSocket() async {
@@ -48,22 +100,33 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       );
 
 
+
       // 수신된 메시지를 처리합니다.
-      _channel.stream.listen((message) {
+      _channel.stream.listen((message) async {
         print("WebSocket 연결 성공!");
         final decodedMessage = jsonDecode(message);
+        print("sdfsdfsdfdsf ${decodedMessage['sendTime']}");
         int senderId = decodedMessage['senderId'];
         print("$senderId");
+        await ChatDatabaseHelper().insertMessage({
+          'groupId': 1, // 그룹 ID
+          'userId': senderId, // 발신자 ID
+          'sender': decodedMessage['senderName'], // 발신자 이름
+          'message': decodedMessage['content'], // 메시지 내용
+          'timestamp': DateTime.now().toIso8601String(), // 현재 시간을 저장
+        });
         setState(() {
           _messages.add(ChatMessage(
             sender: decodedMessage['senderName'],
             text: decodedMessage['content'],
-            time: "몇시",
+            time: "hi",
             studyGroupName: decodedMessage['studyGroupName'] ?? 'Unknown Group',
-            isMine: senderId != userId,
+            isMine: senderId == userId,
             // 사용자 본인 여부 판단
           ));
+
         });
+        _scrollToBottom();
       }, onError: (error) {
         print("WebSocket 연결 실패: $error");
       },
@@ -75,11 +138,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     } catch (e) {
       print("WebSocket 연결 중 예외 발생: $e");
     }
-
-
-
-
-
 
 
   }
@@ -106,39 +164,12 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     _controller.clear();
   }
 
-
-  final List<ChatMessage> messages = const [
-    ChatMessage(
-      sender: '김민재',
-      text: '감사합니다!',
-      time: '09:25 AM',
-      isMine: false, studyGroupName: '',
-    ),
-    ChatMessage(
-      sender: '손홍민',
-      text: '디자인 이거 어때요?',
-      time: '09:25 AM',
-      isMine: false,
-      image: 'assets/icons/ex1.png', studyGroupName: '', // 이미지 경로
-    ),
-    ChatMessage(
-      sender: '김연아',
-      text: '좋아요',
-      time: '09:25 AM',
-      isMine: false, studyGroupName: '',
-    ),
-    ChatMessage(
-      sender: '나',
-      text: 'ㅇㅇ 꽤 괜찮',
-      time: '09:25 AM',
-      isMine: true, studyGroupName: '',
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
+        scrolledUnderElevation: 0,
         backgroundColor: Colors.white,
         title: const Text('선릉역 모각코 모임'),
         leading: IconButton(
@@ -150,13 +181,24 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       body: Column(
         children: [
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(8.0),
-              itemCount: _messages.length,
-              itemBuilder: (context, index) {
-                final message = _messages[index];
-                return ChatMessageWidget(message: message);
+            child: GestureDetector(
+              onTap: () {
+                FocusScope.of(context).unfocus(); // <-- 가상 키보드 숨기기
               },
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  reverse: true,
+                  controller: _scrollController,
+                  padding: const EdgeInsets.all(8.0),
+                  itemCount: _messages.length,
+                  itemBuilder: (context, index) {
+                    final message = _messages[_messages.length - 1 - index];
+                    return ChatMessageWidget(message: message);
+                  },
+                ),
+              ),
             ),
           ),
           const Divider(
