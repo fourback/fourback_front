@@ -32,7 +32,7 @@ class _StudyInvitationScreenState extends State<StudyInvitationScreen> {
     String? token = await readAccess();
 
     final response = await http.get(
-      Uri.parse('${ApiUrl.baseUrl}/api/users/email?email=${addUserController.text}'),
+      Uri.parse('${ApiUrl.baseUrl}/api/users/${addUserController.text}'),
       headers: {'access': '$token'},
         );
 
