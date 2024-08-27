@@ -73,11 +73,14 @@ class _GroupScreenState extends State<GroupScreen> {
           'Content-Type': 'application/json; charset=UTF-8',
         },
       );
+      print(response.body);
+      
 
       if (response.statusCode == 200) {
         setState(() {
           studyGroups = parseStudyGroups(response.body);
           filteredStudyGroups = studyGroups;
+          
         });
       } else if (response.statusCode == 401) {
         bool success = await reissueToken(context);
@@ -293,7 +296,7 @@ class _GroupScreenState extends State<GroupScreen> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => GroupCreateScreen()),
+                      MaterialPageRoute(builder: (context) => GroupChatScreen()),
                     );
                   },
                   icon: Image.asset(

@@ -174,7 +174,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         title: const Text('선릉역 모각코 모임'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () {},
+          onPressed: () {
+            Navigator.pop(context);
+          },
         ),
       ),
       backgroundColor: Colors.white,
