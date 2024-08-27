@@ -32,7 +32,7 @@ class _StudyInvitationScreenState extends State<StudyInvitationScreen> {
     String? token = await readAccess();
 
     final response = await http.get(
-      Uri.parse('${ApiUrl.baseUrl}/user/email?email=${addUserController.text}'),
+      Uri.parse('${ApiUrl.baseUrl}/api/users/email?email=${addUserController.text}'),
       headers: {'access': '$token'},
         );
 
@@ -43,13 +43,18 @@ class _StudyInvitationScreenState extends State<StudyInvitationScreen> {
       });
     }
   }
-
   Future<void> InviteUser() async {
     String? token = await readAccess();
 
-    // 초대 함수 넣어야함
-  }
+    final response = await http.post(
+      Uri.parse('${ApiUrl.baseUrl}/studygroup/${widget.studyGroup.id}/invitations/${user?.userId}'),
+      headers: {'access': '$token'},
+    );
 
+    if (response.statusCode == 200) {
+      print("초대성공");
+      };
+    }
 
   @override
   Widget build(BuildContext context) {
@@ -81,7 +86,9 @@ class _StudyInvitationScreenState extends State<StudyInvitationScreen> {
         padding: const EdgeInsets.only(right: 8.0),
         child: IconButton(
           icon: Icon(Icons.navigate_before_outlined,),
-          onPressed: () => onLogoPressed(),
+            onPressed: () {
+              Navigator.pop(context);
+            }
         ),
       ),
       title: Container(

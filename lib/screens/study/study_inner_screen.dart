@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:bemajor_frontend/models/user_info.dart';
+import 'package:bemajor_frontend/screens/group_screen.dart';
 import 'package:bemajor_frontend/screens/study/study_invitation_screen.dart';
 import 'package:bemajor_frontend/screens/study/study_schedule_screen.dart';
 import 'package:flutter/material.dart';
@@ -37,31 +38,50 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
     fetchStudys();
   }
 
-   Future<void> fetchStudys() async {
-     String? token = await readAccess();
-  //
-  //   final response = await http.get(
-  //     Uri.parse('${ApiUrl.baseUrl}/studygroup'),
-  //     headers: {'access': '$token'},
-  //   );
-  //
-  //   if (response.statusCode == 200) {
-  //     final List<dynamic> jsonMap = jsonDecode(response.body);
-  //
-  //     curruntStudyGroup = jsonMap[0];
-  //
-      final response = await http.get(
-        Uri.parse('${ApiUrl.baseUrl}/studygroup/members/${widget.studyGroup.id}'),
-        headers: {'access': '$token'},
-      );
+  Future<void> _navigateToStudyScheduleScreen() async {
+    // 계획 수정 화면으로 이동하고, 결과를 기다림
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => StudyScheduleScreen(studyGroup: widget.studyGroup),
+      ),
+    );
 
-      if (response.statusCode == 200) {
-        final List<dynamic> jsonMap2 = jsonDecode(utf8.decode(response.bodyBytes));
-        setState(() {
-          user = jsonMap2.map((data) => UserInfo.fromJson(data)).toList();
-        });
-      }
+    // 돌아오면 화면을 갱신하기 위해 fetchStudys 호출
+    fetchStudys();
+  }
+
+
+  Future<void> fetchStudys() async {
+    String? token = await readAccess();
+    final response = await http.get(
+      Uri.parse('${ApiUrl.baseUrl}/studygroup/members/${widget.studyGroup.id}'),
+      headers: {'access': '$token'},
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> jsonMap2 = jsonDecode(utf8.decode(response.bodyBytes));
+      setState(() {
+        user = jsonMap2.map((data) => UserInfo.fromJson(data)).toList();
+      });
     }
+  }
+
+  Future<void> deleteStudys() async {
+    String? token = await readAccess();
+    final response = await http.delete(
+      Uri.parse('${ApiUrl.baseUrl}/studygroup/${widget.studyGroup.id}'),
+      headers: {'access': '$token'},
+    );
+
+    if (response.statusCode == 200) {
+      Navigator.push(context, MaterialPageRoute(builder: (context) => GroupScreen()));
+    }
+  }
+
+  Future<void> updateStudys() async {
+
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -104,13 +124,42 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
           padding: const EdgeInsets.only(left: 8.0),
           child: PopupMenuButton<String>(
             onSelected: (String value) {
-              // 선택된 값을 처리하는 코드
+              if (value == 'delete') {
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: Text('삭제 확인'),
+                      content: Text('정말로 삭제하시겠습니까?'),
+                      actions: <Widget>[
+                        TextButton(
+                          child: Text('아니오'),
+                          onPressed: () {
+                            Navigator.of(context).pop(); // 다이얼로그 닫기
+                          },
+                        ),
+                        TextButton(
+                          child: Text('예'),
+                          onPressed: () {
+                            deleteStudys();
+                            Navigator.of(context).pop(); // 다이얼로그 닫기
+                          },
+                        ),
+                      ],
+                    );
+                  },
+                );
+              }
             },
             itemBuilder: (BuildContext context) {
               return [
                 PopupMenuItem<String>(
                   value: 'delete',
-                  child: Text('삭제'), // 대댓글 삭제 액션
+                  child: Text('삭제'),
+                ),
+                PopupMenuItem<String>(
+                  value: 'update',
+                  child: Text('수정'),
                 ),
               ];
             },
@@ -140,7 +189,7 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
               margin: EdgeInsets.all(3),
               padding: EdgeInsets.all(3),
               child: Text(
-                '스터디 멤버',
+                '그룹 멤버',
                 style: const TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
               ),
             ),
@@ -176,21 +225,21 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
               ),
             ),
             GestureDetector(
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => StudyInvitationScreen(studyGroup: widget.studyGroup)));
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.all(10),
-                    height: 50,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(15), //모서리를 둥글게
-                      border: Border.all(color: Colors.black12, width: 3),
-                      color: Colors.black,
-                    ),
-                    child: Text('구성원 초대하기', style: const TextStyle(fontSize: 15, color: Colors.white)),
-                  )
-              ),
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => StudyInvitationScreen(studyGroup: widget.studyGroup)));
+                },
+                child: Container(
+                  margin: const EdgeInsets.all(10),
+                  height: 50,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15), //모서리를 둥글게
+                    border: Border.all(color: Colors.black12, width: 3),
+                    color: Colors.black,
+                  ),
+                  child: Text('구성원 초대하기', style: const TextStyle(fontSize: 15, color: Colors.white)),
+                )
+            ),
 
           ],
         ),
@@ -209,7 +258,7 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
             ),
             child: GestureDetector(
               child: Text(
-                '스터디 규칙 ▽',
+                '그룹 규칙 ▽',
                 style: const TextStyle(
                     fontSize: 25, fontWeight: FontWeight.bold),
               ),
@@ -238,7 +287,7 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
                     Container(
                       margin: const EdgeInsets.all(10),
                       child: Text(
-                        '스터디 규칙 ▲',
+                        '그룹 규칙 ▲',
                         style: const TextStyle(
                             fontSize: 25, fontWeight: FontWeight.bold),
                       ),
@@ -275,7 +324,7 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
               ),
               child: GestureDetector(
                 child: Text(
-                  '스터디 기간 ▽',
+                  '그룹 기간 ▽',
                   style: const TextStyle(
                       fontSize: 25, fontWeight: FontWeight.bold),
                 ),
@@ -304,7 +353,7 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
                     Container(
                       margin: const EdgeInsets.all(10),
                       child: Text(
-                        '스터디 기간 ▲',
+                        '그룹 기간 ▲',
                         style: const TextStyle(
                             fontSize: 25, fontWeight: FontWeight.bold),
                       ),
@@ -488,77 +537,92 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
     }
     else if(isStudySchedule == true) {
       widgets.add(
-          Column(
-              children: [
-                Container(
-                    margin: const EdgeInsets.all(10),
-                    height: widget.studyGroup.studySchedule.length * 65 + 65,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(15), //모서리를 둥글게
-                      border: Border.all(color: Colors.black12, width: 3),
-                    ),
-                    child: GestureDetector(
-                      child: Column(
-                        children: [
-                          Container(
-                            margin: const EdgeInsets.all(10),
-                            child: Text(
-                              '스터디 계획 ▲',
-                              style: const TextStyle(
-                                  fontSize: 25, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: List.generate(widget.studyGroup.studySchedule.length,(index) {
-                              return Container(
-                                  margin: EdgeInsets.all(3), padding: EdgeInsets.all(3),
-                                  child: Text('ㆍ' + widget.studyGroup.studySchedule[index], style: const TextStyle(fontSize: 25))
-                              );
-                            }),
-                          ),
-                        ],
-                      ),
-                      onTap: () {
-                        setState(() {
-                          isStudySchedule = false;
-                        });
-                      },
-                    )
-                ),
-                GestureDetector(
-                    onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => StudyScheduleScreen(studyGroup: widget.studyGroup)));
-                    },
-                    child: Container(
+        Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.all(10),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(15), // 모서리를 둥글게
+                border: Border.all(color: Colors.black12, width: 3),
+              ),
+              child: GestureDetector(
+                child: Column(
+                  children: [
+                    Container(
                       margin: const EdgeInsets.all(10),
-                      height: 50,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(15), //모서리를 둥글게
-                        border: Border.all(color: Colors.black12, width: 3),
-                        color: Colors.black,
+                      child: Text(
+                        '스터디 계획 ▲',
+                        style: const TextStyle(
+                          fontSize: 25,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                      child: Text('스터디 계획 수정하기', style: const TextStyle(fontSize: 15, color: Colors.white)),
-                    )
+                    ),
+                    Container(
+                      margin: const EdgeInsets.fromLTRB(10, 0, 10, 10), // 바깥쪽 상자와의 간격 조정
+                      padding: const EdgeInsets.fromLTRB(140, 10, 140, 10), // 전체 컨텐츠의 내부 여백
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(15), // 모서리를 둥글게
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: List.generate(widget.studyGroup.studySchedule.length, (index) {
+                          return Container(
+                            margin: const EdgeInsets.symmetric(vertical: 5), // 각 항목 간의 간격
+                            child: Text(
+                              'ㆍ' + widget.studyGroup.studySchedule[index],
+                              style: const TextStyle(fontSize: 18),
+                              softWrap: true,  // 텍스트 줄 바꿈 허용
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+                  ],
                 ),
-                Container(
-                  margin: const EdgeInsets.all(10),
-                  height: 50,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(15), //모서리를 둥글게
-                    border: Border.all(color: Colors.black12, width: 3),
-                    color: Colors.black,
-                  ),
-                  child: Text('그룹 톡', style: const TextStyle(fontSize: 15, color: Colors.white)),
+                onTap: () {
+                  setState(() {
+                    isStudySchedule = false;
+                  });
+                },
+              ),
+            ),
+            GestureDetector(
+              onTap: _navigateToStudyScheduleScreen,  // 함수 호출
+              child: Container(
+                margin: const EdgeInsets.all(10),
+                height: 50,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(color: Colors.black12, width: 3),
+                  color: Colors.black,
                 ),
-              ]
-          )
+                child: Text(
+                  '스터디 계획 수정하기',
+                  style: const TextStyle(fontSize: 15, color: Colors.white),
+                ),
+              ),
+            ),
+            Container(
+              margin: const EdgeInsets.all(10),
+              height: 50,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(15), // 모서리를 둥글게
+                border: Border.all(color: Colors.black12, width: 3),
+                color: Colors.black,
+              ),
+              child: Text('그룹 톡', style: const TextStyle(fontSize: 15, color: Colors.white)),
+            ),
+          ],
+        ),
       );
     }
+
+
 
     return widgets;
   }
