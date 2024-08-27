@@ -56,10 +56,6 @@ class _LoginScreenState extends State<LoginScreen> {
         },
       ),
     );
-
-
-
-
         userID = response.headers['access'];
         refresh = response.headers['refresh'];
         print("userID " + userID!);

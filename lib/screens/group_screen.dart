@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:bemajor_frontend/api_url.dart';
-import 'package:bemajor_frontend/screens/group/group_chat_screen.dart';
+import 'package:bemajor_frontend/screens/group/group_ alarm_screen.dart';
 import 'package:bemajor_frontend/screens/group/group_create_screen.dart';
 import 'package:bemajor_frontend/screens/group/group_search_screen.dart';
-import 'package:bemajor_frontend/screens/group/group_ alarm_screen.dart';
+import 'package:bemajor_frontend/screens/study/study_inner_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:convert';
@@ -25,7 +25,7 @@ class _GroupScreenState extends State<GroupScreen> {
   List<StudyGroup> studyGroups = [];
   List<StudyGroup> filteredStudyGroups = [];
   String selectedCategory = "All";
-  int invitationCount = 0; // 초대받은 스터디 그룹 개수
+  int invitationCount = 0;
 
   @override
   void initState() {
@@ -65,6 +65,7 @@ class _GroupScreenState extends State<GroupScreen> {
   Future<void> fetchStudyGroups() async {
     String? token = await readAccess();
     final url = '${ApiUrl.baseUrl}/studygroup';
+    print('Fetching study groups from $url'); // 로깅 추가
     try {
       final response = await http.get(
         Uri.parse(url),
@@ -168,6 +169,7 @@ class _GroupScreenState extends State<GroupScreen> {
     }
   }
 
+
   List<StudyGroup> parseStudyGroups(String responseBody) {
     final parsed = json.decode(utf8.decode(responseBody.codeUnits)).cast<Map<String, dynamic>>();
     return parsed.map<StudyGroup>((json) => StudyGroup.fromJson(json)).toList();
@@ -186,7 +188,6 @@ class _GroupScreenState extends State<GroupScreen> {
       }
     });
   }
-
   Future<void> _refreshData() async {
     // 데이터를 다시 불러옵니다.
     await fetchStudyGroups();
@@ -339,7 +340,7 @@ class _GroupScreenState extends State<GroupScreen> {
         Align(
           alignment: Alignment.centerLeft,
           child: Container(
-            width: screenWidth * 0.5,
+            width: screenWidth * 0.5, // 절반의 너비
             height: screenHeight * 0.24,
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.9),
@@ -397,9 +398,9 @@ class _GroupScreenState extends State<GroupScreen> {
           right: 0,
           child: Center(
             child: SmoothPageIndicator(
-              controller: controller,
+              controller: controller, // PageController
               count: 4,
-              effect: ExpandingDotsEffect(),
+              effect: ExpandingDotsEffect(), // 점의 애니메이션 효과
             ),
           ),
         ),
@@ -411,7 +412,6 @@ class _GroupScreenState extends State<GroupScreen> {
     Size screenSize = MediaQuery.of(context).size;
     double screenWidth = screenSize.width;
     double screenHeight = screenSize.height;
-
     return Container(
       width: screenWidth * 0.98,
       height: screenHeight * 0.1,
@@ -423,7 +423,7 @@ class _GroupScreenState extends State<GroupScreen> {
             color: Colors.grey.withOpacity(0.2),
             spreadRadius: 2,
             blurRadius: 5,
-            offset: Offset(0, 2),
+            offset: Offset(0, 2), // changes position of shadow
           ),
         ],
       ),
@@ -497,8 +497,18 @@ class _GroupScreenState extends State<GroupScreen> {
       ),
       itemBuilder: (context, index) {
         final studyGroup = filteredStudyGroups[index];
-        return Padding(
-          padding: const EdgeInsets.all(8.0),
+        return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => StudyInnerScreen(studyGroup: studyGroup),
+                ),
+              );
+            },
+
+        child: Padding(
+        padding: const EdgeInsets.all(8.0),
           child: Container(
             width: itemWidth,
             height: itemHeight,
@@ -530,31 +540,32 @@ class _GroupScreenState extends State<GroupScreen> {
                     children: [
                       Text(
                         studyGroup.studyName,
-                        textAlign: TextAlign.start,
+                        textAlign: TextAlign.start, // study_name
                         style: GoogleFonts.inter(
                             fontSize: 16, fontWeight: FontWeight.w600),
-                      ),
+                      ), // 스터디 그룹 이름
                       SizedBox(height: 8),
                       Text(
                         "카테고리 : ${studyGroup.category}",
-                        textAlign: TextAlign.start,
+                        textAlign: TextAlign.start, // category
                         style: GoogleFonts.inter(fontSize: 14),
-                      ),
+                      ), // 카테고리
                       Text(
                         "모임 장소 : ${studyGroup.studyLocation}",
                         style: GoogleFonts.inter(fontSize: 14),
-                      ),
+                      ), // 모임 장소
                       Text(
-                        studyGroup.studyCycle,
+                        studyGroup.studyCycle, // study_cycle
                         style: GoogleFonts.inter(
                             fontSize: 16, fontWeight: FontWeight.w600),
-                      ),
+                      ), // 시간
                     ],
                   ),
                 ),
               ],
             ),
           ),
+        )
         );
       },
     );
