@@ -55,7 +55,7 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
           'teamSize': maxMembers,
           'startDate': selectedDateRange!.start.toIso8601String(),
           'endDate': selectedDateRange!.end.toIso8601String(),
-          'studySchedule': '',
+          'studySchedule': [],
         }),
       );
 
@@ -444,7 +444,7 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
 
                           },
                           style: ElevatedButton.styleFrom(
-                            foregroundColor: Colors.white, backgroundColor: Colors.black, // 텍스트 색상
+                            foregroundColor: Colors.white, backgroundColor: Colors.black,
                             padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(30), // 둥근 모서리

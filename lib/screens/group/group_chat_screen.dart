@@ -172,10 +172,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         scrolledUnderElevation: 0,
         backgroundColor: Colors.white,
         title: const Text('선릉역 모각코 모임'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {},
-        ),
+
       ),
       backgroundColor: Colors.white,
       body: Column(
