@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'friend_screen.dart';
 import 'home_screen.dart';
 import 'chat_screen.dart';
 import 'community/community_screen.dart';
@@ -21,7 +22,7 @@ class _MyAppState extends State<navigationScreen> {
     HomeScreen(),
     BoardScreen(),
     GroupScreen(),
-    ChatScreen(),
+    FriendScreen(),
     MypageScreen(),
   ];
 
@@ -77,7 +78,7 @@ class _MyAppState extends State<navigationScreen> {
             BottomNavigationBarItem(
               icon: SvgPicture.asset('assets/icons/botchat.svg'),
               activeIcon: SvgPicture.asset('assets/icons/botchat.svg',color: Color(0xFF7C3AED),),
-              label: '채팅',
+              label: '친구',
             ),BottomNavigationBarItem(
               icon: SvgPicture.asset('assets/icons/mypage.svg'),
               activeIcon: SvgPicture.asset('assets/icons/mypage.svg',color: Color(0xFF7C3AED),),

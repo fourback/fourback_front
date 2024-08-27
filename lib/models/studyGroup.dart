@@ -10,6 +10,7 @@ class StudyGroup {
   final String category;
   final String studyCycle;
   final String studyRule;
+  final List<String> studySchedule;
   final String ownerOauth2Id;
 
   StudyGroup({
@@ -22,6 +23,7 @@ class StudyGroup {
     required this.category,
     required this.studyCycle,
     required this.studyRule,
+    required this.studySchedule,
     required this.ownerOauth2Id,
   });
 
@@ -36,6 +38,9 @@ class StudyGroup {
       category: json['category'] ?? '',
       studyCycle: json['studyCycle'] ?? '',
       studyRule: json['studyRule'] ?? '',
+      studySchedule: json['studySchedule'] != null
+          ? List<String>.from(json['studySchedule'].map((item) => item.toString())) // 명시적 변환
+          : [],
       ownerOauth2Id: json['ownerOauth2Id'] ?? '',
     );
   }
