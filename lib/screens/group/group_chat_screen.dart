@@ -178,6 +178,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
             Navigator.pop(context);
           },
         ),
+
       ),
       backgroundColor: Colors.white,
       body: Column(
