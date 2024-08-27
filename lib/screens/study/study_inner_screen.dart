@@ -7,6 +7,7 @@ import 'package:bemajor_frontend/screens/study/study_invitation_screen.dart';
 import 'package:bemajor_frontend/screens/study/study_schedule_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import '../../api_url.dart';
 import '../../auth.dart';
 import '../../models/studyGroup.dart';
@@ -361,7 +362,8 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
                     Container(
                       margin: const EdgeInsets.all(10),
                       child: Text(
-                        widget.studyGroup.startDate.toString() + " "+ widget.studyGroup.endDate.toString(),
+                          DateFormat('yyyy.MM.dd').format(widget.studyGroup.startDate) + " - " +
+                              DateFormat('yyyy.MM.dd').format(widget.studyGroup.endDate),
                         style: const TextStyle(
                             fontSize: 18),
                       ),
@@ -606,23 +608,32 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
                 ),
               ),
             ),
-            Container(
-              margin: const EdgeInsets.all(10),
-              height: 50,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15), // 모서리를 둥글게
-                border: Border.all(color: Colors.black12, width: 3),
-                color: Colors.black,
-              ),
-              child: Text('그룹 톡', style: const TextStyle(fontSize: 15, color: Colors.white)),
-            ),
+
           ],
         ),
       );
     }
-
-
+    widgets.add(
+      GestureDetector(
+        onTap: () {
+          // 그룹 톡 관련 기능 구현
+        },
+        child: Container(
+          margin: const EdgeInsets.all(10),
+          height: 50,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(15), // 모서리를 둥글게
+            border: Border.all(color: Colors.black12, width: 3),
+            color: Colors.black,
+          ),
+          child: Text(
+            '그룹 톡',
+            style: const TextStyle(fontSize: 15, color: Colors.white),
+          ),
+        ),
+      ),
+    );
 
     return widgets;
   }
