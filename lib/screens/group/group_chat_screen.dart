@@ -203,8 +203,11 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                     final bool isNewDate = (index == _messages.length - 1) ||
                         message.date != _messages[_messages.length - 2 - index].date;
 
-                    // 다음 메시지와 비교하여 시간이 중복되지 않는 경우에만 시간 표시
-                    final bool showTime = index == 0 || message.time != _messages[_messages.length - index].time;
+
+
+                    final bool showTime = index == 0 ||
+                        message.time != _messages[_messages.length - index].time ||
+                        message.sender != _messages[_messages.length - index].sender;
 
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
