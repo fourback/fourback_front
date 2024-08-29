@@ -27,7 +27,29 @@ class PublicImage extends StatefulWidget {
 
 class _PublicImageState extends State<PublicImage> {
   late Future<Uint8List> _imageData;
-  Future<Uint8List> _fetchImage() async {
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchImage();
+  }
+
+  @override
+  void didUpdateWidget(PublicImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.imageUrl != oldWidget.imageUrl) {
+      _fetchImage(); // 이미지 URL이 변경될 때마다 이미지를 다시 가져옵니다.
+    }
+  }
+
+  Future<void> _fetchImage() async {
+    setState(() {
+      _imageData = _loadImage();
+    });
+    return; // 이 부분이 추가되었습니다.
+  }
+
+  Future<Uint8List> _loadImage() async {
     final token = await readAccess();
     if (token == null) {
       throw Exception('Token not found');
@@ -42,24 +64,17 @@ class _PublicImageState extends State<PublicImage> {
 
     if (response.statusCode == 200) {
       return response.bodyBytes;
-    } else if(response.statusCode == 401) {
+    } else if (response.statusCode == 401) {
       bool success = await reissueToken(context);
-      if(success) {
-        return await _fetchImage();
+      if (success) {
+        return await _loadImage();
       } else {
         print('토큰 재발급 실패');
         throw Exception('Failed to load image');
       }
-
     } else {
       throw Exception('Failed to load image');
     }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _imageData = _fetchImage();
   }
 
   @override

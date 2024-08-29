@@ -53,7 +53,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
 
   String formatDate(String isoString) {
     DateTime dateTime = DateTime.parse(isoString);
-    return DateFormat('yyyy-MM-dd').format(dateTime); // "yyyy-MM-dd" 형식으로 날짜 표시
+    return DateFormat('yyyy년 MM월 dd일').format(dateTime); // "yyyy-MM-dd" 형식으로 날짜 표시
   }
 
   @override
