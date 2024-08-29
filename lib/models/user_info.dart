@@ -45,6 +45,10 @@ class UserInfo {
       techStack:json['techStack'],
     );
   }
+  @override
+  String toString() {
+    return 'UserInfo{id: $userId, name: $userName, email: $email}';
+  }
 }
 
 

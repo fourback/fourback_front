@@ -67,7 +67,7 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
             duration: Duration(seconds: 1),
           ),
         );
-        Navigator.of(context).pop();
+        Navigator.of(context).pop(true);
       } else {
         print("${response.statusCode}, ${response.body}");
       }

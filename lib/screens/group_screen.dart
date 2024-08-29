@@ -296,7 +296,14 @@ class _GroupScreenState extends State<GroupScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => GroupCreateScreen()),
-                    );
+                    ).then((shouldRefresh) {
+                      if (shouldRefresh == true) {
+
+                        setState(() {
+                          _fetchInitialData();
+                        });
+                      }
+                    });
                   },
                   icon: Image.asset(
                     'assets/icons/More.png',

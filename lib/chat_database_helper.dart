@@ -48,9 +48,19 @@ class ChatDatabaseHelper {
     return await db.insert('ChatMessage', message);
   }
 
-  Future<List<Map<String, dynamic>>> getMessages() async {
+  // Future<List<Map<String, dynamic>>> getMessages() async {
+  //   final db = await database;
+  //   return await db.query('ChatMessage', orderBy: 'timestamp ASC');
+  // }
+
+  Future<List<Map<String, dynamic>>> getMessages(int groupId) async {
     final db = await database;
-    return await db.query('ChatMessage', orderBy: 'timestamp ASC');
+    return await db.query(
+      'ChatMessage',
+      where: 'groupId = ?',
+      whereArgs: [groupId],
+      orderBy: 'timestamp ASC',
+    );
   }
 
   Future<void> deleteDatabaseFile() async {

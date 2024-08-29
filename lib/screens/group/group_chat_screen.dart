@@ -13,11 +13,14 @@ import 'package:intl/intl.dart';
 
 import '../../auth.dart';
 import '../../chat_database_helper.dart';
+import '../../models/studyGroup.dart';
+import '../../models/user_info.dart';
 
 class GroupChatScreen extends StatefulWidget {
+  final StudyGroup studyGroup;
+  final List<UserInfo> user;
 
-
-  GroupChatScreen();
+  GroupChatScreen({required this.studyGroup, required this.user});
 
   @override
   _GroupChatScreenState createState() => _GroupChatScreenState();
@@ -30,19 +33,27 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   final TextEditingController _controller = TextEditingController();
   late WebSocketChannel _channel;
   StreamSubscription? _chatSubscription;
+  UserInfo? currentUser;
 
   @override
   void initState() {
     super.initState();
-
+    print(widget.user);
     _loadMessages();
-    _connectWebSocket();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _connectWebSocket();
+    });
   }
 
   String formatTime(String isoString) {
     DateTime dateTime = DateTime.parse(isoString);
     String formattedTime = DateFormat('a hh:mm').format(dateTime); // "a hh:mm"은 "오전/오후 00:00" 형식
     return formattedTime.replaceFirst('AM', '오전').replaceFirst('PM', '오후'); // "AM" -> "오전", "PM" -> "오후"
+  }
+
+  String formatDate(String isoString) {
+    DateTime dateTime = DateTime.parse(isoString);
+    return DateFormat('yyyy-MM-dd').format(dateTime); // "yyyy-MM-dd" 형식으로 날짜 표시
   }
 
   @override
@@ -54,13 +65,14 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   }
 
   void _scrollToBottom() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // 스크롤 가능한 상태인지 확인 후 실행
+    if (_scrollController.hasClients) {
       _scrollController.animateTo(
-        0,
+        _scrollController.position.minScrollExtent,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
-    });
+    }
   }
 
   void _loadMessages() async {
@@ -68,16 +80,17 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     Map<String, dynamic> decodedToken = JwtDecoder.decode(accessToken!);
     int userId = decodedToken['userId'];// 사용자 ID 가져오기
 
-    List<Map<String, dynamic>> savedMessages = await ChatDatabaseHelper().getMessages();
+    List<Map<String, dynamic>> savedMessages = await ChatDatabaseHelper().getMessages(widget.studyGroup.id);
     setState(() {
+      currentUser = widget.user.firstWhere((user) => user.userId == userId);
       _messages = savedMessages.map((message) {
-        // 데이터베이스에서 가져온 각 메시지 맵을 ChatMessage 객체로 변환
         return ChatMessage(
           sender: message['sender'],
           text: message['message'],
-          time: message['timestamp'], // 저장된 시간을 그대로 사용
-          studyGroupName: message['studyGroupName'] ?? 'Unknown Group', // studyGroupName이 없을 경우 기본값 사용
-          isMine: message['userId'] == userId, // 사용자 본인 여부 판단
+          time: formatTime(message['timestamp']),
+          date: formatDate(message['timestamp']),
+          studyGroupName: message['studyGroupName'] ?? 'Unknown Group',
+          isMine: message['userId'] == userId,
         );
       }).toList();
     });
@@ -85,63 +98,54 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
 
   Future<void> _connectWebSocket() async {
     String? accessToken = await readAccess();
-    Map<String, dynamic> decodedToken = JwtDecoder.decode(accessToken!);
-
-    // 사용자 ID 가져오기
-    int userId = decodedToken['userId'];
 
     final headers = {
       'access': '$accessToken', // 헤더에 토큰 추가
     };
-    try{
+    try {
       _channel = IOWebSocketChannel.connect(
-        Uri.parse('ws://116.47.60.159:8080/groupChat?studyGroupId=1'),
+        Uri.parse('ws://116.47.60.159:8080/groupChat?studyGroupId=${widget.studyGroup.id}'),
         headers: headers,
       );
-
-
 
       // 수신된 메시지를 처리합니다.
       _channel.stream.listen((message) async {
         print("WebSocket 연결 성공!");
         final decodedMessage = jsonDecode(message);
-        print("sdfsdfsdfdsf ${decodedMessage['sendTime']}");
-        int senderId = decodedMessage['senderId'];
-        print("$senderId");
+
+        print(decodedMessage['sendTime']);
         await ChatDatabaseHelper().insertMessage({
-          'groupId': 1, // 그룹 ID
-          'userId': senderId, // 발신자 ID
+          'groupId': widget.studyGroup.id, // 그룹 ID
+          'userId': decodedMessage['senderId'], // 발신자 ID
           'sender': decodedMessage['senderName'], // 발신자 이름
           'message': decodedMessage['content'], // 메시지 내용
-          'timestamp': DateTime.now().toIso8601String(), // 현재 시간을 저장
+          'timestamp': decodedMessage['sendTime'], // 현재 시간을 저장
         });
-        setState(() {
-          _messages.add(ChatMessage(
-            sender: decodedMessage['senderName'],
-            text: decodedMessage['content'],
-            time: "hi",
-            studyGroupName: decodedMessage['studyGroupName'] ?? 'Unknown Group',
-            isMine: senderId == userId,
-            // 사용자 본인 여부 판단
-          ));
+        if (mounted) {
+          setState(() {
+            _messages.add(ChatMessage(
+              sender: decodedMessage['senderName'],
+              text: decodedMessage['content'],
+              time: formatTime(decodedMessage['sendTime']),
+              date: formatDate(decodedMessage['sendTime']),
+              studyGroupName: decodedMessage['studyGroupName'] ?? 'Unknown Group',
+              isMine: decodedMessage['senderId'] == currentUser?.userId,
+            ));
+            _messages.sort((a, b) => a.date.compareTo(b.date));
+          });
+        }
 
-        });
         _scrollToBottom();
       }, onError: (error) {
         print("WebSocket 연결 실패: $error");
-      },
-        onDone: () {
-          print("WebSocket 연결이 종료되었습니다.");
-        },
-        cancelOnError: true,
-      );
+      }, onDone: () {
+        print("WebSocket 연결이 종료되었습니다.");
+
+      }, cancelOnError: true);
     } catch (e) {
       print("WebSocket 연결 중 예외 발생: $e");
     }
-
-
   }
-
 
   void _sendMessage(String text) {
     if (text.isEmpty) return;
@@ -149,9 +153,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     // 서버로 전송할 메시지 형식
     final message = {
       "content": text,
-      "senderName": "김현수", // 실제 본인 이름으로 변경
-      "sendTime": DateTime.now().toIso8601String(), // 현재 시간을 ISO8601 형식으로 전송
-      "studyGroupName": "스터디 그룹 이름" // 스터디 그룹 이름을 실제로 변경
+      "senderName": currentUser?.userName, // 실제 본인 이름으로 변경
+      "sendTime": DateTime.now().toUtc().add(Duration(hours: 9)).toIso8601String(), // 현재 시간을 ISO8601 형식으로 전송
+      "studyGroupName": widget.studyGroup.studyName // 스터디 그룹 이름을 실제로 변경
     };
 
     // 서버로 메시지를 보냅니다.
@@ -171,13 +175,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       appBar: AppBar(
         scrolledUnderElevation: 0,
         backgroundColor: Colors.white,
-        title: const Text('선릉역 모각코 모임'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
+
+        title: Text('${widget.studyGroup.studyName}'),
 
       ),
       backgroundColor: Colors.white,
@@ -192,13 +191,41 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                 alignment: Alignment.topCenter,
                 child: ListView.builder(
                   shrinkWrap: true,
-                  reverse: true,
+                  reverse: true,  // ListView가 역순으로 메시지를 표시하도록 설정
                   controller: _scrollController,
                   padding: const EdgeInsets.all(8.0),
                   itemCount: _messages.length,
                   itemBuilder: (context, index) {
+                    // 역순으로 접근하므로, 리스트의 뒤에서부터 접근
                     final message = _messages[_messages.length - 1 - index];
-                    return ChatMessageWidget(message: message);
+
+                    // 역순 접근이므로 다음 메시지와 비교해야 함
+                    final bool isNewDate = (index == _messages.length - 1) ||
+                        message.date != _messages[_messages.length - 2 - index].date;
+
+                    // 다음 메시지와 비교하여 시간이 중복되지 않는 경우에만 시간 표시
+                    final bool showTime = index == 0 || message.time != _messages[_messages.length - index].time;
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (isNewDate) ...[
+                          Center(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8.0),
+                              child: Text(
+                                message.date,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                        ChatMessageWidget(message: message, showTime: showTime),
+                      ],
+                    );
                   },
                 ),
               ),
@@ -209,19 +236,19 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
             height: 0.5,
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(4.0,10.0,0.0,10.0),
+            padding: const EdgeInsets.fromLTRB(4.0, 10.0, 0.0, 10.0),
             child: Row(
               children: [
                 IconButton(
-                  icon:  SvgPicture.asset('assets/icons/clip.svg',width: 30,height: 30,),
-                  // 아이콘 크기 조정
+                  icon: SvgPicture.asset(
+                    'assets/icons/clip.svg',
+                    width: 30,
+                    height: 30,
+                  ),
                   onPressed: () {
                     // 버튼이 눌렸을 때의 동작
                   },
                 ),
-
-
-
                 Expanded(
                   child: TextField(
                     controller: _controller,
@@ -235,21 +262,25 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                       const EdgeInsets.symmetric(horizontal: 16.0),
                       fillColor: Color(0xFFF3F6F6),
                       filled: true,
-
                     ),
                     onSubmitted: _sendMessage,
                   ),
                 ),
                 IconButton(
-                  icon:  SvgPicture.asset('assets/icons/camera2.svg',width: 30,height: 30,),
-                  // 아이콘 크기 조정
+                  icon: SvgPicture.asset(
+                    'assets/icons/camera2.svg',
+                    width: 30,
+                    height: 30,
+                  ),
                   onPressed: () {
                     // 버튼이 눌렸을 때의 동작
                   },
                 ),
                 IconButton(
-                  icon:  SvgPicture.asset('assets/icons/send.svg',height: 30,),
-                  // 아이콘 크기 조정
+                  icon: SvgPicture.asset(
+                    'assets/icons/send.svg',
+                    height: 30,
+                  ),
                   onPressed: () {
                     _sendMessage(_controller.text);
                     FocusScope.of(context).unfocus();
@@ -268,6 +299,7 @@ class ChatMessage {
   final String sender;
   final String text;
   final String time;
+  final String date; // 추가된 필드
   final String studyGroupName;
   final bool isMine;
   final String? image;
@@ -276,6 +308,7 @@ class ChatMessage {
     required this.sender,
     required this.text,
     required this.time,
+    required this.date, // 추가된 필드
     required this.isMine,
     required this.studyGroupName,
     this.image,
@@ -283,9 +316,14 @@ class ChatMessage {
 }
 
 class ChatMessageWidget extends StatelessWidget {
-  const ChatMessageWidget({required this.message, Key? key}) : super(key: key);
+  const ChatMessageWidget({
+    required this.message,
+    required this.showTime,
+    Key? key,
+  }) : super(key: key);
 
   final ChatMessage message;
+  final bool showTime; // 시간을 표시할지 여부를 제어하는 속성
 
   @override
   Widget build(BuildContext context) {
@@ -302,70 +340,91 @@ class ChatMessageWidget extends StatelessWidget {
               child: Text(message.sender[0]),
             ),
           const SizedBox(width: 8.0),
-          Column(
-            crossAxisAlignment: message.isMine
-                ? CrossAxisAlignment.end
-                : CrossAxisAlignment.start,
-            children: [
-              if (!message.isMine)
-                Text(
-                  message.sender,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
+          Flexible(
+            child: Column(
+              crossAxisAlignment: message.isMine
+                  ? CrossAxisAlignment.end
+                  : CrossAxisAlignment.start,
+              children: [
+                if (!message.isMine)
+                  Text(
+                    message.sender,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
+                SizedBox(height: 6.0),
+                Row(
+                  mainAxisAlignment: message.isMine
+                      ? MainAxisAlignment.end
+                      : MainAxisAlignment.start,
+                  children: [
+                    if (showTime && message.isMine) // 자신의 메시지인 경우 시간을 왼쪽에 표시
+                      Padding(
+                        padding: const EdgeInsets.only(top:20.0,right: 8.0),
+                        child: Text(
+                          message.time,
+                          style: const TextStyle(
+                            fontSize: 10.0,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                    Flexible(
+                      child: Container(
+                        padding: const EdgeInsets.all(10.0),
+                        constraints: BoxConstraints(
+                          maxWidth: MediaQuery.of(context).size.width * 0.6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: message.isMine
+                              ? Color(0xff20A090)
+                              : Color(0xffF2F7FB),
+                          borderRadius: message.isMine
+                              ? const BorderRadius.only(
+                            topLeft: Radius.circular(12.0),
+                            topRight: Radius.circular(0),
+                            bottomLeft: Radius.circular(12.0),
+                            bottomRight: Radius.circular(12.0),
+                          )
+                              : const BorderRadius.only(
+                            topLeft: Radius.circular(0),
+                            topRight: Radius.circular(12.0),
+                            bottomLeft: Radius.circular(12.0),
+                            bottomRight: Radius.circular(12.0),
+                          ),
+                        ),
+                        child: Text(
+                          message.text,
+                          style: TextStyle(
+                            color: message.isMine ? Colors.white : Colors.black,
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (showTime && !message.isMine) // 자신의 메시지가 아닌 경우 시간을 오른쪽에 표시
+                      Padding(
+                        padding: const EdgeInsets.only(top:20.0,left: 8.0),
+                        child: Text(
+                          message.time,
+                          style: const TextStyle(
+                            fontSize: 10.0,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
-              SizedBox(height: 6.0,),
-
-              Container(
-                padding: const EdgeInsets.all(10.0),
-                constraints: BoxConstraints(
-                  maxWidth: MediaQuery.of(context).size.width * 0.6, // 화면 너비의 70%로 설정
-                ),
-                decoration: BoxDecoration(
-                  color: message.isMine
-                      ? Color(0xff20A090)
-                      : Color(0xffF2F7FB),
-                  borderRadius: message.isMine
-                      ? const BorderRadius.only(
-                    topLeft: Radius.circular(12.0),
-                    topRight: Radius.circular(0),
-                    bottomLeft: Radius.circular(12.0),
-                    bottomRight: Radius.circular(12.0),
-                  )
-                      : const BorderRadius.only(
-                    topLeft: Radius.circular(0),
-                    topRight: Radius.circular(12.0),
-                    bottomLeft: Radius.circular(12.0),
-                    bottomRight: Radius.circular(12.0),
+                if (message.image != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Image.asset(
+                      message.image!,
+                      width: 200.0,
+                    ),
                   ),
-                ),
-                child: Text(
-                  message.text,
-                  style: TextStyle(
-                    color: message.isMine ? Colors.white : Colors.black,
-                  ),
-
-
-
-                ),
-              ),
-              if (message.image != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: Image.asset(
-                    message.image!,
-                    width: 200.0,
-                  ),
-                ),
-              const SizedBox(height: 4.0),
-              Text(
-                message.time,
-                style: const TextStyle(
-                  fontSize: 10.0,
-                  color: Colors.grey,
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
