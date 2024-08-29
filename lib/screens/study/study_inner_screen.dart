@@ -740,10 +740,10 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => GroupChatScreen()),
+
+            MaterialPageRoute(builder: (context) => GroupChatScreen(studyGroup: widget.studyGroup,user: user)),
           );
 
-          // 그룹 톡 관련 기능 구현
         },
         child: Container(
           margin: const EdgeInsets.all(10),
