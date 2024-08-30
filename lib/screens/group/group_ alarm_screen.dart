@@ -117,11 +117,7 @@ class _GroupAlarmScreenState extends State<GroupAlarmScreen> {
   }
 
   void _goBackToGroupManagement(BuildContext context) {
-    // 그룹 관리 화면을 완전히 새로 로드
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => GroupScreen()),
-    );
+    Navigator.pop(context, true); // 그룹 알람 화면을 닫을 때 true 값을 함께 전달
   }
 
   @override
@@ -132,7 +128,7 @@ class _GroupAlarmScreenState extends State<GroupAlarmScreen> {
 
     return WillPopScope(
       onWillPop: () async {
-        _goBackToGroupManagement(context); // 뒤로 가기 시 그룹 관리 화면을 새로 로드
+        _goBackToGroupManagement(context); // 뒤로 가기 시 그룹 관리 화면으로 돌아가도록
         return false; // 기본 뒤로 가기 동작 막기
       },
       child: Scaffold(
@@ -147,7 +143,7 @@ class _GroupAlarmScreenState extends State<GroupAlarmScreen> {
           leading: IconButton(
             icon: Icon(Icons.arrow_back),
             onPressed: () {
-              _goBackToGroupManagement(context); // 뒤로 가기 버튼을 누르면 그룹 관리 화면 새로 로드
+              _goBackToGroupManagement(context); // 뒤로 가기 버튼을 누르면 그룹 관리 화면으로 돌아가기
             },
           ),
         ),
