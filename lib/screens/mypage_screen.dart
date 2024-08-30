@@ -322,7 +322,7 @@ class _MypageScreenState extends State<MypageScreen> {
                               child: PublicImage(
                                 imageUrl: () {
                                   final url = userImage != null
-                                      ? 'http://116.47.60.159:8080/api/images/$userImage?timestamp=${DateTime.now().millisecondsSinceEpoch}'
+                                      ? 'http://116.47.60.159:8080/api/images/$userImage'
                                       : 'http://116.47.60.159:8080/api/images/default_profile_image.jpg';
 
                                   print('Image URL: $url'); // URL을 출력

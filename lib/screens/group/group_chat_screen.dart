@@ -15,6 +15,7 @@ import '../../auth.dart';
 import '../../chat_database_helper.dart';
 import '../../models/studyGroup.dart';
 import '../../models/user_info.dart';
+import '../../publicImage.dart';
 
 class GroupChatScreen extends StatefulWidget {
   final StudyGroup studyGroup;
@@ -83,7 +84,11 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     List<Map<String, dynamic>> savedMessages = await ChatDatabaseHelper().getMessages(widget.studyGroup.id);
     setState(() {
       currentUser = widget.user.firstWhere((user) => user.userId == userId);
+
       _messages = savedMessages.map((message) {
+        UserInfo? user = widget.user.firstWhere(
+              (user) => user.userId == message['userId'],
+        );
         return ChatMessage(
           sender: message['sender'],
           text: message['message'],
@@ -91,6 +96,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
           date: formatDate(message['timestamp']),
           studyGroupName: message['studyGroupName'] ?? 'Unknown Group',
           isMine: message['userId'] == userId,
+          profileImageName: user.fileName,
         );
       }).toList();
     });
@@ -114,6 +120,14 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         final decodedMessage = jsonDecode(message);
 
         print(decodedMessage['sendTime']);
+
+        final senderId = decodedMessage['senderId'];
+        final senderUser = widget.user.firstWhere(
+              (user) => user.userId == senderId,
+
+        );
+
+
         await ChatDatabaseHelper().insertMessage({
           'groupId': widget.studyGroup.id, // 그룹 ID
           'userId': decodedMessage['senderId'], // 발신자 ID
@@ -130,6 +144,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               date: formatDate(decodedMessage['sendTime']),
               studyGroupName: decodedMessage['studyGroupName'] ?? 'Unknown Group',
               isMine: decodedMessage['senderId'] == currentUser?.userId,
+              profileImageName: senderUser.fileName,
             ));
             _messages.sort((a, b) => a.date.compareTo(b.date));
           });
@@ -198,6 +213,13 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                   itemBuilder: (context, index) {
                     // 역순으로 접근하므로, 리스트의 뒤에서부터 접근
                     final message = _messages[_messages.length - 1 - index];
+                    final previousMessage = index < _messages.length - 1
+                        ? _messages[_messages.length - 2 - index]
+                        : null;
+
+                    final bool hideProfile = previousMessage != null &&
+                        previousMessage.sender == message.sender &&
+                        previousMessage.time == message.time;
 
                     // 역순 접근이므로 다음 메시지와 비교해야 함
                     final bool isNewDate = (index == _messages.length - 1) ||
@@ -226,7 +248,10 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                             ),
                           ),
                         ],
-                        ChatMessageWidget(message: message, showTime: showTime),
+                        ChatMessageWidget(
+                            message: message,
+                            showTime: showTime,
+                            hideProfile: hideProfile,),
                       ],
                     );
                   },
@@ -306,6 +331,7 @@ class ChatMessage {
   final String studyGroupName;
   final bool isMine;
   final String? image;
+  final String? profileImageName;
 
   const ChatMessage({
     required this.sender,
@@ -315,6 +341,7 @@ class ChatMessage {
     required this.isMine,
     required this.studyGroupName,
     this.image,
+    this.profileImageName
   });
 }
 
@@ -322,11 +349,13 @@ class ChatMessageWidget extends StatelessWidget {
   const ChatMessageWidget({
     required this.message,
     required this.showTime,
+    required this.hideProfile,
     Key? key,
   }) : super(key: key);
 
   final ChatMessage message;
-  final bool showTime; // 시간을 표시할지 여부를 제어하는 속성
+  final bool showTime;
+  final bool hideProfile;// 시간을 표시할지 여부를 제어하는 속성
 
   @override
   Widget build(BuildContext context) {
@@ -339,8 +368,17 @@ class ChatMessageWidget extends StatelessWidget {
             : MainAxisAlignment.start,
         children: [
           if (!message.isMine)
-            CircleAvatar(
-              child: Text(message.sender[0]),
+            hideProfile
+                ? SizedBox(width: 40.0, height: 40.0) // 프로필 이미지 공간을 차지하는 빈 공간
+                : PublicImage(
+              imageUrl: message.profileImageName != null
+                  ? 'http://116.47.60.159:8080/api/images/${message.profileImageName}'
+                  : 'http://116.47.60.159:8080/api/images/default_profile_image.jpg',
+              placeholderPath: 'assets/icons/loading.gif',
+              width: 40.0, // 원하는 크기로 조정하세요
+              height: 40.0, // 원하는 크기로 조정하세요
+              fit: BoxFit.cover, // 이미지 맞춤 설정
+              isCircular: true, // 원형으로 표시
             ),
           const SizedBox(width: 8.0),
           Flexible(
@@ -349,14 +387,14 @@ class ChatMessageWidget extends StatelessWidget {
                   ? CrossAxisAlignment.end
                   : CrossAxisAlignment.start,
               children: [
-                if (!message.isMine)
+                if (!message.isMine && !hideProfile)
                   Text(
                     message.sender,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                SizedBox(height: 6.0),
+                SizedBox(height: 4.0),
                 Row(
                   mainAxisAlignment: message.isMine
                       ? MainAxisAlignment.end
