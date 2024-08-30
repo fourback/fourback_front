@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
-
 import 'package:bemajor_frontend/models/user_info.dart';
+import 'package:bemajor_frontend/screens/group/group_chat_screen.dart';
 import 'package:bemajor_frontend/screens/group_screen.dart';
 import 'package:bemajor_frontend/screens/study/study_invitation_screen.dart';
 import 'package:bemajor_frontend/screens/study/study_schedule_screen.dart';
@@ -13,7 +13,6 @@ import '../../auth.dart';
 import '../../models/studyGroup.dart';
 
 class StudyInnerScreen extends StatefulWidget {
-
   final StudyGroup studyGroup;
 
   StudyInnerScreen({required this.studyGroup});
@@ -40,18 +39,14 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
   }
 
   Future<void> _navigateToStudyScheduleScreen() async {
-    // 계획 수정 화면으로 이동하고, 결과를 기다림
     await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => StudyScheduleScreen(studyGroup: widget.studyGroup),
       ),
     );
-
-    // 돌아오면 화면을 갱신하기 위해 fetchStudys 호출
     fetchStudys();
   }
-
 
   Future<void> fetchStudys() async {
     String? token = await readAccess();
@@ -80,16 +75,14 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
     }
   }
 
-  Future<void> updateStudys() async {
-
-  }
+  Future<void> updateStudys() async {}
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: _UpperAppbar(
-        context: context, // context 전달
+        context: context,
         onLogoPressed: () {},
         onlistPressed: () {},
       ),
@@ -103,69 +96,85 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
 
   @override
   PreferredSizeWidget _UpperAppbar({
-    required BuildContext context, // BuildContext 추가
+    required BuildContext context,
     required Function onLogoPressed,
     required Function onlistPressed,
   }) {
     return AppBar(
       backgroundColor: Colors.white,
       scrolledUnderElevation: 0,
+      centerTitle: true, // 가운데 정렬을 위해 centerTitle을 true로 설정
       leading: Padding(
         padding: const EdgeInsets.only(right: 8.0),
         child: IconButton(
-          icon: Icon(Icons.navigate_before_outlined,),
-          onPressed: () => onLogoPressed(),
+          icon: Icon(
+            Icons.navigate_before_outlined,
+          ),
+          onPressed: () {
+            Navigator.pop(context);
+          },
         ),
       ),
-      title: Container(
-        child: Text(widget.studyGroup.studyName, textAlign: TextAlign.center,),
+      title: Text(
+        widget.studyGroup.studyName,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontWeight: FontWeight.bold, // 제목을 Bold로 설정
+        ),
       ),
       actions: [
         Padding(
           padding: const EdgeInsets.only(left: 8.0),
-          child: PopupMenuButton<String>(
-            onSelected: (String value) {
-              if (value == 'delete') {
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: Text('삭제 확인'),
-                      content: Text('정말로 삭제하시겠습니까?'),
-                      actions: <Widget>[
-                        TextButton(
-                          child: Text('아니오'),
-                          onPressed: () {
-                            Navigator.of(context).pop(); // 다이얼로그 닫기
-                          },
-                        ),
-                        TextButton(
-                          child: Text('예'),
-                          onPressed: () {
-                            deleteStudys();
-                            Navigator.of(context).pop(); // 다이얼로그 닫기
-                          },
-                        ),
-                      ],
-                    );
-                  },
-                );
-              }
-            },
-            itemBuilder: (BuildContext context) {
-              return [
-                PopupMenuItem<String>(
-                  value: 'delete',
-                  child: Text('삭제'),
-                ),
-                PopupMenuItem<String>(
-                  value: 'update',
-                  child: Text('수정'),
-                ),
-              ];
-            },
-            icon: Icon(Icons.list),
-            offset: Offset(0, 50),
+          child: Theme(
+            data: Theme.of(context).copyWith(
+              popupMenuTheme: PopupMenuThemeData(
+                color: Colors.white, // 팝업 메뉴의 배경색을 흰색으로 설정
+              ),
+            ),
+            child: PopupMenuButton<String>(
+              onSelected: (String value) {
+                if (value == 'delete') {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text('삭제 확인'),
+                        content: Text('정말로 삭제하시겠습니까?'),
+                        actions: <Widget>[
+                          TextButton(
+                            child: Text('아니오'),
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                          ),
+                          TextButton(
+                            child: Text('예'),
+                            onPressed: () {
+                              deleteStudys();
+                              Navigator.of(context).pop();
+                            },
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                }
+              },
+              itemBuilder: (BuildContext context) {
+                return [
+                  PopupMenuItem<String>(
+                    value: 'delete',
+                    child: Text('삭제'),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'update',
+                    child: Text('수정'),
+                  ),
+                ];
+              },
+              icon: Icon(Icons.list),
+              offset: Offset(0, 50),
+            ),
           ),
         ),
       ],
@@ -180,44 +189,55 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
         height: 300,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(15), //모서리를 둥글게
-          border: Border.all(color: Colors.black12, width: 3),
+          borderRadius: BorderRadius.circular(15),
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 8,
+              spreadRadius: 2,
+              offset: Offset(0, 3),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
               margin: EdgeInsets.all(3),
-              padding: EdgeInsets.all(3),
+              padding: const EdgeInsets.only(left: 8.0, top: 16.0), // 상단과 좌측 여백을 추가
               child: Text(
                 '그룹 멤버',
-                style: const TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
             ),
-            SizedBox(height: 20.0,),
+            SizedBox(height: 20.0),
             Container(
               margin: const EdgeInsets.all(5),
               height: 140,
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: Colors.grey.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(15), //모서리를 둥글게
-                border: Border.all(color: Colors.black12, width: 3),
+                borderRadius: BorderRadius.circular(15),
               ),
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   double width = constraints.maxWidth / 2 - 10;
                   return Wrap(
-                    spacing: 10.0, // 항목 간의 수평 간격
-                    runSpacing: 10.0, // 항목 간의 수직 간격
+                    spacing: 10.0,
+                    runSpacing: 10.0,
                     children: List.generate(user.length, (index) {
                       return Container(
-                        width: width, // 한 줄에 두 개씩 배치하기 위한 너비 조절
+                        width: width,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10), // 테두리만 둥글게 설정
+                          color: Colors.transparent, // 배경색 없이 투명하게 설정
+                        ),
                         child: Text(
-                            user[index].userName,
-                            style: const TextStyle(
-                                fontSize: 20, fontWeight: FontWeight.bold),
-                            textAlign: TextAlign.center
+                          user[index].userName,
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                          textAlign: TextAlign.center,
                         ),
                       );
                     }),
@@ -234,14 +254,20 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
                   height: 50,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(15), //모서리를 둥글게
-                    border: Border.all(color: Colors.black12, width: 3),
+                    borderRadius: BorderRadius.circular(15),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 8,
+                        spreadRadius: 2,
+                        offset: Offset(0, 3),
+                      ),
+                    ],
                     color: Colors.black,
                   ),
-                  child: Text('구성원 초대하기', style: const TextStyle(fontSize: 15, color: Colors.white)),
+                  child: Text('구성원 초대하기', style: const TextStyle(fontSize: 14, color: Colors.white)),
                 )
             ),
-
           ],
         ),
       ),
@@ -251,17 +277,27 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
       widgets.add(
           Container(
             margin: const EdgeInsets.all(10),
-            height: 70,
-            alignment: Alignment.center,
+            height: 60,
+            alignment: Alignment.centerLeft,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(15), //모서리를 둥글게
-              border: Border.all(color: Colors.black12, width: 3),
+              borderRadius: BorderRadius.circular(15),
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 8,
+                  spreadRadius: 2,
+                  offset: Offset(0, 3),
+                ),
+              ],
             ),
             child: GestureDetector(
-              child: Text(
-                '그룹 규칙 ▽',
-                style: const TextStyle(
-                    fontSize: 25, fontWeight: FontWeight.bold),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Text(
+                  '그룹 규칙 ▽',
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
               ),
               onTap: () {
                 setState(() {
@@ -276,29 +312,37 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
       widgets.add(
           Container(
               margin: const EdgeInsets.all(10),
-              height: 300,
-              alignment: Alignment.center,
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              alignment: Alignment.centerLeft,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15), //모서리를 둥글게
-                border: Border.all(color: Colors.black12, width: 3),
+                borderRadius: BorderRadius.circular(15),
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 8,
+                    spreadRadius: 2,
+                    offset: Offset(0, 3),
+                  ),
+                ],
               ),
               child: GestureDetector(
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
                       margin: const EdgeInsets.all(10),
                       child: Text(
                         '그룹 규칙 ▲',
-                        style: const TextStyle(
-                            fontSize: 25, fontWeight: FontWeight.bold),
+                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                       ),
                     ),
                     Container(
                       margin: const EdgeInsets.all(10),
                       child: Text(
                         widget.studyGroup.studyRule,
-                        style: const TextStyle(
-                            fontSize: 18),
+                        style: const TextStyle(fontSize: 16),
+                        textAlign: TextAlign.left,
                       ),
                     )
                   ],
@@ -317,17 +361,27 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
       widgets.add(
           Container(
               margin: const EdgeInsets.all(10),
-              height: 70,
-              alignment: Alignment.center,
+              height: 60,
+              alignment: Alignment.centerLeft,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15), //모서리를 둥글게
-                border: Border.all(color: Colors.black12, width: 3),
+                borderRadius: BorderRadius.circular(15),
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 8,
+                    spreadRadius: 2,
+                    offset: Offset(0, 3),
+                  ),
+                ],
               ),
               child: GestureDetector(
-                child: Text(
-                  '그룹 기간 ▽',
-                  style: const TextStyle(
-                      fontSize: 25, fontWeight: FontWeight.bold),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Text(
+                    '그룹 기간 ▽',
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
                 ),
                 onTap: () {
                   setState(() {
@@ -342,30 +396,38 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
       widgets.add(
           Container(
               margin: const EdgeInsets.all(10),
-              height: 300,
-              alignment: Alignment.center,
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              alignment: Alignment.centerLeft,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15), //모서리를 둥글게
-                border: Border.all(color: Colors.black12, width: 3),
+                borderRadius: BorderRadius.circular(15),
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 8,
+                    spreadRadius: 2,
+                    offset: Offset(0, 3),
+                  ),
+                ],
               ),
               child: GestureDetector(
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
                       margin: const EdgeInsets.all(10),
                       child: Text(
                         '그룹 기간 ▲',
-                        style: const TextStyle(
-                            fontSize: 25, fontWeight: FontWeight.bold),
+                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                       ),
                     ),
                     Container(
                       margin: const EdgeInsets.all(10),
                       child: Text(
-                          DateFormat('yyyy.MM.dd').format(widget.studyGroup.startDate) + " - " +
-                              DateFormat('yyyy.MM.dd').format(widget.studyGroup.endDate),
-                        style: const TextStyle(
-                            fontSize: 18),
+                        DateFormat('yyyy.MM.dd').format(widget.studyGroup.startDate) + " - " +
+                            DateFormat('yyyy.MM.dd').format(widget.studyGroup.endDate),
+                        style: const TextStyle(fontSize: 16),
+                        textAlign: TextAlign.left,
                       ),
                     )
                   ],
@@ -384,17 +446,27 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
       widgets.add(
           Container(
               margin: const EdgeInsets.all(10),
-              height: 70,
-              alignment: Alignment.center,
+              height: 60,
+              alignment: Alignment.centerLeft,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15), //모서리를 둥글게
-                border: Border.all(color: Colors.black12, width: 3),
+                borderRadius: BorderRadius.circular(15),
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 8,
+                    spreadRadius: 2,
+                    offset: Offset(0, 3),
+                  ),
+                ],
               ),
               child: GestureDetector(
-                child: Text(
-                  '모임 장소 ▽',
-                  style: const TextStyle(
-                      fontSize: 25, fontWeight: FontWeight.bold),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Text(
+                    '모임 장소 ▽',
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
                 ),
                 onTap: () {
                   setState(() {
@@ -409,29 +481,37 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
       widgets.add(
           Container(
               margin: const EdgeInsets.all(10),
-              height: 300,
-              alignment: Alignment.center,
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              alignment: Alignment.centerLeft,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15), //모서리를 둥글게
-                border: Border.all(color: Colors.black12, width: 3),
+                borderRadius: BorderRadius.circular(15),
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 8,
+                    spreadRadius: 2,
+                    offset: Offset(0, 3),
+                  ),
+                ],
               ),
               child: GestureDetector(
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
                       margin: const EdgeInsets.all(10),
                       child: Text(
                         '모임 장소 ▲',
-                        style: const TextStyle(
-                            fontSize: 25, fontWeight: FontWeight.bold),
+                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                       ),
                     ),
                     Container(
                       margin: const EdgeInsets.all(10),
                       child: Text(
                         widget.studyGroup.studyLocation,
-                        style: const TextStyle(
-                            fontSize: 18),
+                        style: const TextStyle(fontSize: 16),
+                        textAlign: TextAlign.left,
                       ),
                     )
                   ],
@@ -450,17 +530,27 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
       widgets.add(
           Container(
               margin: const EdgeInsets.all(10),
-              height: 70,
-              alignment: Alignment.center,
+              height: 60,
+              alignment: Alignment.centerLeft,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15), //모서리를 둥글게
-                border: Border.all(color: Colors.black12, width: 3),
+                borderRadius: BorderRadius.circular(15),
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 8,
+                    spreadRadius: 2,
+                    offset: Offset(0, 3),
+                  ),
+                ],
               ),
               child: GestureDetector(
-                child: Text(
-                  '모임 주기 ▽',
-                  style: const TextStyle(
-                      fontSize: 25, fontWeight: FontWeight.bold),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Text(
+                    '모임 주기 ▽',
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
                 ),
                 onTap: () {
                   setState(() {
@@ -475,29 +565,37 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
       widgets.add(
           Container(
               margin: const EdgeInsets.all(10),
-              height: 300,
-              alignment: Alignment.center,
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              alignment: Alignment.centerLeft,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15), //모서리를 둥글게
-                border: Border.all(color: Colors.black12, width: 3),
+                borderRadius: BorderRadius.circular(15),
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 8,
+                    spreadRadius: 2,
+                    offset: Offset(0, 3),
+                  ),
+                ],
               ),
               child: GestureDetector(
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
                       margin: const EdgeInsets.all(10),
                       child: Text(
                         '모임 주기 ▲',
-                        style: const TextStyle(
-                            fontSize: 25, fontWeight: FontWeight.bold),
+                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                       ),
                     ),
                     Container(
                       margin: const EdgeInsets.all(10),
                       child: Text(
                         widget.studyGroup.studyCycle,
-                        style: const TextStyle(
-                            fontSize: 18),
+                        style: const TextStyle(fontSize: 16),
+                        textAlign: TextAlign.left,
                       ),
                     )
                   ],
@@ -516,17 +614,27 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
       widgets.add(
           Container(
               margin: const EdgeInsets.all(10),
-              height: 70,
-              alignment: Alignment.center,
+              height: 60,
+              alignment: Alignment.centerLeft,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15), //모서리를 둥글게
-                border: Border.all(color: Colors.black12, width: 3),
+                borderRadius: BorderRadius.circular(15),
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 8,
+                    spreadRadius: 2,
+                    offset: Offset(0, 3),
+                  ),
+                ],
               ),
               child: GestureDetector(
-                child: Text(
-                  '스터디 계획 ▽',
-                  style: const TextStyle(
-                      fontSize: 25, fontWeight: FontWeight.bold),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Text(
+                    '스터디 계획 ▽',
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
                 ),
                 onTap: () {
                   setState(() {
@@ -543,40 +651,47 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
           children: [
             Container(
               margin: const EdgeInsets.all(10),
-              alignment: Alignment.center,
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              alignment: Alignment.centerLeft,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15), // 모서리를 둥글게
-                border: Border.all(color: Colors.black12, width: 3),
+                borderRadius: BorderRadius.circular(15),
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 8,
+                    spreadRadius: 2,
+                    offset: Offset(0, 3),
+                  ),
+                ],
               ),
               child: GestureDetector(
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
                       margin: const EdgeInsets.all(10),
                       child: Text(
                         '스터디 계획 ▲',
-                        style: const TextStyle(
-                          fontSize: 25,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                       ),
                     ),
                     Container(
-                      margin: const EdgeInsets.fromLTRB(10, 0, 10, 10), // 바깥쪽 상자와의 간격 조정
-                      padding: const EdgeInsets.fromLTRB(140, 10, 140, 10), // 전체 컨텐츠의 내부 여백
+                      margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+                      padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
                       decoration: BoxDecoration(
                         color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(15), // 모서리를 둥글게
+                        borderRadius: BorderRadius.circular(15),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: List.generate(widget.studyGroup.studySchedule.length, (index) {
                           return Container(
-                            margin: const EdgeInsets.symmetric(vertical: 5), // 각 항목 간의 간격
+                            margin: const EdgeInsets.symmetric(vertical: 5),
                             child: Text(
                               'ㆍ' + widget.studyGroup.studySchedule[index],
-                              style: const TextStyle(fontSize: 18),
-                              softWrap: true,  // 텍스트 줄 바꿈 허용
+                              style: const TextStyle(fontSize: 16),
+                              softWrap: true,
                             ),
                           );
                         }),
@@ -592,19 +707,26 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
               ),
             ),
             GestureDetector(
-              onTap: _navigateToStudyScheduleScreen,  // 함수 호출
+              onTap: _navigateToStudyScheduleScreen,
               child: Container(
                 margin: const EdgeInsets.all(10),
                 height: 50,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(15),
-                  border: Border.all(color: Colors.black12, width: 3),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 8,
+                      spreadRadius: 2,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
                   color: Colors.black,
                 ),
                 child: Text(
                   '스터디 계획 수정하기',
-                  style: const TextStyle(fontSize: 15, color: Colors.white),
+                  style: const TextStyle(fontSize: 14, color: Colors.white),
                 ),
               ),
             ),
@@ -616,20 +738,32 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
     widgets.add(
       GestureDetector(
         onTap: () {
-          // 그룹 톡 관련 기능 구현
+          Navigator.push(
+            context,
+
+            MaterialPageRoute(builder: (context) => GroupChatScreen(studyGroup: widget.studyGroup,user: user)),
+          );
+
         },
         child: Container(
           margin: const EdgeInsets.all(10),
           height: 50,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15), // 모서리를 둥글게
-            border: Border.all(color: Colors.black12, width: 3),
+            borderRadius: BorderRadius.circular(15),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 8,
+                spreadRadius: 2,
+                offset: Offset(0, 3),
+              ),
+            ],
             color: Colors.black,
           ),
           child: Text(
             '그룹 톡',
-            style: const TextStyle(fontSize: 15, color: Colors.white),
+            style: const TextStyle(fontSize: 14, color: Colors.white),
           ),
         ),
       ),

@@ -33,6 +33,15 @@ class _GroupScreenState extends State<GroupScreen> {
     _fetchInitialData();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final shouldReload = ModalRoute.of(context)?.settings.arguments as bool?;
+    if (shouldReload == true) {
+      _fetchInitialData(); // 데이터를 새로 로드
+    }
+  }
+
   Future<void> _fetchInitialData() async {
     await fetchStudyGroups();
     await fetchInvitationCount();
@@ -74,7 +83,6 @@ class _GroupScreenState extends State<GroupScreen> {
           'Content-Type': 'application/json; charset=UTF-8',
         },
       );
-
       if (response.statusCode == 200) {
         setState(() {
           studyGroups = parseStudyGroups(response.body);
@@ -166,7 +174,6 @@ class _GroupScreenState extends State<GroupScreen> {
     }
   }
 
-
   List<StudyGroup> parseStudyGroups(String responseBody) {
     final parsed = json.decode(utf8.decode(responseBody.codeUnits)).cast<Map<String, dynamic>>();
     return parsed.map<StudyGroup>((json) => StudyGroup.fromJson(json)).toList();
@@ -185,6 +192,7 @@ class _GroupScreenState extends State<GroupScreen> {
       }
     });
   }
+
   Future<void> _refreshData() async {
     // 데이터를 다시 불러옵니다.
     await fetchStudyGroups();
@@ -211,11 +219,14 @@ class _GroupScreenState extends State<GroupScreen> {
             child: Column(
               children: [
                 GestureDetector(
-                  onTap: () {
-                    Navigator.push(
+                  onTap: () async {
+                    final shouldReload = await Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => GroupAlarmScreen()),
                     );
+                    if (shouldReload == true) {
+                      _refreshData(); // 그룹 알람 화면에서 돌아왔을 때 새로고침
+                    }
                   },
                   child: Container(
                     decoration: BoxDecoration(
@@ -295,7 +306,13 @@ class _GroupScreenState extends State<GroupScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => GroupCreateScreen()),
-                    );
+                    ).then((shouldRefresh) {
+                      if (shouldRefresh == true) {
+                        setState(() {
+                          _fetchInitialData();
+                        });
+                      }
+                    });
                   },
                   icon: Image.asset(
                     'assets/icons/More.png',
@@ -495,74 +512,73 @@ class _GroupScreenState extends State<GroupScreen> {
       itemBuilder: (context, index) {
         final studyGroup = filteredStudyGroups[index];
         return GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => StudyInnerScreen(studyGroup: studyGroup),
-                ),
-              );
-            },
-
-        child: Padding(
-        padding: const EdgeInsets.all(8.0),
-          child: Container(
-            width: itemWidth,
-            height: itemHeight,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(15),
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.2),
-                  spreadRadius: 2,
-                  blurRadius: 5,
-                  offset: Offset(0, 2),
-                )
-              ],
-            ),
-            child: Column(
-              children: [
-                Container(
-                  width: itemWidth * 0.9,
-                  height: itemHeight * 0.48,
-                  child: Image.asset("assets/icons/eximage.png",
-                      fit: BoxFit.cover),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Text(
-                        studyGroup.studyName,
-                        textAlign: TextAlign.start, // study_name
-                        style: GoogleFonts.inter(
-                            fontSize: 16, fontWeight: FontWeight.w600),
-                      ), // 스터디 그룹 이름
-                      SizedBox(height: 8),
-                      Text(
-                        "카테고리 : ${studyGroup.category}",
-                        textAlign: TextAlign.start, // category
-                        style: GoogleFonts.inter(fontSize: 14),
-                      ), // 카테고리
-                      Text(
-                        "모임 장소 : ${studyGroup.studyLocation}",
-                        style: GoogleFonts.inter(fontSize: 14),
-                      ), // 모임 장소
-                      Text(
-                        studyGroup.studyCycle, // study_cycle
-                        style: GoogleFonts.inter(
-                            fontSize: 16, fontWeight: FontWeight.w600),
-                      ), // 시간
-                    ],
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => StudyInnerScreen(studyGroup: studyGroup),
+              ),
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Container(
+              width: itemWidth,
+              height: itemHeight,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(15),
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.2),
+                    spreadRadius: 2,
+                    blurRadius: 5,
+                    offset: Offset(0, 2),
+                  )
+                ],
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    width: itemWidth * 0.9,
+                    height: itemHeight * 0.48,
+                    child: Image.asset("assets/icons/eximage.png",
+                        fit: BoxFit.cover),
                   ),
-                ),
-              ],
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Text(
+                          studyGroup.studyName,
+                          textAlign: TextAlign.start, // study_name
+                          style: GoogleFonts.inter(
+                              fontSize: 16, fontWeight: FontWeight.w600),
+                        ), // 스터디 그룹 이름
+                        SizedBox(height: 8),
+                        Text(
+                          "카테고리 : ${studyGroup.category}",
+                          textAlign: TextAlign.start, // category
+                          style: GoogleFonts.inter(fontSize: 14),
+                        ), // 카테고리
+                        Text(
+                          "모임 장소 : ${studyGroup.studyLocation}",
+                          style: GoogleFonts.inter(fontSize: 14),
+                        ), // 모임 장소
+                        Text(
+                          studyGroup.studyCycle, // study_cycle
+                          style: GoogleFonts.inter(
+                              fontSize: 16, fontWeight: FontWeight.w600),
+                        ), // 시간
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        )
         );
       },
     );

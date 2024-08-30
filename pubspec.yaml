@@ -51,6 +51,8 @@ dependencies:
   web_socket_channel: ^2.1.0
   stomp_dart_client: ^0.4.4
   jwt_decoder: ^2.0.1
+  sqflite: ^2.0.0+4
+  path_provider: ^2.0.11
 dev_dependencies:
   kakao_flutter_sdk: ^1.9.5
   flutter_test:

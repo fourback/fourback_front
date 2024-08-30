@@ -18,7 +18,8 @@ class UserInfo {
         required this.hobby,
         required this.objective,
         required this.address,
-        required this.techStack});
+        required this.techStack,
+        required this.fileName});
 
   final int userId;
   final String userName;
@@ -30,6 +31,7 @@ class UserInfo {
   final String? objective;
   final String? address;
   final String? techStack;
+  final String? fileName;
 
   factory UserInfo.fromJson(Map<String, dynamic> json) {
     return UserInfo(
@@ -43,7 +45,12 @@ class UserInfo {
       objective:json['objective'],
       address:json['address'],
       techStack:json['techStack'],
+      fileName:json['fileName'],
     );
+  }
+  @override
+  String toString() {
+    return 'UserInfo{id: $userId, name: $userName, email: $email $fileName}';
   }
 }
 

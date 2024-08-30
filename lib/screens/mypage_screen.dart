@@ -36,7 +36,7 @@ class _MypageScreenState extends State<MypageScreen> {
       source: ImageSource.gallery, //위치는 갤러리
       maxHeight: 150,
       maxWidth: 150,
-      imageQuality: 70, // 이미지 크기 압축을 위해 퀄리티를 30으로 낮춤.
+
     );
     if (image != null) {
       setState(() {
@@ -47,15 +47,14 @@ class _MypageScreenState extends State<MypageScreen> {
   }
 
   Future<void> fetchUserInfo() async {
-    if (isLoading) return;
+    setState(() {
+      isLoading = true;
+    });
     String? accessToken = await readAccess();
 
     final url = Uri.http(
       "116.47.60.159:8080",
-      "user",
-      {
-        "username": "naver123",
-      },
+      "/api/users",
     );
     try {
       final response = await http.get(
@@ -63,8 +62,9 @@ class _MypageScreenState extends State<MypageScreen> {
         headers: {'access': '$accessToken'},
       );
       if (response.statusCode == 200) {
-        final Map<String, dynamic> jsonData = jsonDecode(response.body);
+        final Map<String, dynamic> jsonData = jsonDecode(utf8.decode(response.bodyBytes));
         setState(() {
+          userImage = jsonData["fileName"];
           userNameController.text = jsonData["userName"] ?? "";
           emailController.text = jsonData["email"] ?? "";
           birthController.text = jsonData["birth"] ?? "";
@@ -74,14 +74,15 @@ class _MypageScreenState extends State<MypageScreen> {
           objectiveController.text = jsonData["objective"] ?? "";
           addressController.text = jsonData["address"] ?? "";
           techStackController.text = jsonData["techStack"] ?? "";
-          userImage = jsonData["imageName"];
+          print(userImage);
           isLoading = false;
         });
+
       } else {
         setState(() {
           isLoading = false;
         });
-        print('Failed to load data');
+        print('실패 Failed to load data${response.body}');
       }
     } catch (e) {
       setState(() {
@@ -186,41 +187,47 @@ class _MypageScreenState extends State<MypageScreen> {
   }
 
   Future<void> deleteImage() async {
+    if (userImage == null || userImage!.isEmpty) {
+      print('No image to delete');
+      return;
+    }
+
     String? accessToken = await readAccess();
     final url = Uri.http(
       "116.47.60.159:8080",
-
       "api/users/image",
     );
-    /*  ***
-      access token, refresh token 없애는 로직 구현
-      + 헤더에 access token, refresh token 전송해줘야 함
-     */
-    final headers = {"Content-Type": "application/json", 'access': '$accessToken'};
+
+    final headers = {
+      "Content-Type": "application/json",
+      'access': '$accessToken',
+    };
+
     try {
       final response = await http.delete(
         url,
         headers: headers,
-        body: jsonEncode([userImage])
+        body: jsonEncode({"fileName": userImage}),
       );
+
       if (response.statusCode == 200) {
         setState(() {
-          selectImage=null;
-          userImage=null;
+          selectImage = null;
+          userImage = null; // 이미지 삭제 후 기본 이미지로 변경
+          print('State updated: userImage set to null');
         });
-        print('delete successfully');
       } else {
-        print("${response.body},${response.statusCode}");
-        print('Failed');
+        print('Failed to delete image. Status code: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error: $e');
+      print('Error during image deletion: $e');
     }
   }
 
   @override
   void initState() {
     super.initState();
+    fetchUserInfo();
     userNameController = TextEditingController();
     emailController = TextEditingController();
     birthController = TextEditingController();
@@ -230,7 +237,7 @@ class _MypageScreenState extends State<MypageScreen> {
     objectiveController = TextEditingController();
     addressController = TextEditingController();
     techStackController = TextEditingController();
-    fetchUserInfo();
+
   }
 
   @override
@@ -261,7 +268,9 @@ class _MypageScreenState extends State<MypageScreen> {
             )),
         centerTitle: true,
       ),
-      body:LayoutBuilder(
+      body:isLoading
+        ? Center(child: CircularProgressIndicator())
+        : LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
           return Column(
             children: [
@@ -270,60 +279,78 @@ class _MypageScreenState extends State<MypageScreen> {
                 child: Center(
                   child: Stack(
                     children: [
-                      userImage != null
-                          ? PublicImage(
-                        imageUrl:
-                        'http://116.47.60.159:8080/api/images/$userImage',
-                        placeholderPath: 'assets/icons/loading.gif',
-                        width: 150,
-
-                        fit: BoxFit.cover,
-                        isCircular: true,
-                      )
-                          : selectImage == null
-                          ? Image.asset("assets/icons/basic_image.png")
-                          : Container(
-                        width: 80,
-                        height: 80,
+                      // 사용자가 이미지를 선택했을 경우
+                      selectImage != null
+                          ? Container(
+                        width: 160, // 크기를 일관되게 유지합니다.
+                        height: 160,
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
-                          image: DecorationImage(
-                            fit: BoxFit.cover,
-                            image: FileImage(
-                              File(selectImage!.path),
+                          shape: BoxShape.circle, // 이미지를 원형으로 만듭니다.
+                          border: Border.all(
+                            color: Color(0xff242760), // 원하는 테두리 색상
+                            width: 2.0, // 테두리 두께
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(4.0), // 이미지와 테두리 사이의 여백 추가
+                          child: Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle, // 이미지를 원형으로 만듭니다.
+                              image: DecorationImage(
+                                fit: BoxFit.cover,
+                                image: FileImage(File(selectImage!.path)),
+                              ),
                             ),
                           ),
                         ),
-                      ),
+                      )
+                      // 사용자가 이미지를 선택하지 않았을 경우
 
-                      if(userImage != null)
-                        Positioned(
-                          right: 0,
-                          child: IconButton(
-                            icon: Icon(Icons.remove_circle_outline, color: Colors.red),
-                            onPressed: () {
-                              print("asdasd");
-                              deleteImage();
-                            },
-                            splashColor: Colors.transparent,
-                            highlightColor: Colors.transparent,
+                          : Container(
+                        width: 160,
+                        height: 160,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Color(0xff242760),  // 원하는 테두리 색상
+                            width: 2.0, // 테두리 두께
                           ),
                         ),
 
+                            child: Padding(
+                              padding: const EdgeInsets.all(4.0),
+                              child: PublicImage(
+                                imageUrl: () {
+                                  final url = userImage != null
+                                      ? 'http://116.47.60.159:8080/api/images/$userImage'
+                                      : 'http://116.47.60.159:8080/api/images/default_profile_image.jpg';
+
+                                  print('Image URL: $url'); // URL을 출력
+                                  return url;
+                                }(),
+                                placeholderPath: 'assets/icons/loading.gif',
+                                width: 150,
+                                height: 150,
+                                fit: BoxFit.cover,
+                                isCircular: true,
+                              ),
+                            ),
+                          ),
+
+                      // 이미지 선택 또는 삭제 버튼
                       Positioned(
-                        top: 140,
-                        left: 140,
-                        child: TextButton(
-                          onPressed: userImage==null? _pickImg:deleteImage,
-                          child: userImage == null
-                              ? Image.asset(
-                            'assets/icons/camera.png',
-                            width: 50,
-                          )
-                              : Image.asset(
-                            'assets/icons/x.png',
-                            color: Colors.red,
-                            width: 50,
+                        bottom: 0, // 하단 중앙에 배치됩니다.
+                        right: 0,
+                        child: IconButton(
+                          onPressed: userImage == null ? _pickImg : deleteImage,
+                          icon: CircleAvatar(
+                            radius: 20, // 아이콘 배경의 크기 설정
+                            backgroundColor: userImage == null ? Color(0xff242760) : Color(0xff242760), // 배경색 설정
+                            child: Icon(
+                              userImage == null ? Icons.camera_alt : Icons.close,
+                              color: userImage != null ? Colors.white : Colors.white, // 아이콘 색상 설정
+                              size: 24, // 아이콘 크기 설정
+                            ),
                           ),
                         ),
                       ),
