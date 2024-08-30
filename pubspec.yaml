@@ -52,7 +52,7 @@ dependencies:
   stomp_dart_client: ^0.4.4
   jwt_decoder: ^2.0.1
 dev_dependencies:
-  kakao_flutter_sdk: ^1.9.1+2
+  kakao_flutter_sdk: ^1.9.5
   flutter_test:
     sdk: flutter
 
