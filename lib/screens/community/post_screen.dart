@@ -478,9 +478,15 @@ class _DetailScreenState extends State<DetailScreen> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        CircleAvatar(
-                          backgroundColor: Colors.blue,
-                          child: Icon(Icons.person, color: Colors.white),
+                        PublicImage(
+                          imageUrl: widget.post.profileImage.isNotEmpty
+                              ? 'http://116.47.60.159:8080/api/images/${widget.post.profileImage}'
+                              : 'http://116.47.60.159:8080/api/images/default_profile_image.jpg',
+                          placeholderPath: 'assets/icons/loading.gif',
+                          width: 40.0, // 원하는 크기로 조정하세요
+                          height: 40.0, // 원하는 크기로 조정하세요
+                          fit: BoxFit.cover, // 이미지 맞춤 설정
+                          isCircular: true, // 원형으로 표시
                         ),
                         SizedBox(width: 8.0),
                         Expanded(
@@ -491,7 +497,9 @@ class _DetailScreenState extends State<DetailScreen> {
                                 widget.post.memberName,
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
-                              Text('수원대학교 컴퓨터학부'), // 출신 및 과 // User.belong, dapartment 가져와서 수정해야함
+                              Text(
+                                widget.post.belong + ", " + widget.post.department,
+                              ), // 출신 및 과 // User.belong, dapartment 가져와서 수정해야함
                               SizedBox(height: 8.0),
                             ],
                           ),
@@ -672,7 +680,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                       memberId,
                                       style: TextStyle(fontWeight: FontWeight.bold),
                                     ),
-                                    Text('${commentsResult[index].belong} ${commentsResult[index].department}'),
+                                    Text('${commentsResult[index].belong}, ${commentsResult[index].department}'),
                                   ],
                                 ),
                                 Spacer(),

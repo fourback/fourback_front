@@ -93,15 +93,21 @@ class _MypageScreenState extends State<MypageScreen> {
   }
 
   Future<void> sendUserInfo() async {
+    String? accessToken = await readAccess();
     /*
     * ***
     * multipartfile 보내는 양식으로 고쳐야 함
     * */
     final url = Uri.http(
       "116.47.60.159:8080",
-      "user",
+      "api/users",
+    );
+    final headers = {
+      "Content-Type": "application/json",
+      'access': '$accessToken'
+    };
+    final body =
       {
-        "username": "naver123",
         "userName": userNameController.text,
         "email": emailController.text,
         "birth": birthController.text,
@@ -111,15 +117,19 @@ class _MypageScreenState extends State<MypageScreen> {
         "objective": objectiveController.text,
         "address": addressController.text,
         "techStack": techStackController.text
-      },
-    );
-    final headers = {"Content-Type": "application/json"};
+      };
+
+
     try {
-      final response = await http.put(url, headers: headers);
+      final response = await http.put(
+          url,
+          headers: headers,
+          body: jsonEncode(body),
+      );
       if (response.statusCode == 200) {
         print('Data sent successfully');
       } else {
-        print('Failed to send data');
+        print('${response.body} Failed to send data');
       }
     } catch (e) {
       print('Error: $e');

@@ -123,9 +123,15 @@ class _PostListScreenState extends State<PostListScreen> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        CircleAvatar(
-                          backgroundColor: Colors.blue,
-                          child: Icon(Icons.person, color: Colors.white),
+                        PublicImage(
+                          imageUrl: posts[index].profileImage.isNotEmpty
+                              ? 'http://116.47.60.159:8080/api/images/${posts[index].profileImage}'
+                              : 'http://116.47.60.159:8080/api/images/default_profile_image.jpg',
+                          placeholderPath: 'assets/icons/loading.gif',
+                          width: 40.0, // 원하는 크기로 조정하세요
+                          height: 40.0, // 원하는 크기로 조정하세요
+                          fit: BoxFit.cover, // 이미지 맞춤 설정
+                          isCircular: true, // 원형으로 표시
                         ),
                         SizedBox(width: 8), // CircleAvatar와 작성자 이름 사이의 간격 조절
                         Column(
@@ -144,7 +150,7 @@ class _PostListScreenState extends State<PostListScreen> {
                               ],
                             ),
                             Text(
-                              '수원대학교', // 작성자 학교 표시
+                              posts[index].belong + ", " + posts[index].department, // 작성자 학교 표시
                               style: TextStyle(
                                 fontSize: 14.0,
                                 fontWeight: FontWeight.normal,

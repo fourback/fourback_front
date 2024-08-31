@@ -320,9 +320,15 @@ class _HomeBodyState extends State<_HomeBody> {
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                CircleAvatar(
-                                  backgroundColor: Colors.blue,
-                                  child: Icon(Icons.person, color: Colors.white),
+                                PublicImage(
+                                  imageUrl: widget.posts[index].profileImage.isNotEmpty
+                                      ? 'http://116.47.60.159:8080/api/images/${widget.posts[index].profileImage}'
+                                      : 'http://116.47.60.159:8080/api/images/default_profile_image.jpg',
+                                  placeholderPath: 'assets/icons/loading.gif',
+                                  width: 40.0, // 원하는 크기로 조정하세요
+                                  height: 40.0, // 원하는 크기로 조정하세요
+                                  fit: BoxFit.cover, // 이미지 맞춤 설정
+                                  isCircular: true, // 원형으로 표시
                                 ),
                                 SizedBox(
                                     width: 8), // CircleAvatar와 작성자 이름 사이의 간격 조절
@@ -338,7 +344,7 @@ class _HomeBodyState extends State<_HomeBody> {
                                       ],
                                     ),
                                     Text(
-                                      '수원대학교, 컴퓨터공학과', // 작성자 학교 표시
+                                      widget.posts[index].belong + ", " + widget.posts[index].department, // 작성자 학교 표시
                                       style: AppFonts.smallText, // 폰트 스타일 적용
                                     ),
                                     SizedBox(height: 8), // 각 항목 사이의 간격 추가

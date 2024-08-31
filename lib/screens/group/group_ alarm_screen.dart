@@ -117,7 +117,11 @@ class _GroupAlarmScreenState extends State<GroupAlarmScreen> {
   }
 
   void _goBackToGroupManagement(BuildContext context) {
+
     Navigator.pop(context, true); // 그룹 알람 화면을 닫을 때 true 값을 함께 전달
+
+
+
   }
 
   @override
