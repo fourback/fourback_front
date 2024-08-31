@@ -10,6 +10,7 @@ class CommentResult {
   final int status;
   final bool userCheck;
 
+  final String? profileImage;
   final String? userName;
   final String? email;
   final String? birth;
@@ -22,6 +23,7 @@ class CommentResult {
 
   CommentResult({
     required this.id,
+    required this.profileImage,
     required this.content,
     required this.goodCount,
     required this.commentDate,
@@ -44,6 +46,7 @@ class CommentResult {
   factory CommentResult.fromJson(Map<String, dynamic> json) {
     return CommentResult(
       id: json['id'],
+      profileImage: json['profileImage'],
       content: json['content'],
       goodCount: json['goodCount'],
       commentDate: json['commentDate'],
@@ -69,6 +72,7 @@ class CommentResult {
     return {
       'id': id,
       'content': content,
+      'profileImage': profileImage,
       'goodCount': goodCount,
       'commentDate': commentDate,
       'postId': postId,

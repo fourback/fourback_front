@@ -19,7 +19,6 @@ class DetailScreen extends StatefulWidget {
   Post post;
   final String boardName;
 
-
   DetailScreen({required this.post, required this.boardName});
 
   @override
@@ -668,9 +667,15 @@ class _DetailScreenState extends State<DetailScreen> {
                             title: Row(
                               mainAxisAlignment: MainAxisAlignment.start,
                               children: [
-                                CircleAvatar(
-                                  backgroundColor: Colors.blue,
-                                  child: Icon(Icons.person, color: Colors.white),
+                                PublicImage(
+                                  imageUrl: commentsResult[index].profileImage != null
+                                      ? 'http://116.47.60.159:8080/api/images/${commentsResult[index].profileImage}'
+                                      : 'http://116.47.60.159:8080/api/images/default_profile_image.jpg',
+                                  placeholderPath: 'assets/icons/loading.gif',
+                                  width: 40.0, // 원하는 크기로 조정하세요x`
+                                  height: 40.0, // 원하는 크기로 조정하세요
+                                  fit: BoxFit.cover, // 이미지 맞춤 설정
+                                  isCircular: true, // 원형으로 표시
                                 ),
                                 SizedBox(width: 8.0),
                                 Column(
@@ -816,10 +821,15 @@ class _DetailScreenState extends State<DetailScreen> {
                                             children: [
                                               Row(
                                                 children: [
-                                                  CircleAvatar(
-                                                    backgroundColor: Colors.grey,
-                                                    child: Icon(Icons.person, color: Colors.white),
-                                                    radius: 16,
+                                                  PublicImage(
+                                                    imageUrl: replies[replyIndex].profileImage != null
+                                                        ? 'http://116.47.60.159:8080/api/images/${replies[index].profileImage}'
+                                                        : 'http://116.47.60.159:8080/api/images/default_profile_image.jpg',
+                                                    placeholderPath: 'assets/icons/loading.gif',
+                                                    width: 40.0, // 원하는 크기로 조정하세요
+                                                    height: 40.0, // 원하는 크기로 조정하세요
+                                                    fit: BoxFit.cover, // 이미지 맞춤 설정
+                                                    isCircular: true, // 원형으로 표시
                                                   ),
                                                   SizedBox(width: 8.0),
                                                   Column(
