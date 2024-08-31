@@ -54,7 +54,7 @@ dependencies:
   sqflite: ^2.0.0+4
   path_provider: ^2.0.11
 dev_dependencies:
-  kakao_flutter_sdk: ^1.9.5
+  kakao_flutter_sdk: ^1.9.1+2
   flutter_test:
     sdk: flutter
 
