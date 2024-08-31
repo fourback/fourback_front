@@ -52,9 +52,27 @@ class _StudyInvitationScreenState extends State<StudyInvitationScreen> {
     );
 
     if (response.statusCode == 200) {
-      print("초대성공");
-      };
+      Navigator.pop(context);
+    } else {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('초대 실패'),
+            content: Text('사용자를 초대하는 데 실패했습니다. 다시 시도해주세요.'),
+            actions: <Widget>[
+              TextButton(
+                child: Text('확인'),
+                onPressed: () {
+                  Navigator.of(context).pop(); // 알림창 닫기
+                },
+              ),
+            ],
+          );
+        },
+      );
     }
+  }
 
   @override
   Widget build(BuildContext context) {
