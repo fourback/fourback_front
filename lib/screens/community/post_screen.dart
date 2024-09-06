@@ -640,8 +640,14 @@ class _DetailScreenState extends State<DetailScreen> {
               SingleChildScrollView(
                 child: Container(
                   decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey, width: 1),
-                    borderRadius: BorderRadius.circular(10.0),
+                    border: Border(
+                      top: BorderSide(
+                        color: Colors.grey,
+                        width: 1
+                      ),
+                    ),
+                    //border: Border.all(color: Colors.grey, width: 1),
+                    //borderRadius: BorderRadius.circular(10.0),
                     color: Colors.white,
                   ),
                   child: Column(
@@ -658,6 +664,7 @@ class _DetailScreenState extends State<DetailScreen> {
                       final List<CommentResult> replies = List.generate(
                           jsonData.length,
                               (replyIndex) => repliesResult[replyIndex]);
+
 
 
                       return Column(

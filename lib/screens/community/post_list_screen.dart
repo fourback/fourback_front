@@ -190,7 +190,7 @@ class _PostListScreenState extends State<PostListScreen> {
                                 ),
                                 Text(
                                   posts[index].content,
-                                  maxLines: 1,
+                                  maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ],
