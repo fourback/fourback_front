@@ -28,6 +28,7 @@ class ChatDatabaseHelper {
     );
   }
 
+
   Future<void> _onCreate(Database db, int version) async {
     await db.execute(
       '''

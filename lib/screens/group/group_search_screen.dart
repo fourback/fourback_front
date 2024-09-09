@@ -105,11 +105,22 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
                       topRight: Radius.circular(15),
                     ),
                     child: Image.asset(
-                      "assets/icons/eximage.png", // 예시 이미지 경로
-                      width: double.infinity,
-                      height: itemHeight * 0.48, // 이미지 비율 유지
+                          () {
+                        if (studyGroup.category == "프로젝트") {
+                          return "assets/icons/ex5.png";
+                        } else if (studyGroup.category == '스터디') {
+                          return "assets/icons/ex6.png";
+                        } else if (studyGroup.category == '친목') {
+                          return "assets/icons/ex7.png";
+                        } else {
+                          return "assets/icons/eximage.png";
+                        }
+                      }(),
                       fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: itemHeight * 0.48,
                     ),
+
                   ),
                   Padding(
                     padding: const EdgeInsets.all(8.0),

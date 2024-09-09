@@ -823,7 +823,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                                 children: [
                                                   PublicImage(
                                                     imageUrl: replies[replyIndex].profileImage != null
-                                                        ? 'http://116.47.60.159:8080/api/images/${replies[index].profileImage}'
+                                                        ? 'http://116.47.60.159:8080/api/images/${replies[replyIndex].profileImage}'
                                                         : 'http://116.47.60.159:8080/api/images/default_profile_image.jpg',
                                                     placeholderPath: 'assets/icons/loading.gif',
                                                     width: 40.0, // 원하는 크기로 조정하세요

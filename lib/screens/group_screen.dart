@@ -380,7 +380,7 @@ class _GroupScreenState extends State<GroupScreen> {
                     Text("전공자가 되자!",
                         style: GoogleFonts.inter(
                             fontWeight: FontWeight.w600, fontSize: 15)),
-                    SizedBox(height: 24),
+
                     ElevatedButton(
                       onPressed: () {
                         Navigator.push(
@@ -390,6 +390,7 @@ class _GroupScreenState extends State<GroupScreen> {
                         );
                       },
                       style: ElevatedButton.styleFrom(
+
                         backgroundColor: Color(0xFF333333),
                       ),
                       child: Text(
@@ -542,8 +543,23 @@ class _GroupScreenState extends State<GroupScreen> {
                   Container(
                     width: itemWidth * 0.9,
                     height: itemHeight * 0.48,
-                    child: Image.asset("assets/icons/eximage.png",
-                        fit: BoxFit.cover),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12.0), // 둥근 모서리 반경 설정
+                      child: Image.asset(
+                            () {
+                          if (studyGroup.category == "프로젝트") {
+                            return "assets/icons/ex5.png";
+                          } else if (studyGroup.category == '스터디') {
+                            return "assets/icons/ex6.png";
+                          } else if (studyGroup.category == '친목') {
+                            return "assets/icons/ex7.png";
+                          } else {
+                            return "assets/icons/eximage.png";
+                          }
+                        }(),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(8.0),

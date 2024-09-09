@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:firebase_messaging/firebase_messaging.dart';
+
 import 'navigation_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -43,7 +45,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _sendUserInfo() async {
+    FirebaseMessaging messaging = FirebaseMessaging.instance;
     final url = Uri.http(address, "api/users");
+    String? fcmToken = await messaging.getToken();
+
     final response = await http.post(
       url,
       headers: {
@@ -53,6 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
         {
           "userId": userId,
           "registrationId": "KAKAO",
+          "fcmToken": fcmToken,
         },
       ),
     );
@@ -199,7 +205,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       top: 0,
                       left: 0,
                       child: Text(
-                        '비전공자 개발 커뮤니티\nBe전공자',
+                        '비전공 개발자 커뮤니티\nBe전공자',
                         textAlign: TextAlign.left,
                         style: TextStyle(
                             color: Color.fromRGBO(30, 35, 44, 1),

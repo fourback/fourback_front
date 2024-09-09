@@ -39,6 +39,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   @override
   void initState() {
     super.initState();
+
     print(widget.user);
     _loadMessages();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -83,12 +84,14 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
 
     List<Map<String, dynamic>> savedMessages = await ChatDatabaseHelper().getMessages(widget.studyGroup.id);
     setState(() {
+
       currentUser = widget.user.firstWhere((user) => user.userId == userId);
 
       _messages = savedMessages.map((message) {
         UserInfo? user = widget.user.firstWhere(
               (user) => user.userId == message['userId'],
         );
+
         return ChatMessage(
           sender: message['sender'],
           text: message['message'],

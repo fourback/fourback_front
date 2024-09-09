@@ -203,7 +203,17 @@ class _GroupAlarmScreenState extends State<GroupAlarmScreen> {
                                     width: itemWidth * 1.8,
                                     height: itemHeight * 0.53,
                                     child: Image.asset(
-                                      "assets/icons/eximage.png",
+                                          () {
+                                        if (invitations[index].category == "프로젝트") {
+                                          return "assets/icons/ex5.png";
+                                        } else if (invitations[index].category == '스터디') {
+                                          return "assets/icons/ex6.png";
+                                        } else if (invitations[index].category == '친목') {
+                                          return "assets/icons/ex7.png";
+                                        } else {
+                                          return "assets/icons/eximage.png";
+                                        }
+                                      }(),
                                       fit: BoxFit.cover,
                                     ),
                                   ),

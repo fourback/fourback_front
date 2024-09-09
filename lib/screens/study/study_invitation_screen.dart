@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../../auth.dart';
 import '../../models/user_info.dart';
+import '../../publicImage.dart';
 
 class StudyInvitationScreen extends StatefulWidget {
   final StudyGroup studyGroup;
@@ -168,12 +169,29 @@ class _StudyInvitationScreenState extends State<StudyInvitationScreen> {
               alignment: Alignment.center,
               child:Row(
                 children: [
-                  CircleAvatar(
-                    backgroundColor: Colors.blue,
-                    child: Icon(Icons.person, color: Colors.white),
+                  PublicImage(
+                    imageUrl: user!.fileName != null
+                        ? 'http://116.47.60.159:8080/api/images/${user!.fileName}'
+                        : 'http://116.47.60.159:8080/api/images/default_profile_image.jpg',
+                    placeholderPath: 'assets/icons/loading.gif',
+                    width: 40.0, // 원하는 크기로 조정하세요
+                    height: 40.0, // 원하는 크기로 조정하세요
+                    fit: BoxFit.cover, // 이미지 맞춤 설정
+                    isCircular: true, // 원형으로 표시
                   ),
-                  Text(user!.userName,
-                    style: const TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
+                  SizedBox(width: 8.0,),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: 22),
+                      Text(user!.userName,
+                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+
+                      Text((user!.belong ?? "Unknown") + ", " + (user!.department ?? "Unknown"),
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
+                      ),
+                    ],
                   ),
 
                 ],
