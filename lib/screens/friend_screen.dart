@@ -1,109 +1,157 @@
-import 'dart:convert';
-import 'dart:math';
-
-import 'package:bemajor_frontend/api_url.dart';
-import 'package:bemajor_frontend/models/studyGroup.dart';
 import 'package:flutter/material.dart';
-
-import 'package:http/http.dart' as http;
-import '../../auth.dart';
-import '../../models/user_info.dart';
+import 'package:bemajor_frontend/screens/friend/friend_alarm_screen.dart';
+import 'package:bemajor_frontend/screens/friend/friend_invitation_screen.dart';
 
 class FriendScreen extends StatefulWidget {
+  const FriendScreen({super.key});
+
   @override
-  State<FriendScreen> createState() => _StudyFriendScreenState();
+  State<FriendScreen> createState() => _FriendScreenState();
 }
 
-class _StudyFriendScreenState extends State<FriendScreen> {
-  final TextEditingController addUserController = TextEditingController();
+class _FriendScreenState extends State<FriendScreen> {
+  final List<String> friends = [
+    '김수현',
+    '김지은',
+    '소지섭',
+    '강예담',
+    '안정현',
+    '김수영',
+    '원빈',
+    '아이유',
+  ]; // 친구 목록 패치해서 받아오기!
 
-  UserInfo? user;
-  List<UserInfo> friendList = [];
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  Future<void> searchUser() async {
-    // 친구 목록 가져오는 API 실행
-  }
+  int friendRequests = 3; // 받은 친구 요청 개수
 
   @override
   Widget build(BuildContext context) {
+    double deviceHeight = MediaQuery.of(context).size.height;
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: _UpperAppbar(
-        context: context,
-        onLogoPressed: () {},
-        onlistPressed: () {},
-      ),
-      body: SingleChildScrollView(
-        child: ListBody(
-          children: _body(),
-        ),
-      ),
-    );
-  }
-
-  @override
-  PreferredSizeWidget _UpperAppbar({
-    required BuildContext context,
-    required Function onLogoPressed,
-    required Function onlistPressed,
-  }) {
-    return AppBar(
-      backgroundColor: Colors.white,
-      scrolledUnderElevation: 0,
-      leading: Padding(
-        padding: const EdgeInsets.only(right: 8.0),
-        child: IconButton(
-          icon: Icon(Icons.navigate_before_outlined),
-          onPressed: () => onLogoPressed(),
-        ),
-      ),
-      title: Container(
-        child: Text(
-          '친구목록',
-          textAlign: TextAlign.center,
-        ),
-      ),
-    );
-  }
-
-  List<Widget> _body() {
-    List<Widget> widgets = [];
-    widgets.add(
-      Container(
-        height: 600, // 화면 내에서 리스트가 차지할 수 있는 높이 지정
-        child: ListView.builder(
-          itemCount: 15, // friendList.length로 변경 가능
-          itemBuilder: (context, index) {
-            return Column(
-              children: [
-                ListTile(
-                  leading: CircleAvatar(
-                    radius: 30,
-                    backgroundColor: Colors.blue,
-                    child: Icon(Icons.person, color: Colors.white),
+      appBar: _friendAppbar(context),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              itemCount: friends.length,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.only(top: 20, right: 20, left: 20),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: Color(0xff22172A),
+                          width: 0.3,
+                        ),
+                      ),
+                    ),
+                    height: deviceHeight * 0.1,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CircleAvatar(
+                          radius: 30, // 프로필 이미지 크기 설정
+                        ),
+                        SizedBox(width: 15), // 프로필 이미지와 텍스트 간격
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start, // Column 내에서 왼쪽 정렬
+                          mainAxisAlignment: MainAxisAlignment.start, // 텍스트를 상단에 배치
+                          children: [
+                            Text(
+                              friends[index],
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                  title: Text('title'),
-                  subtitle: Text('subtitle'),
-                  // trailing: IconButton(
-                  //   onPressed: () {},
-                  // ),
+                );
+              },
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch, // 버튼의 너비를 최대화
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    // 친구 요청 화면으로 이동하는 코드
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => FriendAlarmScreen(),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                    decoration: BoxDecoration(
+                      color: Colors.black, // 검정색 배경
+                      borderRadius: BorderRadius.circular(16), // 모서리 둥글게
+                    ),
+                    child: Center(
+                      child: Text(
+                        '받은 친구 요청 $friendRequests개',
+                        style: TextStyle(
+                          color: Colors.white, // 하얀색 텍스트
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-                Divider(
-                  thickness: 1, // 선의 두께를 1로 설정
-                  color: Colors.grey, // 선의 색상을 회색으로 설정
+                SizedBox(height: 10), // 버튼 간 간격 추가
+                GestureDetector(
+                  onTap: () {
+                    // 친구 추가하기 화면으로 이동하는 코드
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => FriendInvitationScreen(),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                    decoration: BoxDecoration(
+                      color: Colors.black, // 검정색 배경
+                      borderRadius: BorderRadius.circular(16), // 모서리 둥글게
+                    ),
+                    child: Center(
+                      child: Text(
+                        '친구 추가하기',
+                        style: TextStyle(
+                          color: Colors.white, // 하얀색 텍스트
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ],
-            );
-          },
-        ),
+            ),
+          ),
+        ],
       ),
     );
-
-    return widgets;
   }
+}
+
+PreferredSizeWidget _friendAppbar(BuildContext context) {
+  return AppBar(
+    backgroundColor: Colors.white,
+    scrolledUnderElevation: 0,
+    title: Text(
+      "친구목록",
+      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+    ),
+    centerTitle: true,
+  );
 }

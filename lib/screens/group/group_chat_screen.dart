@@ -149,7 +149,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               isMine: decodedMessage['senderId'] == currentUser?.userId,
               profileImageName: senderUser.fileName,
             ));
-            _messages.sort((a, b) => a.date.compareTo(b.date));
+
           });
         }
 
