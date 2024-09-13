@@ -51,6 +51,7 @@ class _FriendScreenState extends State<FriendScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         CircleAvatar(
+                          backgroundColor: Colors.blue,
                           radius: 30, // 프로필 이미지 크기 설정
                         ),
                         SizedBox(width: 15), // 프로필 이미지와 텍스트 간격
