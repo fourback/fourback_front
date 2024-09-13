@@ -110,6 +110,7 @@ class _FriendAlarmScreenState extends State<FriendAlarmScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
         title: Text("알림"),
         content: Text("$friendName의 친구 요청을 수락했습니다."),
         actions: [
