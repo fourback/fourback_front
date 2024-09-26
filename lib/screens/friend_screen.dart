@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:bemajor_frontend/screens/friend/friend_alarm_screen.dart';
+import 'package:bemajor_frontend/screens/friend/friend_detail_screen.dart';
 import 'package:bemajor_frontend/screens/friend/friend_invitation_screen.dart';
 
 class FriendScreen extends StatefulWidget {
@@ -10,15 +11,16 @@ class FriendScreen extends StatefulWidget {
 }
 
 class _FriendScreenState extends State<FriendScreen> {
-  final List<String> friends = [
-    '김수현',
-    '김지은',
-    '소지섭',
-    '강예담',
-    '안정현',
-    '김수영',
-    '원빈',
-    '아이유',
+  // 친구 목록을 이름과 학교, 학과 정보로 저장
+  final List<Map<String, String>> friends = [
+    {'name': '김수현', 'school': '서울대학교', 'major': '컴퓨터학부'},
+    {'name': '김지은', 'school': '고려대학교', 'major': '경영학과'},
+    {'name': '소지섭', 'school': '연세대학교', 'major': '심리학과'},
+    {'name': '강예담', 'school': '한양대학교', 'major': '건축학부'},
+    {'name': '안정현', 'school': '성균관대학교', 'major': '화학공학과'},
+    {'name': '김수영', 'school': '서울시립대학교', 'major': '도시공학과'},
+    {'name': '원빈', 'school': '중앙대학교', 'major': '연극영화과'},
+    {'name': '아이유', 'school': '이화여자대학교', 'major': '음악학과'},
   ]; // 친구 목록 패치해서 받아오기!
 
   int friendRequests = 3; // 받은 친구 요청 개수
@@ -35,40 +37,63 @@ class _FriendScreenState extends State<FriendScreen> {
             child: ListView.builder(
               itemCount: friends.length,
               itemBuilder: (context, index) {
-                return Padding(
-                  padding: const EdgeInsets.only(top: 20, right: 20, left: 20),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(
-                          color: Color(0xff22172A),
-                          width: 0.3,
+                return GestureDetector(
+                  onTap: () {
+                    // 친구 타일을 클릭했을 때 친구 상세 화면으로 이동
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => FriendDetailScreen(
+                          friendName: friends[index]['name']!,
+                          school: friends[index]['school']!,
+                          major: friends[index]['major']!,
                         ),
                       ),
-                    ),
-                    height: deviceHeight * 0.1,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        CircleAvatar(
-                          backgroundColor: Colors.blue,
-                          radius: 30, // 프로필 이미지 크기 설정
+                    );
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 20, left: 20),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: Color(0xff22172A),
+                            width: 0.3,
+                          ),
                         ),
-                        SizedBox(width: 15), // 프로필 이미지와 텍스트 간격
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start, // Column 내에서 왼쪽 정렬
-                          mainAxisAlignment: MainAxisAlignment.start, // 텍스트를 상단에 배치
-                          children: [
-                            Text(
-                              friends[index],
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                      ),
+                      height: deviceHeight * 0.12, // 높이를 약간 늘림
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center, // 수직 중앙 정렬
+                        children: [
+                          CircleAvatar(
+                            backgroundColor: Colors.blue,
+                            radius: 30, // 프로필 이미지 크기 설정
+                          ),
+                          SizedBox(width: 20), // 프로필 이미지와 텍스트 간격
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start, // Column 내에서 왼쪽 정렬
+                            mainAxisAlignment: MainAxisAlignment.center, // 텍스트를 중앙에 배치
+                            children: [
+                              Text(
+                                friends[index]['name']!,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
+                              SizedBox(height: 5),
+                              Text(
+                                '${friends[index]['school']} ${friends[index]['major']}',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600], // 부가 정보는 회색으로 표시
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );
