@@ -66,9 +66,15 @@ class _FriendScreenState extends State<FriendScreen> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.center, // 수직 중앙 정렬
                         children: [
+                          // 임시 프로필 이미지 적용
                           CircleAvatar(
-                            backgroundColor: Colors.blue,
                             radius: 30, // 프로필 이미지 크기 설정
+                            backgroundColor: Color(0xFFD8BFD8), // 임시 배경색
+                            child: Icon(
+                              Icons.person, // 사람 아이콘 사용
+                              size: 30,
+                              color: Colors.white, // 아이콘 색상
+                            ),
                           ),
                           SizedBox(width: 20), // 프로필 이미지와 텍스트 간격
                           Column(
