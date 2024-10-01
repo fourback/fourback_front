@@ -2,14 +2,29 @@ import 'package:flutter/material.dart';
 
 class FriendDetailScreen extends StatelessWidget {
   final String friendName;
-  final String school;
-  final String major;
+  final String email;
+  final String belong;
+  final String department;
+  final String birth;
+  final String hobby;
+  final String objective;
+  final String address;
+  final String techStack;
+  final String fileName;
 
   const FriendDetailScreen({
     super.key,
     required this.friendName,
-    required this.school,
-    required this.major,
+    required this.email,
+    required this.belong,
+    required this.department,
+    required this.birth,
+    required this.hobby,
+    required this.objective,
+    required this.address,
+    required this.techStack,
+    required this.fileName
+
   });
 
   @override
@@ -72,15 +87,15 @@ class FriendDetailScreen extends StatelessWidget {
                 child: ListView(
                   //받아와야 할 데이터들
                   children: [
-                    _buildInfoTile('이름', friendName),
-                    _buildInfoTile('이메일', '이메일'),
-                    _buildInfoTile('대학교/소속기관', '$school $major'),
-                    _buildInfoTile('생년월일', '생년월일'),
-                    _buildInfoTile('학과', '학과'),
-                    _buildInfoTile('취미', '취미'),
-                    _buildInfoTile('희망 직무', '희망 직무'),
-                    _buildInfoTile('거주 지역', '거주 지역'),
-                    _buildInfoTile('기술 스택', '기술 스택'),
+                    _buildInfoTile('이름', friendName ?? ""),
+                    _buildInfoTile('이메일', email ?? ""),
+                    _buildInfoTile('대학교/소속기관', belong ?? ""),
+                    _buildInfoTile('생년월일', birth ?? ""),
+                    _buildInfoTile('학과', department ?? ""),
+                    _buildInfoTile('취미', hobby ?? ""),
+                    _buildInfoTile('희망 직무', objective ?? ""),
+                    _buildInfoTile('거주 지역', address ?? ""),
+                    _buildInfoTile('기술 스택', techStack ?? ""),
                     SizedBox(
                       height: 20,
                     ),

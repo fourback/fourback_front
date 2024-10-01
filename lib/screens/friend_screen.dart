@@ -1,7 +1,15 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:bemajor_frontend/screens/friend/friend_alarm_screen.dart';
 import 'package:bemajor_frontend/screens/friend/friend_detail_screen.dart';
 import 'package:bemajor_frontend/screens/friend/friend_invitation_screen.dart';
+
+import '../api_url.dart';
+import '../auth.dart';
+import 'package:http/http.dart' as http;
+
+import '../models/user_info.dart';
 
 class FriendScreen extends StatefulWidget {
   const FriendScreen({super.key});
@@ -10,20 +18,66 @@ class FriendScreen extends StatefulWidget {
   State<FriendScreen> createState() => _FriendScreenState();
 }
 
-class _FriendScreenState extends State<FriendScreen> {
-  // 친구 목록을 이름과 학교, 학과 정보로 저장
-  final List<Map<String, String>> friends = [
-    {'name': '김수현', 'school': '서울대학교', 'major': '컴퓨터학부'},
-    {'name': '김지은', 'school': '고려대학교', 'major': '경영학과'},
-    {'name': '소지섭', 'school': '연세대학교', 'major': '심리학과'},
-    {'name': '강예담', 'school': '한양대학교', 'major': '건축학부'},
-    {'name': '안정현', 'school': '성균관대학교', 'major': '화학공학과'},
-    {'name': '김수영', 'school': '서울시립대학교', 'major': '도시공학과'},
-    {'name': '원빈', 'school': '중앙대학교', 'major': '연극영화과'},
-    {'name': '아이유', 'school': '이화여자대학교', 'major': '음악학과'},
-  ]; // 친구 목록 패치해서 받아오기!
 
-  int friendRequests = 3; // 받은 친구 요청 개수
+
+class _FriendScreenState extends State<FriendScreen> {
+  List<UserInfo> friendInfo = [];
+  int friendSize = 0;
+  int friendRequests = 0; // 받은 친구 요청 개수
+
+  @override
+  void initState() {
+    super.initState();
+    // 화면이 로드될 때 친구 요청 목록을 불러옴
+    fetchFriendInfo();
+  }
+
+
+  Future<void> countFriendApply() async {
+    String? token = await readAccess();
+
+    final response = await http.get(
+      // {3} 자리에 로그인한 사용자의 id가 들어가야됨
+      Uri.parse('${ApiUrl.baseUrl}/api/friend/${3}'),
+      headers: {
+        'access': '$token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> jsonMap = jsonDecode(response.body);
+
+      setState(() {
+        friendRequests  = jsonMap['count'];
+      });
+    }
+  }
+
+  Future<void> fetchFriendInfo() async {
+    String? token = await readAccess();
+
+    final response = await http.get(
+      // {3} 자리에 로그인한 사용자의 id가 들어가야됨
+      Uri.parse('${ApiUrl.baseUrl}/api/friend/${3}'),
+      headers: {
+        'access': '$token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> jsonMap = jsonDecode(response.body);
+
+      setState(() {
+        List<dynamic> jsonData = jsonMap['result'];
+        friendSize = jsonMap['size'];
+        friendInfo =
+            jsonData.map((data) => UserInfo.fromJson(data)).toList();
+      });
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +89,7 @@ class _FriendScreenState extends State<FriendScreen> {
         children: [
           Expanded(
             child: ListView.builder(
-              itemCount: friends.length,
+              itemCount: friendInfo.length,
               itemBuilder: (context, index) {
                 return GestureDetector(
                   onTap: () {
@@ -44,9 +98,16 @@ class _FriendScreenState extends State<FriendScreen> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => FriendDetailScreen(
-                          friendName: friends[index]['name']!,
-                          school: friends[index]['school']!,
-                          major: friends[index]['major']!,
+                          friendName: friendInfo[index].userName ?? "Unknown",
+                          email: friendInfo[index].email ?? "No email",
+                          belong: friendInfo[index].belong ?? "No belong",
+                          department: friendInfo[index].department ?? "No department",
+                          birth: friendInfo[index].birth ?? "Unknown",
+                          hobby: friendInfo[index].hobby ?? "No hobby",
+                          objective: friendInfo[index].objective ?? "No objective",
+                          address: friendInfo[index].address ?? "No address",
+                          techStack: friendInfo[index].techStack ?? "No tech stack",
+                          fileName: friendInfo[index].fileName ?? "No file",
                         ),
                       ),
                     );
@@ -82,7 +143,7 @@ class _FriendScreenState extends State<FriendScreen> {
                             mainAxisAlignment: MainAxisAlignment.center, // 텍스트를 중앙에 배치
                             children: [
                               Text(
-                                friends[index]['name']!,
+                                friendInfo[index].userName!,
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -90,7 +151,7 @@ class _FriendScreenState extends State<FriendScreen> {
                               ),
                               SizedBox(height: 5),
                               Text(
-                                '${friends[index]['school']} ${friends[index]['major']}',
+                                '${friendInfo[index].belong} ${friendInfo[index].department}',
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: Colors.grey[600], // 부가 정보는 회색으로 표시

@@ -1,4 +1,10 @@
+import 'dart:convert';
+
+import 'package:bemajor_frontend/models/friendApply.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import '../../api_url.dart';
+import '../../auth.dart';
 
 class FriendInvitationScreen extends StatefulWidget {
   const FriendInvitationScreen({super.key});
@@ -6,6 +12,21 @@ class FriendInvitationScreen extends StatefulWidget {
   @override
   State<FriendInvitationScreen> createState() => _FriendInvitationScreenState();
 }
+
+Future<void> addFriendApply() async {
+  String? token = await readAccess();
+
+  final response = await http.post(
+    Uri.parse('${ApiUrl.baseUrl}/api/friend/apply'),
+    headers: {
+      'access': '$token',
+      'Content-Type': 'application/json',
+    },
+    // body에 사용자 id, 친구를 신청할 유저의 id로 넘기면 됩니다.
+    body: jsonEncode(FriendApply(4, 3)),
+  );
+}
+
 
 class _FriendInvitationScreenState extends State<FriendInvitationScreen> {
   final List<String> invitaionfriends = [
@@ -146,6 +167,7 @@ void _showAcceptDialog(BuildContext context, String friendName) {
       actions: [
         TextButton(
           onPressed: () {
+            addFriendApply();
             Navigator.of(context).pop();
           },
           child: Text("확인"),
