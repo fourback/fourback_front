@@ -30,8 +30,7 @@ class _FriendAlarmScreenState extends State<FriendAlarmScreen> {
     String? token = await readAccess();
 
     final response = await http.get(
-      // {3} 자리에 로그인한 사용자의 id가 들어가야됨
-      Uri.parse('${ApiUrl.baseUrl}/api/friend/apply/${3}'),
+      Uri.parse('${ApiUrl.baseUrl}/api/friend/apply'), // 사용자 ID 없이 호출
       headers: {
         'access': '$token',
         'Content-Type': 'application/json',
@@ -49,12 +48,11 @@ class _FriendAlarmScreenState extends State<FriendAlarmScreen> {
     }
   }
 
-  Future<void> acceptFriendApply() async {
+  Future<void> acceptFriendApply(String applyId) async {
     String? token = await readAccess();
 
     final response = await http.post(
-      // {3} 자리에 ApplyId가 들어가야함
-      Uri.parse('${ApiUrl.baseUrl}/api/friend/apply/${3}'),
+      Uri.parse('${ApiUrl.baseUrl}/api/friend/apply/$applyId'), // ApplyId를 URI에 포함
       headers: {
         'access': '$token',
         'Content-Type': 'application/json',
@@ -114,7 +112,7 @@ class _FriendAlarmScreenState extends State<FriendAlarmScreen> {
                               padding: const EdgeInsets.symmetric(horizontal: 20.0), // 좌우 여백 설정
                               child: GestureDetector(
                                 onTap: () {
-                                  _showAcceptDialog(context, appliesResult[index].friendName);
+                                  _showAcceptDialog(context, appliesResult[index].friendName, appliesResult[index].applyId);
                                 },
                                 child: Container(
                                   width: double.infinity, // 버튼 가로 크기를 최대한으로 설정
@@ -149,7 +147,7 @@ class _FriendAlarmScreenState extends State<FriendAlarmScreen> {
   }
 
   // 수락 버튼 눌렀을 때 팝업 창으로 알림
-  void _showAcceptDialog(BuildContext context, String friendName) {
+  void _showAcceptDialog(BuildContext context, String friendName, int applyId) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -159,7 +157,7 @@ class _FriendAlarmScreenState extends State<FriendAlarmScreen> {
         actions: [
           TextButton(
             onPressed: () {
-              acceptFriendApply();
+              acceptFriendApply(applyId.toString()); // applyId를 String으로 변환하여 전달
               Navigator.of(context).pop();
             },
             child: Text("확인"),

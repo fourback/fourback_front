@@ -112,8 +112,12 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       'access': '$accessToken', // 헤더에 토큰 추가
     };
     try {
-      _channel = IOWebSocketChannel.connect(
+      /*_channel = IOWebSocketChannel.connect(
         Uri.parse('ws://116.47.60.159:8080/groupChat?studyGroupId=${widget.studyGroup.id}'),
+        headers: headers,
+      );*/
+      _channel = IOWebSocketChannel.connect(
+        Uri.parse('ws://116.47.60.159:8080/friendChat?chatRoomId=11-12'),
         headers: headers,
       );
 
