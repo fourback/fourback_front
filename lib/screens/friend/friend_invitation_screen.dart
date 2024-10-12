@@ -13,6 +13,27 @@ class FriendInvitationScreen extends StatefulWidget {
   State<FriendInvitationScreen> createState() => _FriendInvitationScreenState();
 }
 
+Future<List<String>> fetchFriendList() async {
+  String? token = await readAccess();
+
+  final response = await http.get(
+    Uri.parse('${ApiUrl.baseUrl}/api/friends/invitation-list'),
+    headers: {
+      'access': '$token',
+      'Content-Type': 'application/json',
+    },
+  );
+
+  if (response.statusCode == 200) {
+    List<dynamic> friendList = jsonDecode(response.body);
+    print(friendList); // 응답 로그 출력
+    return friendList.map((friend) => friend.toString()).toList();
+  } else {
+    print('Error: ${response.statusCode}, ${response.body}');
+    throw Exception('Failed to load friend list');
+  }
+}
+
 Future<void> addFriendApply() async {
   String? token = await readAccess();
 
@@ -22,30 +43,24 @@ Future<void> addFriendApply() async {
       'access': '$token',
       'Content-Type': 'application/json',
     },
-    // body에 사용자 id, 친구를 신청할 유저의 id로 넘기면 됩니다.
     body: jsonEncode(FriendApply(4, 3)),
   );
 }
 
-
 class _FriendInvitationScreenState extends State<FriendInvitationScreen> {
-  final List<String> invitaionfriends = [
-    '김수현',
-    '김지은',
-    '소지섭',
-    '강예담',
-    '안정현',
-    '김수영',
-    '원빈',
-    '아이유',
-  ]; // 친구 추가 목록 받아오기
+  List<String> invitaionfriends = []; // 친구 목록을 저장할 리스트
   List<String> filteredFriends = [];
   TextEditingController searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    filteredFriends = invitaionfriends; // 초기값으로 전체 친구 목록 설정
+    fetchFriendList().then((friendList) {
+      setState(() {
+        invitaionfriends = friendList;
+        filteredFriends = friendList; // 초기값으로 전체 친구 목록 설정
+      });
+    });
     searchController.addListener(_filterFriends);
   }
 
@@ -79,7 +94,9 @@ class _FriendInvitationScreenState extends State<FriendInvitationScreen> {
             ),
           ),
           Expanded(
-            child: ListView.builder(
+            child: filteredFriends.isEmpty
+                ? Center(child: Text('친구 목록이 없습니다.'))
+                : ListView.builder(
               itemCount: filteredFriends.length,
               itemBuilder: (context, index) {
                 return Padding(

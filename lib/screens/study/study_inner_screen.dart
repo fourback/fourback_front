@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:math';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:bemajor_frontend/models/user_info.dart';
 import 'package:bemajor_frontend/screens/group/group_chat_screen.dart';
 import 'package:bemajor_frontend/screens/group_screen.dart';
@@ -24,6 +24,7 @@ class StudyInnerScreen extends StatefulWidget {
 class _StudyInnerScreenState extends State<StudyInnerScreen> {
   List<Map<String, dynamic>> groupGoals = [];
 
+  // 목표 진행률 계산 함수
   double getGoalProgress(List<Map<String, dynamic>> subGoals) {
     int completedSubGoals = subGoals.where((subGoal) => subGoal['completed']).length;
     return completedSubGoals / subGoals.length;
@@ -48,25 +49,14 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
   bool isStudySchedule = false;
 
   List<UserInfo> user = [];
+  bool isOwner = false; // 그룹 생성자인지 확인할 변수
+  int pendingApprovalCount = 0; // 그룹 참여 승인 대기 인원
 
   @override
   void initState() {
     super.initState();
     fetchStudys();
-  }
-
-  Future<void> _navigateToStudyScheduleScreen() async {
-
-    final newGoal = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AddGoalScreen(),
-      ),
-    );
-    if (newGoal != null) {
-      addNewGoal(newGoal['title'], newGoal['date'], newGoal['subGoals']);
-    }
-    fetchStudys();
+    checkIfOwner(); // 그룹 생성자인지 확인
   }
 
   Future<void> fetchStudys() async {
@@ -84,6 +74,36 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
     }
   }
 
+  Future<void> checkIfOwner() async {
+    String? token = await readAccess();
+    final response = await http.get(
+      Uri.parse('${ApiUrl.baseUrl}/studygroup/${widget.studyGroup.id}/isOwner'),
+      headers: {'access': '$token'},
+    );
+
+    if (response.statusCode == 200) {
+      final result = jsonDecode(response.body);
+      setState(() {
+        isOwner = result['isOwner'];
+        pendingApprovalCount = result['pendingApprovalCount']; // 승인 대기 인원 수
+      });
+    }
+  }
+
+  Future<void> requestToJoinGroup() async {
+    String? token = await readAccess();
+    final response = await http.post(
+      Uri.parse('${ApiUrl.baseUrl}/studygroup/${widget.studyGroup.id}/request-join'),
+      headers: {'access': '$token'},
+    );
+
+    if (response.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("그룹 참여 신청이 완료되었습니다.")),
+      );
+    }
+  }
+
   Future<void> deleteStudys() async {
     String? token = await readAccess();
     final response = await http.delete(
@@ -98,6 +118,19 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
 
   Future<void> updateStudys() async {}
 
+  Future<void> _navigateToStudyScheduleScreen() async {
+    final newGoal = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddGoalScreen(),
+      ),
+    );
+    if (newGoal != null) {
+      addNewGoal(newGoal['title'], newGoal['date'], newGoal['subGoals']);
+    }
+    fetchStudys();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -108,14 +141,66 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
         onlistPressed: () {},
       ),
       body: SingleChildScrollView(
-        child: ListBody(
-          children: _body(),
+        child: Column(
+          children: [
+            if (isOwner && pendingApprovalCount > 0)
+              Padding(
+                padding: const EdgeInsets.all(10.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    color: Colors.black,
+                  ),
+                  width: MediaQuery.of(context).size.width * 0.9,
+                  height: MediaQuery.of(context).size.height * 0.05,
+                  child: Center(
+                    child: Text(
+                      '$pendingApprovalCount명의 유저가 그룹 참여 승인을 기다리고 있어요!',
+                      style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            if (!isOwner)
+              Padding(
+                padding: const EdgeInsets.all(10.0),
+                child: GestureDetector(
+                  onTap: () {
+                    requestToJoinGroup();
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      color: Colors.black,
+                    ),
+                    width: MediaQuery.of(context).size.width * 0.9,
+                    height: MediaQuery.of(context).size.height * 0.05,
+                    child: Center(
+                      child: Text(
+                        '그룹 참여 신청하기',
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ListBody(
+              children: _body(),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  @override
   PreferredSizeWidget _UpperAppbar({
     required BuildContext context,
     required Function onLogoPressed,
@@ -361,39 +446,39 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
                       ),
                     ),
                     if(groupGoals.isNotEmpty)
-                    Container(
-                      margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-                      padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: List.generate(groupGoals.length, (index) {
-                          final goal = groupGoals[index];
-                          final progress = getGoalProgress(goal['subGoals']);
+                      Container(
+                        margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+                        padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: List.generate(groupGoals.length, (index) {
+                            final goal = groupGoals[index];
+                            final progress = getGoalProgress(goal['subGoals']);
 
-                          return GoalCard(
-                            title: goal['title'],
-                            date: goal['date'],
-                            progress: progress,
-                            onTap: () async {
-                              await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => SubGoalsScreen(
-                                    title: goal['title'],
-                                    subGoals: goal['subGoals'],
+                            return GoalCard(
+                              title: goal['title'],
+                              date: goal['date'],
+                              progress: progress,
+                              onTap: () async {
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => SubGoalsScreen(
+                                      title: goal['title'],
+                                      subGoals: goal['subGoals'],
+                                    ),
                                   ),
-                                ),
-                              );
-                              setState(() {});
-                            },
-                          );
-                        }),
+                                );
+                                setState(() {});
+                              },
+                            );
+                          }),
+                        ),
                       ),
-                    ),
                   ],
                 ),
                 onTap: () {
@@ -809,7 +894,6 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
   }
 }
 
-
 class GoalCard extends StatelessWidget {
   final String title;
   final String? date;
@@ -855,10 +939,8 @@ class GoalCard extends StatelessWidget {
                     '${(progress * 100).toInt()}%',
                     style: TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold),
                   ),
-        
                 ],
               ),
-
               Container(
                 width: double.infinity,
                 height: 10,
@@ -891,14 +973,11 @@ class GoalCard extends StatelessWidget {
               ),
             ],
           ),
-        
         ),
       ),
-
     );
   }
 }
-
 
 class SubGoalsScreen extends StatefulWidget {
   final String title;
@@ -949,6 +1028,7 @@ class _SubGoalsScreenState extends State<SubGoalsScreen> {
     );
   }
 }
+
 class AddGoalScreen extends StatefulWidget {
   @override
   _AddGoalScreenState createState() => _AddGoalScreenState();
@@ -1054,7 +1134,6 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
                       contentPadding: EdgeInsets.symmetric(horizontal: 10.0),
                       title: Text(
                         _subGoals[index]['title'],
-                         // 텍스트 크기 조정
                       ),
                       trailing: IconButton(
                         icon: Icon(Icons.remove_circle_outline, color: Colors.red),
@@ -1077,8 +1156,6 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
                 _addSubGoal(value);
               },
             ),
-
-
             SizedBox(height: 20),
             Container(
               width: MediaQuery.of(context).size.width * 0.9,

@@ -18,8 +18,6 @@ class FriendScreen extends StatefulWidget {
   State<FriendScreen> createState() => _FriendScreenState();
 }
 
-
-
 class _FriendScreenState extends State<FriendScreen> {
   List<UserInfo> friendInfo = [];
   int friendSize = 0;
@@ -28,17 +26,16 @@ class _FriendScreenState extends State<FriendScreen> {
   @override
   void initState() {
     super.initState();
-    // 화면이 로드될 때 친구 요청 목록을 불러옴
+    // 화면이 로드될 때 친구 목록과 친구 요청 개수 정보를 불러옴
     fetchFriendInfo();
+    countFriendApply();
   }
-
 
   Future<void> countFriendApply() async {
     String? token = await readAccess();
 
     final response = await http.get(
-      // {3} 자리에 로그인한 사용자의 id가 들어가야됨
-      Uri.parse('${ApiUrl.baseUrl}/api/friend/${3}'),
+      Uri.parse('${ApiUrl.baseUrl}/api/friend/apply/count'), // 사용자 ID가 필요 없음
       headers: {
         'access': '$token',
         'Content-Type': 'application/json',
@@ -49,7 +46,7 @@ class _FriendScreenState extends State<FriendScreen> {
       final Map<String, dynamic> jsonMap = jsonDecode(response.body);
 
       setState(() {
-        friendRequests  = jsonMap['count'];
+        friendRequests = jsonMap['count'];
       });
     }
   }
@@ -58,8 +55,7 @@ class _FriendScreenState extends State<FriendScreen> {
     String? token = await readAccess();
 
     final response = await http.get(
-      // {3} 자리에 로그인한 사용자의 id가 들어가야됨
-      Uri.parse('${ApiUrl.baseUrl}/api/friend/${3}'),
+      Uri.parse('${ApiUrl.baseUrl}/api/friend'), // 사용자 ID가 필요 없음
       headers: {
         'access': '$token',
         'Content-Type': 'application/json',
@@ -72,12 +68,10 @@ class _FriendScreenState extends State<FriendScreen> {
       setState(() {
         List<dynamic> jsonData = jsonMap['result'];
         friendSize = jsonMap['size'];
-        friendInfo =
-            jsonData.map((data) => UserInfo.fromJson(data)).toList();
+        friendInfo = jsonData.map((data) => UserInfo.fromJson(data)).toList();
       });
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
