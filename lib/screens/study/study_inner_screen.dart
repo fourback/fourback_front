@@ -15,6 +15,7 @@ import '../../models/studyGroup.dart';
 class StudyInnerScreen extends StatefulWidget {
   final StudyGroup studyGroup;
 
+
   StudyInnerScreen({required this.studyGroup});
 
   @override
@@ -49,6 +50,8 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
   bool isStudySchedule = false;
 
   List<UserInfo> user = [];
+  bool isMember = false;
+  bool isLoading = true;
   bool isOwner = false; // 그룹 생성자인지 확인할 변수
   int pendingApprovalCount = 0; // 그룹 참여 승인 대기 인원
 
@@ -56,7 +59,9 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
   void initState() {
     super.initState();
     fetchStudys();
-    checkIfOwner(); // 그룹 생성자인지 확인
+    loadInitialData();
+    checkGroupRole(); // 그룹 생성자인지 확인
+    fetchPendingApplications();
   }
 
   Future<void> fetchStudys() async {
@@ -74,26 +79,54 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
     }
   }
 
-  Future<void> checkIfOwner() async {
+  Future<void> checkGroupRole() async {
     String? token = await readAccess();
     final response = await http.get(
-      Uri.parse('${ApiUrl.baseUrl}/studygroup/${widget.studyGroup.id}/isOwner'),
+      Uri.parse('${ApiUrl.baseUrl}/studygroup/${widget.studyGroup.id}/role'),
+      headers: {'access': '$token'},
+    );
+
+    if (response.statusCode == 200) {
+      final result = jsonDecode(response.body);
+      print('Role: ${result['role']}');
+
+      setState(() {
+        // 역할에 따라 소유자 또는 멤버 여부 설정
+        isOwner = result['role'] == 'ADMIN';
+        isMember = result['role'] == 'MEMBER';
+      });
+    }
+  }
+  Future<void> loadInitialData() async {
+    await checkGroupRole(); // 역할 먼저 확인
+    await fetchStudys(); // 멤버 정보 가져오기
+    await fetchPendingApplications(); // 승인 대기 인원 가져오기
+    setState(() {
+      isLoading = false; // 데이터 로드 완료 후 로딩 상태 해제
+    });
+  }
+  Future<void> fetchPendingApplications() async {
+    String? token = await readAccess();
+    final response = await http.get(
+      Uri.parse('${ApiUrl.baseUrl}/studygroup/applications/${widget.studyGroup.id}/count'),
       headers: {'access': '$token'},
     );
 
     if (response.statusCode == 200) {
       final result = jsonDecode(response.body);
       setState(() {
-        isOwner = result['isOwner'];
-        pendingApprovalCount = result['pendingApprovalCount']; // 승인 대기 인원 수
+        pendingApprovalCount = result['count'] ?? 0; // null 체크 후 값 설정
       });
+    } else {
+      print('Failed to fetch pending applications. Status code: ${response.statusCode}');
+      print('Response body: ${response.body}');  // 응답 본문 출력
     }
   }
 
   Future<void> requestToJoinGroup() async {
     String? token = await readAccess();
     final response = await http.post(
-      Uri.parse('${ApiUrl.baseUrl}/studygroup/${widget.studyGroup.id}/request-join'),
+      Uri.parse('${ApiUrl.baseUrl}/studygroup/joingroup/${widget.studyGroup.id}'),
       headers: {'access': '$token'},
     );
 
@@ -116,8 +149,6 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
     }
   }
 
-  Future<void> updateStudys() async {}
-
   Future<void> _navigateToStudyScheduleScreen() async {
     final newGoal = await Navigator.push(
       context,
@@ -133,6 +164,15 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      // 로딩 중일 때는 로딩 스피너를 보여줌
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: _UpperAppbar(
@@ -143,7 +183,7 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            if (isOwner && pendingApprovalCount > 0)
+            if (isOwner) // 소유자인 경우 승인 대기 인원 보여줌
               Padding(
                 padding: const EdgeInsets.all(10.0),
                 child: Container(
@@ -165,7 +205,7 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
                   ),
                 ),
               ),
-            if (!isOwner)
+            if (!isOwner && !isMember) // 소유자도 멤버도 아닌 경우 참여 신청 버튼
               Padding(
                 padding: const EdgeInsets.all(10.0),
                 child: GestureDetector(
@@ -311,7 +351,7 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
           children: [
             Container(
               margin: EdgeInsets.all(3),
-              padding: const EdgeInsets.only(left: 8.0, top: 16.0), // 상단과 좌측 여백을 추가
+              padding: const EdgeInsets.only(left: 8.0, top: 16.0),
               child: Text(
                 '그룹 멤버',
                 style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -336,13 +376,12 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
                       return Container(
                         width: width,
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10), // 테두리만 둥글게 설정
-                          color: Colors.transparent, // 배경색 없이 투명하게 설정
+                          borderRadius: BorderRadius.circular(10),
+                          color: Colors.transparent,
                         ),
                         child: Text(
                           user[index].userName,
-                          style: const TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                           textAlign: TextAlign.center,
                         ),
                       );
@@ -352,69 +391,71 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
               ),
             ),
             GestureDetector(
-                onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => StudyInvitationScreen(studyGroup: widget.studyGroup)));
-                },
-                child: Container(
-                  margin: const EdgeInsets.all(10),
-                  height: 50,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(15),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 8,
-                        spreadRadius: 2,
-                        offset: Offset(0, 3),
-                      ),
-                    ],
-                    color: Colors.black,
-                  ),
-                  child: Text('구성원 초대하기', style: const TextStyle(fontSize: 14, color: Colors.white)),
-                )
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => StudyInvitationScreen(studyGroup: widget.studyGroup)),
+                );
+              },
+              child: Container(
+                margin: const EdgeInsets.all(10),
+                height: 50,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(15),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 8,
+                      spreadRadius: 2,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                  color: Colors.black,
+                ),
+                child: Text('구성원 초대하기', style: const TextStyle(fontSize: 14, color: Colors.white)),
+              ),
             ),
           ],
         ),
       ),
     );
 
-    if(isStudySchedule == false) {
+    if (!isStudySchedule) {
       widgets.add(
-          Container(
-              margin: const EdgeInsets.all(10),
-              height: 60,
-              alignment: Alignment.centerLeft,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15),
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 8,
-                    spreadRadius: 2,
-                    offset: Offset(0, 3),
-                  ),
-                ],
+        Container(
+          margin: const EdgeInsets.all(10),
+          height: 60,
+          alignment: Alignment.centerLeft,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(15),
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 8,
+                spreadRadius: 2,
+                offset: Offset(0, 3),
               ),
-              child: GestureDetector(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Text(
-                    '진행 현황 ▽',
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                onTap: () {
-                  setState(() {
-                    isStudySchedule = true;
-                  });
-                },
-              )
-          )
+            ],
+          ),
+          child: GestureDetector(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Text(
+                '진행 현황 ▽',
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+            ),
+            onTap: () {
+              setState(() {
+                isStudySchedule = true;
+              });
+            },
+          ),
+        ),
       );
-    }
-    else if(isStudySchedule == true) {
+    } else {
       widgets.add(
         Column(
           children: [
@@ -445,7 +486,7 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
                         style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                       ),
                     ),
-                    if(groupGoals.isNotEmpty)
+                    if (groupGoals.isNotEmpty)
                       Container(
                         margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
                         padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
@@ -512,7 +553,6 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
                 ),
               ),
             ),
-
           ],
         ),
       );
