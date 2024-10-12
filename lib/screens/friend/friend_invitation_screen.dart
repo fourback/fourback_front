@@ -17,7 +17,7 @@ Future<List<String>> fetchFriendList() async {
   String? token = await readAccess();
 
   final response = await http.get(
-    Uri.parse('${ApiUrl.baseUrl}/api/friends/invitation-list'),
+    Uri.parse('${ApiUrl.baseUrl}/api/friend/invitation-list'),
     headers: {
       'access': '$token',
       'Content-Type': 'application/json',
