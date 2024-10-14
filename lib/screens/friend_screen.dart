@@ -92,6 +92,7 @@ class _FriendScreenState extends State<FriendScreen> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => FriendDetailScreen(
+                          friendId: friendInfo[index].userId,
                           friendName: friendInfo[index].userName ?? "Unknown",
                           email: friendInfo[index].email ?? "No email",
                           belong: friendInfo[index].belong ?? "No belong",
