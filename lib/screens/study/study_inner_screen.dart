@@ -7,6 +7,7 @@ import 'package:bemajor_frontend/screens/study/study_invitation_screen.dart';
 import 'package:bemajor_frontend/screens/study/study_schedule_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import '../../api_url.dart';
 import '../../auth.dart';
@@ -24,6 +25,7 @@ class StudyInnerScreen extends StatefulWidget {
 
 class _StudyInnerScreenState extends State<StudyInnerScreen> {
   List<Map<String, dynamic>> groupGoals = [];
+  bool enableNotification = false;
 
   // 목표 진행률 계산 함수
   double getGoalProgress(List<Map<String, dynamic>> subGoals) {
@@ -67,14 +69,19 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
   Future<void> fetchStudys() async {
     String? token = await readAccess();
     final response = await http.get(
-      Uri.parse('${ApiUrl.baseUrl}/studygroup/members/${widget.studyGroup.id}'),
+      Uri.parse('${ApiUrl.baseUrl}/studygroup/details/${widget.studyGroup.id}'),
       headers: {'access': '$token'},
     );
 
+
     if (response.statusCode == 200) {
-      final List<dynamic> jsonMap2 = jsonDecode(utf8.decode(response.bodyBytes));
+      final Map<String, dynamic> jsonMap2 = jsonDecode(utf8.decode(response.bodyBytes));
+
       setState(() {
-        user = jsonMap2.map((data) => UserInfo.fromJson(data)).toList();
+        enableNotification = jsonMap2['enableNotification'];
+        user = (jsonMap2['users'] as List<dynamic>)
+            .map((data) => UserInfo.fromJson(data))
+            .toList();
       });
     }
   }
@@ -162,6 +169,48 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
     fetchStudys();
   }
 
+  Future<void> notificationOn() async {
+    String? token = await readAccess();
+    final url = Uri.parse('${ApiUrl.baseUrl}/studyGroup/notification/${widget.studyGroup.id}');
+
+    final response = await http.post(
+      url,
+      headers: {'access': '$token'},
+    );
+
+    if (response.statusCode == 200) {
+      setState(() {
+        enableNotification = true;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('채팅 알림 켜짐')),
+      );
+    } else {
+      throw Exception('알림 켜기 실패: ${response.statusCode}');
+    }
+  }
+
+  Future<void> notificationOff() async {
+    String? token = await readAccess();
+    final url = Uri.parse('${ApiUrl.baseUrl}/studyGroup/notification/${widget.studyGroup.id}');
+
+    final response = await http.delete(
+      url,
+      headers: {'access': '$token'},
+    );
+
+    if (response.statusCode == 200) {
+      setState(() {
+        enableNotification = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('채팅 알림 꺼짐')),
+      );
+    } else {
+      throw Exception('알림 끄기 실패: ${response.statusCode}');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
@@ -176,6 +225,7 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: _UpperAppbar(
+
         context: context,
         onLogoPressed: () {},
         onlistPressed: () {},
@@ -254,7 +304,7 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
         padding: const EdgeInsets.only(right: 8.0),
         child: IconButton(
           icon: Icon(
-            Icons.navigate_before_outlined,
+            Icons.arrow_back,
           ),
           onPressed: () {
             Navigator.pop(context);
@@ -305,6 +355,11 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
                     },
                   );
                 }
+                else if (value == 'notifications_on') {
+                   notificationOn();
+                } else if (value == 'notifications_off') {
+                  notificationOff();
+                }
               },
               itemBuilder: (BuildContext context) {
                 return [
@@ -316,6 +371,16 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
                     value: 'update',
                     child: Text('수정'),
                   ),
+                  if (enableNotification)
+                    PopupMenuItem<String>(
+                      value: 'notifications_off',
+                      child: Text('채팅 알림 끄기'),
+                    )
+                  else
+                    PopupMenuItem<String>(
+                      value: 'notifications_on',
+                      child: Text('채팅 알림 켜기'),
+                    ),
                 ];
               },
               icon: Icon(Icons.list),

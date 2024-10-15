@@ -134,6 +134,7 @@ class _FriendChatScreenState extends State<FriendChatScreen> {
 
 
     List<Map<String, dynamic>> savedMessages = await FriendChatDatabaseHelper().getMessages(chatRoomId);
+
     setState(() {
       _messages = savedMessages.map((message) {
         print("메시지$message");
