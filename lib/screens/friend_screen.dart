@@ -31,6 +31,14 @@ class _FriendScreenState extends State<FriendScreen> {
     countFriendApply();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 화면이 다시 로드될 때마다 데이터를 새로 불러오기
+    fetchFriendInfo();
+    countFriendApply();
+  }
+
   Future<void> countFriendApply() async {
     String? token = await readAccess();
 

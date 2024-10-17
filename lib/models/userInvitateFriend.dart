@@ -1,13 +1,13 @@
-class UserInvitateFriend {
+class UserInviteFriend {
   final int userId;
   final String userName;
 
-  UserInvitateFriend({
+  UserInviteFriend({
   required this.userId,
   required this.userName,});
 
-  factory UserInvitateFriend.fromJson(Map<String, dynamic> json) {
-    return UserInvitateFriend(
+  factory UserInviteFriend.fromJson(Map<String, dynamic> json) {
+    return UserInviteFriend(
         userId: json['userId'],
         userName: json['userName'],
     );

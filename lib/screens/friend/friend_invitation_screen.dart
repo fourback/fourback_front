@@ -15,8 +15,8 @@ class FriendInvitationScreen extends StatefulWidget {
 }
 
 class _FriendInvitationScreenState extends State<FriendInvitationScreen> {
-  List<UserInvitateFriend> friends = [];// 친구 목록을 저장할 리스트
-  List<UserInvitateFriend> filteredFriends = [];
+  List<UserInviteFriend> friends = [];// 친구 목록을 저장할 리스트
+  List<UserInviteFriend> filteredFriends = [];
   TextEditingController searchController = TextEditingController();
 
   @override
@@ -71,7 +71,7 @@ class _FriendInvitationScreenState extends State<FriendInvitationScreen> {
       setState(() {
         List<dynamic> jsonData = jsonMap['result'];
         friends =
-            jsonData.map((data) => UserInvitateFriend.fromJson(data)).toList();
+            jsonData.map((data) => UserInviteFriend.fromJson(data)).toList();
         filteredFriends = friends; //  검색 초기값을 friends로 설정
       });
     }
@@ -200,7 +200,7 @@ class _FriendInvitationScreenState extends State<FriendInvitationScreen> {
   }
 }
 
-void _showAcceptDialog(BuildContext context, UserInvitateFriend friend, Function addFriendApply) {
+void _showAcceptDialog(BuildContext context, UserInviteFriend friend, Function addFriendApply) {
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
