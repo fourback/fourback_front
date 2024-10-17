@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../../api_url.dart';
 import '../../auth.dart';
+import '../../models/userInvitateFriend.dart';
 
 class FriendInvitationScreen extends StatefulWidget {
   const FriendInvitationScreen({super.key});
@@ -13,61 +14,86 @@ class FriendInvitationScreen extends StatefulWidget {
   State<FriendInvitationScreen> createState() => _FriendInvitationScreenState();
 }
 
-Future<List<String>> fetchFriendList() async {
-  String? token = await readAccess();
-
-  final response = await http.get(
-    Uri.parse('${ApiUrl.baseUrl}/api/friend/invitation-list'),
-    headers: {
-      'access': '$token',
-      'Content-Type': 'application/json',
-    },
-  );
-
-  if (response.statusCode == 200) {
-    List<dynamic> friendList = jsonDecode(response.body);
-    print(friendList); // 응답 로그 출력
-    return friendList.map((friend) => friend.toString()).toList();
-  } else {
-    print('Error: ${response.statusCode}, ${response.body}');
-    throw Exception('Failed to load friend list');
-  }
-}
-
-Future<void> addFriendApply() async {
-  String? token = await readAccess();
-
-  final response = await http.post(
-    Uri.parse('${ApiUrl.baseUrl}/api/friend/apply'),
-    headers: {
-      'access': '$token',
-      'Content-Type': 'application/json',
-    },
-    body: jsonEncode(FriendApply(4, 3)),
-  );
-}
-
 class _FriendInvitationScreenState extends State<FriendInvitationScreen> {
-  List<String> invitaionfriends = []; // 친구 목록을 저장할 리스트
-  List<String> filteredFriends = [];
+  List<UserInvitateFriend> friends = [];// 친구 목록을 저장할 리스트
+  List<UserInvitateFriend> filteredFriends = [];
   TextEditingController searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    fetchFriendList().then((friendList) {
-      setState(() {
-        invitaionfriends = friendList;
-        filteredFriends = friendList; // 초기값으로 전체 친구 목록 설정
-      });
-    });
+    fetchUserList();
+
+    // fetchFriendList().then((friendList) {
+    //   setState(() {
+    //     invitaionfriends = friendList;
+    //     filteredFriends = friendList; // 초기값으로 전체 친구 목록 설정
+    //   });
+    // });
     searchController.addListener(_filterFriends);
+  }
+
+  Future<List<String>> fetchFriendList() async {
+    String? token = await readAccess();
+
+    final response = await http.get(
+      Uri.parse('${ApiUrl.baseUrl}/api/friend/invitation-list'),
+      headers: {
+        'access': '$token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      List<dynamic> friendList = jsonDecode(response.body);
+      print(friendList); // 응답 로그 출력
+      return friendList.map((friend) => friend.toString()).toList();
+    } else {
+      print('Error: ${response.statusCode}, ${response.body}');
+      throw Exception('Failed to load friend list');
+    }
+  }
+
+  Future<void> fetchUserList() async {
+    String? token = await readAccess();
+    // 친구 초대에 사용할 유저 목록을 가져옵니다.
+    final response = await http.get(
+      Uri.parse('${ApiUrl.baseUrl}/api/friend/invitation-list'), // 사용자 ID 없이 호출
+      headers: {
+        'access': '$token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> jsonMap = jsonDecode(response.body);
+
+      setState(() {
+        List<dynamic> jsonData = jsonMap['result'];
+        friends =
+            jsonData.map((data) => UserInvitateFriend.fromJson(data)).toList();
+        filteredFriends = friends; //  검색 초기값을 friends로 설정
+      });
+    }
+  }
+
+  Future<void> addFriendApply(int friendId) async {
+    String? token = await readAccess();
+
+    final response = await http.post(
+      Uri.parse('${ApiUrl.baseUrl}/api/friend/apply'),
+      headers: {
+        'access': '$token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(FriendApply(friendId)),
+    );
   }
 
   void _filterFriends() {
     setState(() {
-      filteredFriends = invitaionfriends
-          .where((friend) => friend.contains(searchController.text)) // 검색어가 포함된 친구만 필터링
+      filteredFriends = friends
+          .where((friend) => friend.userName.contains(searchController.text)) // 검색어가 포함된 친구만 필터링
           .toList();
     });
   }
@@ -122,7 +148,7 @@ class _FriendInvitationScreenState extends State<FriendInvitationScreen> {
                             ),
                             SizedBox(width: 15), // 프로필 이미지와 텍스트 간격
                             Text(
-                              filteredFriends[index],
+                              filteredFriends[index].userName,
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -139,7 +165,7 @@ class _FriendInvitationScreenState extends State<FriendInvitationScreen> {
                               padding: const EdgeInsets.symmetric(horizontal: 20.0), // 좌우 여백 설정
                               child: GestureDetector(
                                 onTap: () {
-                                  _showAcceptDialog(context, filteredFriends[index]);
+                                  _showAcceptDialog(context, filteredFriends[index], addFriendApply);
                                 },
                                 child: Container(
                                   width: double.infinity, // 버튼 가로 크기를 최대한으로 설정
@@ -174,17 +200,17 @@ class _FriendInvitationScreenState extends State<FriendInvitationScreen> {
   }
 }
 
-void _showAcceptDialog(BuildContext context, String friendName) {
+void _showAcceptDialog(BuildContext context, UserInvitateFriend friend, Function addFriendApply) {
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
       backgroundColor: Colors.white,
       title: Text("알림"),
-      content: Text("$friendName님에게 친구 요청을 보냈습니다."),
+      content: Text(friend.userName + "님에게 친구 요청을 보냈습니다."),
       actions: [
         TextButton(
           onPressed: () {
-            addFriendApply();
+            addFriendApply(friend.userId);
             Navigator.of(context).pop();
           },
           child: Text("확인"),
