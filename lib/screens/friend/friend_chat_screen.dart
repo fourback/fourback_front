@@ -1,55 +1,60 @@
 import 'dart:async';
 
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/io.dart';
-import 'package:stomp_dart_client/stomp_config.dart';
 import 'package:stomp_dart_client/stomp.dart';
-import 'package:stomp_dart_client/stomp_frame.dart';
-import 'package:http/http.dart' as http;
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'dart:convert';
 import 'package:intl/intl.dart';
+import 'package:http/http.dart' as http;
 
-import '../../api_url.dart';
 import '../../auth.dart';
 import '../../chat_database_helper.dart';
-import '../../models/studyGroup.dart';
+import 'package:bemajor_frontend/friend_chat_database_helper.dart';
+
 import '../../models/user_info.dart';
 import '../../publicImage.dart';
 
-class GroupChatScreen extends StatefulWidget {
-  final StudyGroup studyGroup;
-  final List<UserInfo> user;
+class FriendChatScreen extends StatefulWidget {
+  final int friendId;
+  final String friendName;
+  final String friendProfile;
 
-  GroupChatScreen({required this.studyGroup, required this.user});
+  FriendChatScreen({required this.friendId, required this.friendName,required this.friendProfile});
 
   @override
-  _GroupChatScreenState createState() => _GroupChatScreenState();
+  _FriendChatScreenState createState() => _FriendChatScreenState();
 }
 
-class _GroupChatScreenState extends State<GroupChatScreen> {
+class _FriendChatScreenState extends State<FriendChatScreen> {
   final ScrollController _scrollController = ScrollController();
   StompClient? stompClient;
   List<ChatMessage> _messages = [];
   final TextEditingController _controller = TextEditingController();
   late WebSocketChannel _channel;
+  late String userProfile;
+  late String userName;
+  late int userId;
   StreamSubscription? _chatSubscription;
-  UserInfo? currentUser;
-  bool enableNotification = false;
+
 
   @override
   void initState() {
     super.initState();
-
-    _loadMessages();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _connectWebSocket();
-    });
+    _initializeChat();
   }
 
-
+  Future<void> _initializeChat() async {
+    // 사용자 정보를 먼저 가져온 후에 메시지 로드 및 WebSocket 연결
+    await fetchUserInfo();  // userId 설정 후 계속 진행
+    _loadMessages();  // 메시지 로드
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _connectWebSocket();  // WebSocket 연결
+    });
+  }
 
   String formatTime(String isoString) {
     DateTime dateTime = DateTime.parse(isoString);
@@ -81,29 +86,67 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     }
   }
 
-  void _loadMessages() async {
+  Future<void> fetchUserInfo() async {
     String? accessToken = await readAccess();
     Map<String, dynamic> decodedToken = JwtDecoder.decode(accessToken!);
-    int userId = decodedToken['userId'];// 사용자 ID 가져오기
+    userId = decodedToken['userId'];// 사용자 ID 가져오기
 
-    List<Map<String, dynamic>> savedMessages = await ChatDatabaseHelper().getMessages(widget.studyGroup.id);
+    final url = Uri.http(
+      "116.47.60.159:8080",
+      "/api/users",
+    );
+    try {
+      final response = await http.get(
+        url,
+        headers: {'access': '$accessToken'},
+      );
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonData = jsonDecode(utf8.decode(response.bodyBytes));
+        setState(() {
+          userProfile = jsonData["fileName"];
+          userName = jsonData["userName"];
+        });
+        print(userName);
+
+      } else if(response.statusCode == 401) {
+        bool success = await reissueToken(context);
+        if(success) {
+          await fetchUserInfo();
+        } else {
+          print('토큰 재발급 실패');
+        }
+      }
+      else {
+        print('실패 Failed to load data${response.body}');
+      }
+    } catch (e) {
+      print('Error: $e');
+    }
+  }
+
+  void _loadMessages() async {
+
+
+
+    String chatRoomId = userId < widget.friendId
+        ? '$userId\_${widget.friendId}'
+        : '${widget.friendId}\_$userId';
+
+
+    List<Map<String, dynamic>> savedMessages = await FriendChatDatabaseHelper().getMessages(chatRoomId);
+
     setState(() {
-
-      currentUser = widget.user.firstWhere((user) => user.userId == userId);
-
       _messages = savedMessages.map((message) {
-        UserInfo? user = widget.user.firstWhere(
-              (user) => user.userId == message['userId'],
-        );
-
+        print("메시지$message");
         return ChatMessage(
           sender: message['sender'],
           text: message['message'],
           time: formatTime(message['timestamp']),
           date: formatDate(message['timestamp']),
-          studyGroupName: message['studyGroupName'] ?? 'Unknown Group',
           isMine: message['userId'] == userId,
-          profileImageName: user.fileName,
+          profileImageName: message['userId'] == userId
+              ? userProfile
+              : widget.friendProfile,
         );
       }).toList();
     });
@@ -113,32 +156,27 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     print("연결 실행");
     String? accessToken = await readAccess();
 
+
     final headers = {
       'access': '$accessToken', // 헤더에 토큰 추가
     };
     try {
+      String chatRoomId = userId < widget.friendId
+          ? '$userId\_${widget.friendId}'
+          : '${widget.friendId}\_$userId';
       _channel = IOWebSocketChannel.connect(
-        Uri.parse('ws://116.47.60.159:8080/groupChat?studyGroupId=${widget.studyGroup.id}'),
+        Uri.parse('ws://116.47.60.159:8080/friendChat?chatRoomId=$chatRoomId'),
         headers: headers,
       );
-
-
 
       // 수신된 메시지를 처리합니다.
       _channel.stream.listen((message) async {
         print("WebSocket 연결 성공!");
         final decodedMessage = jsonDecode(message);
+        print("디코드 메시지$decodedMessage");
 
-        print(decodedMessage['sendTime']);
-
-        final senderId = decodedMessage['senderId'];
-        final senderUser = widget.user.firstWhere(
-              (user) => user.userId == senderId,
-        );
-
-
-        await ChatDatabaseHelper().insertMessage({
-          'groupId': widget.studyGroup.id, // 그룹 ID
+        await FriendChatDatabaseHelper().insertMessage({
+          'chatRoomId': chatRoomId,
           'userId': decodedMessage['senderId'], // 발신자 ID
           'sender': decodedMessage['senderName'], // 발신자 이름
           'message': decodedMessage['content'], // 메시지 내용
@@ -153,9 +191,10 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               text: decodedMessage['content'],
               time: formatTime(decodedMessage['sendTime']),
               date: formatDate(decodedMessage['sendTime']),
-              studyGroupName: decodedMessage['studyGroupName'] ?? 'Unknown Group',
-              isMine: decodedMessage['senderId'] == currentUser?.userId,
-              profileImageName: senderUser.fileName,
+              isMine: decodedMessage['senderId'] == userId,
+              profileImageName: decodedMessage['senderId'] == userId
+                  ? userProfile
+                  : widget.friendProfile,
             ));
 
           });
@@ -172,48 +211,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       print("WebSocket 연결 중 예외 발생: $e");
     }
   }
-  Future<void> notificationOn() async {
-    String? token = await readAccess();
-    final url = Uri.parse('${ApiUrl.baseUrl}/studyGroup/notification/${widget.studyGroup.id}');
-
-    final response = await http.post(
-      url,
-      headers: {'access': '$token'},
-    );
-
-    if (response.statusCode == 200) {
-      setState(() {
-        enableNotification = true;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('채팅 알림 켜짐')),
-      );
-    } else {
-      throw Exception('알림 켜기 실패: ${response.statusCode}');
-    }
-  }
-
-
-  Future<void> notificationOff() async {
-    String? token = await readAccess();
-    final url = Uri.parse('${ApiUrl.baseUrl}/studyGroup/notification/${widget.studyGroup.id}');
-
-    final response = await http.delete(
-      url,
-      headers: {'access': '$token'},
-    );
-
-    if (response.statusCode == 200) {
-      setState(() {
-        enableNotification = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('채팅 알림 꺼짐')),
-      );
-    } else {
-      throw Exception('알림 끄기 실패: ${response.statusCode}');
-    }
-  }
 
   void _sendMessage(String text) {
     if (text.isEmpty) return;
@@ -221,9 +218,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     // 서버로 전송할 메시지 형식
     final message = {
       "content": text,
-      "senderName": currentUser?.userName, // 실제 본인 이름으로 변경
+      "senderName": userName, // 실제 본인 이름으로 변경
       "sendTime": DateTime.now().toUtc().add(Duration(hours: 9)).toIso8601String(), // 현재 시간을 ISO8601 형식으로 전송
-      "studyGroupName": widget.studyGroup.studyName // 스터디 그룹 이름을 실제로 변경
     };
 
     // 서버로 메시지를 보냅니다.
@@ -244,34 +240,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         scrolledUnderElevation: 0,
         backgroundColor: Colors.white,
 
-        title: Text('${widget.studyGroup.studyName}'),
-        actions: [
-          IconButton(
-            icon: Icon(
-              enableNotification ? Icons.notifications : Icons.notifications_off,
-              color: enableNotification ? Colors.blue : Colors.grey,
-            ),
-            onPressed: () {
-              setState(() {
-                enableNotification = !enableNotification; // 알림 상태 변경
-              });
-              if (enableNotification) {
-                // 알림 켜기 API 호출
-                notificationOn();
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text("알림이 켜졌습니다."),
-                ));
-              } else {
-                // 알림 끄기 API 호출
-                notificationOff();
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text("알림이 꺼졌습니다."),
-                ));
-              }
-            },
-          ),
-        ],
-
+        title: Text('${widget.friendName}'),
 
       ),
       backgroundColor: Colors.white,
@@ -329,9 +298,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                           ),
                         ],
                         ChatMessageWidget(
-                            message: message,
-                            showTime: showTime,
-                            hideProfile: hideProfile,),
+                          message: message,
+                          showTime: showTime,
+                          hideProfile: hideProfile,),
                       ],
                     );
                   },
@@ -408,7 +377,6 @@ class ChatMessage {
   final String text;
   final String time;
   final String date; // 추가된 필드
-  final String studyGroupName;
   final bool isMine;
   final String? image;
   final String? profileImageName;
@@ -419,7 +387,6 @@ class ChatMessage {
     required this.time,
     required this.date, // 추가된 필드
     required this.isMine,
-    required this.studyGroupName,
     this.image,
     this.profileImageName
   });
@@ -482,7 +449,7 @@ class ChatMessageWidget extends StatelessWidget {
                   children: [
                     if (showTime && message.isMine) // 자신의 메시지인 경우 시간을 왼쪽에 표시
                       Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
+                        padding: const EdgeInsets.only(top:20.0,right: 8.0),
                         child: Text(
                           message.time,
                           style: const TextStyle(
@@ -525,7 +492,7 @@ class ChatMessageWidget extends StatelessWidget {
                     ),
                     if (showTime && !message.isMine) // 자신의 메시지가 아닌 경우 시간을 오른쪽에 표시
                       Padding(
-                        padding: const EdgeInsets.only(left: 8.0),
+                        padding: const EdgeInsets.only(top:20.0,left: 8.0),
                         child: Text(
                           message.time,
                           style: const TextStyle(

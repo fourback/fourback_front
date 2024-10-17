@@ -26,6 +26,17 @@ void registerRefresh(String refresh) async {
   await prefs.setString('REFRESH', refresh);
 }
 
+Future<void> removeAccess() async {
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+  await prefs.remove('USERID'); // USERID 토큰 삭제
+}
+
+Future<void> removeRefresh() async {
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+  await prefs.remove('REFRESH'); // REFRESH 토큰 삭제
+}
+
+
 Future<bool> reissueToken(BuildContext context) async { //토큰 재발급
   try {
     print("reissueToken");
@@ -34,7 +45,7 @@ Future<bool> reissueToken(BuildContext context) async { //토큰 재발급
 
 
     final reissueResponse = await http.post(
-      Uri.parse('${ApiUrl.baseUrl}/auth'),
+      Uri.parse('${ApiUrl.baseUrl}/reissue'),
       headers: {
         'refresh': '$refreshToken',
         'access': '$accessToken',
@@ -51,6 +62,7 @@ Future<bool> reissueToken(BuildContext context) async { //토큰 재발급
 
       registerAccess(access!);
       registerRefresh(refresh!);
+      print("재발급성공");
       return true;
 
     } else {

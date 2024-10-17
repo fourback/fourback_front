@@ -8,16 +8,16 @@ import 'package:image_picker/image_picker.dart';
 import 'package:bemajor_frontend/publicImage.dart';
 
 import '../auth.dart';
-import 'login_screen.dart';
+import 'navigation_screen.dart';
 
-class MypageScreen extends StatefulWidget {
-  const MypageScreen({super.key});
+class UserInformationScreen extends StatefulWidget {
+  const UserInformationScreen({super.key});
 
   @override
-  State<MypageScreen> createState() => _MypageScreenState();
+  State<UserInformationScreen> createState() => _MypageScreenState();
 }
 
-class _MypageScreenState extends State<MypageScreen> {
+class _MypageScreenState extends State<UserInformationScreen> {
   var isLoading = false;
   late TextEditingController userNameController;
   late TextEditingController emailController;
@@ -79,15 +79,7 @@ class _MypageScreenState extends State<MypageScreen> {
           isLoading = false;
         });
 
-      } else if(response.statusCode == 401) {
-        bool success = await reissueToken(context);
-        if(success) {
-          await fetchUserInfo();
-        } else {
-          print('토큰 재발급 실패');
-        }
-      }
-      else {
+      } else {
         setState(() {
           isLoading = false;
         });
@@ -116,27 +108,31 @@ class _MypageScreenState extends State<MypageScreen> {
       'access': '$accessToken'
     };
     final body =
-      {
-        "userName": userNameController.text,
-        "email": emailController.text,
-        "birth": birthController.text,
-        "belong": belongController.text,
-        "department": departmentController.text,
-        "hobby": hobbyController.text,
-        "objective": objectiveController.text,
-        "address": addressController.text,
-        "techStack": techStackController.text
-      };
+    {
+      "userName": userNameController.text,
+      "email": emailController.text,
+      "birth": birthController.text,
+      "belong": belongController.text,
+      "department": departmentController.text,
+      "hobby": hobbyController.text,
+      "objective": objectiveController.text,
+      "address": addressController.text,
+      "techStack": techStackController.text
+    };
 
 
     try {
       final response = await http.put(
-          url,
-          headers: headers,
-          body: jsonEncode(body),
+        url,
+        headers: headers,
+        body: jsonEncode(body),
       );
       if (response.statusCode == 200) {
         print('Data sent successfully');
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => navigationScreen()),
+        );
       } else {
         print('${response.body} Failed to send data');
       }
@@ -145,44 +141,7 @@ class _MypageScreenState extends State<MypageScreen> {
     }
   }
 
-  Future<void> logout() async {
-    String? refreshToken = await readRefresh();
-    String? accessToken = await readAccess();
-    final url = Uri.http(
-      "116.47.60.159:8080",
-      "logout",
-    );
-    /*  ***
-      access token, refresh token 없애는 로직 구현
-      + 헤더에 access token, refresh token 전송해줘야 함
-     */
-    final headers = {
-      "Content-Type": "application/json",
-      'access': '$accessToken',
-      'refresh': '$refreshToken',
-    };
-    try {
-      final response = await http.post(
-        url,
-        headers: headers,
-      );
-      if (response.statusCode == 200) {
-        print('logout successfully');
-        removeAccess();
-        removeRefresh();
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => LoginScreen()),
-              (Route<dynamic> route) => false,  // 모든 기존 화면 제거
-        );
 
-      } else {
-        print('Failed logout');
-      }
-    } catch (e) {
-      print('Error: $e');
-    }
-  }
 
   Future<void> uploadImage(XFile image) async {
     String? accessToken = await readAccess();
@@ -200,7 +159,7 @@ class _MypageScreenState extends State<MypageScreen> {
       + 헤더에 access token, refresh token 전송해줘야 함
      */
     request.files.add(
-      await http.MultipartFile.fromPath('file', image.path)
+        await http.MultipartFile.fromPath('file', image.path)
     );
     try {
       final response = await request.send();
@@ -295,15 +254,15 @@ class _MypageScreenState extends State<MypageScreen> {
         scrolledUnderElevation: 0,
         backgroundColor: Colors.white,
 
-        title: Text('프로필',
+        title: Text('프로필 등록',
             style: TextStyle(
               fontSize: 25,fontWeight: FontWeight.bold,
             )),
         centerTitle: true,
       ),
       body:isLoading
-        ? Center(child: CircularProgressIndicator())
-        : LayoutBuilder(
+          ? Center(child: CircularProgressIndicator())
+          : LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
           return Column(
             children: [
@@ -350,25 +309,25 @@ class _MypageScreenState extends State<MypageScreen> {
                           ),
                         ),
 
-                            child: Padding(
-                              padding: const EdgeInsets.all(4.0),
-                              child: PublicImage(
-                                imageUrl: () {
-                                  final url = userImage != null
-                                      ? 'http://116.47.60.159:8080/api/images/$userImage'
-                                      : 'http://116.47.60.159:8080/api/images/default_profile_image.jpg';
+                        child: Padding(
+                          padding: const EdgeInsets.all(4.0),
+                          child: PublicImage(
+                            imageUrl: () {
+                              final url = userImage != null
+                                  ? 'http://116.47.60.159:8080/api/images/$userImage'
+                                  : 'http://116.47.60.159:8080/api/images/default_profile_image.jpg';
 
-                                  print('Image URL: $url'); // URL을 출력
-                                  return url;
-                                }(),
-                                placeholderPath: 'assets/icons/loading.gif',
-                                width: 150,
-                                height: 150,
-                                fit: BoxFit.cover,
-                                isCircular: true,
-                              ),
-                            ),
+                              print('Image URL: $url'); // URL을 출력
+                              return url;
+                            }(),
+                            placeholderPath: 'assets/icons/loading.gif',
+                            width: 150,
+                            height: 150,
+                            fit: BoxFit.cover,
+                            isCircular: true,
                           ),
+                        ),
+                      ),
 
                       // 이미지 선택 또는 삭제 버튼
                       Positioned(
@@ -400,6 +359,7 @@ class _MypageScreenState extends State<MypageScreen> {
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       subtitle: TextField(
+                        style: TextStyle(color: Colors.black),
                         controller: userNameController,
                         decoration: const InputDecoration(
                           border: OutlineInputBorder(),
@@ -416,6 +376,7 @@ class _MypageScreenState extends State<MypageScreen> {
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       subtitle: TextField(
+                        style: TextStyle(color: Colors.black),
                         controller: emailController,
                         decoration: const InputDecoration(
                           border: OutlineInputBorder(),
@@ -432,6 +393,7 @@ class _MypageScreenState extends State<MypageScreen> {
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       subtitle: TextField(
+                        style: TextStyle(color: Colors.black),
                         controller: belongController,
                         decoration: const InputDecoration(
                           border: OutlineInputBorder(),
@@ -448,6 +410,7 @@ class _MypageScreenState extends State<MypageScreen> {
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       subtitle: TextField(
+                        style: TextStyle(color: Colors.black),
                         controller: birthController,
                         decoration: const InputDecoration(
                           border: OutlineInputBorder(),
@@ -464,6 +427,7 @@ class _MypageScreenState extends State<MypageScreen> {
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       subtitle: TextField(
+                        style: TextStyle(color: Colors.black),
                         controller: departmentController,
                         decoration: const InputDecoration(
                           border: OutlineInputBorder(),
@@ -480,6 +444,7 @@ class _MypageScreenState extends State<MypageScreen> {
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       subtitle: TextField(
+                        style: TextStyle(color: Colors.black),
                         controller: hobbyController,
                         decoration: const InputDecoration(
                           border: OutlineInputBorder(),
@@ -496,6 +461,7 @@ class _MypageScreenState extends State<MypageScreen> {
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       subtitle: TextField(
+                        style: TextStyle(color: Colors.black),
                         controller: objectiveController,
                         decoration: const InputDecoration(
                           border: OutlineInputBorder(),
@@ -512,10 +478,10 @@ class _MypageScreenState extends State<MypageScreen> {
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       subtitle: TextField(
+                        style: TextStyle(color: Colors.black),
                         controller: addressController,
                         decoration: const InputDecoration(
                           border: OutlineInputBorder(),
-
 
                           floatingLabelBehavior: FloatingLabelBehavior.never,
                           contentPadding: EdgeInsets.symmetric(
@@ -529,6 +495,7 @@ class _MypageScreenState extends State<MypageScreen> {
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       subtitle: TextField(
+                        style: TextStyle(color: Colors.black),
                         controller: techStackController,
                         decoration: const InputDecoration(
                           border: OutlineInputBorder(),
@@ -544,31 +511,40 @@ class _MypageScreenState extends State<MypageScreen> {
                     ),
                     Column(
                       children: [
-                        ElevatedButton(
-                          onPressed: logout,
-                          style: ElevatedButton.styleFrom(
-                              minimumSize: Size(200, 50),
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10)),
-                              backgroundColor:
-                              const Color.fromARGB(255, 211, 44, 44)),
-                          child: const Text(
-                            '로그아웃',
-                            style: TextStyle(color: Colors.white, fontSize: 18),
-                          ),
-                        ),
+
                         SizedBox(
                           height: 20,
                         ),
                         ElevatedButton(
-                          onPressed: sendUserInfo,
+                          onPressed: () {
+                            if (userNameController.text.trim().isEmpty ||
+                                emailController.text.trim().isEmpty ||
+                                birthController.text.trim().isEmpty ||
+                                belongController.text.trim().isEmpty ||
+                                departmentController.text.trim().isEmpty ||
+                                hobbyController.text.trim().isEmpty ||
+                                objectiveController.text.trim().isEmpty ||
+                                addressController.text.trim().isEmpty ||
+                                techStackController.text.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('필수 정보를 모두 입력해주세요.'),
+                                  duration: Duration(seconds: 1),
+                                ),
+
+                              );
+                              return;
+                            } else {
+                              sendUserInfo();
+                            }
+                          },
                           style: ElevatedButton.styleFrom(
                               minimumSize: Size(200, 50),
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10)),
                               backgroundColor: Colors.black),
                           child: const Text(
-                            '프로필 변경',
+                            '프로필 등록',
                             style: TextStyle(color: Colors.white, fontSize: 18),
                           ),
                         ),

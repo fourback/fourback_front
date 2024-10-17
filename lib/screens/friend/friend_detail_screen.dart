@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import 'friend_chat_screen.dart';
+
 class FriendDetailScreen extends StatelessWidget {
+  final int friendId;
   final String friendName;
   final String email;
   final String belong;
@@ -14,6 +17,7 @@ class FriendDetailScreen extends StatelessWidget {
 
   const FriendDetailScreen({
     super.key,
+    required this.friendId,
     required this.friendName,
     required this.email,
     required this.belong,
@@ -118,7 +122,14 @@ class FriendDetailScreen extends StatelessWidget {
                           height: 20,
                         ),
                         ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+
+                              MaterialPageRoute(builder: (context) => FriendChatScreen(friendId: friendId,friendName: friendName,friendProfile: fileName,)),
+                            );
+
+                          },
                           style: ElevatedButton.styleFrom(
                               minimumSize: Size(200, 50),
                               shape: RoundedRectangleBorder(

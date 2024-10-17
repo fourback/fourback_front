@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'package:bemajor_frontend/screens/user_information_screen.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
+import '../auth.dart';
 import 'navigation_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -22,10 +24,6 @@ Future<String?> readJwt() async {
   return prefs.getString('USERID');
 }
 
-Future<String?> readRefresh() async {
-  final prefs = await SharedPreferences.getInstance();
-  return prefs.getString('REFRESH');
-}
 
 
 class _LoginScreenState extends State<LoginScreen> {
@@ -116,6 +114,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     await getKakaoUserInfo();
     await _sendUserInfo();
+    await fetchUserInfo();
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => navigationScreen()),
@@ -175,6 +174,47 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() {});
     } catch (error) {
       print('사용자 정보 요청 실패 $error');
+    }
+  }
+  Future<void> fetchUserInfo() async {
+
+    String? accessToken = await readAccess();
+
+    final url = Uri.http(
+      "116.47.60.159:8080",
+      "/api/users",
+    );
+    try {
+      final response = await http.get(
+        url,
+        headers: {'access': '$accessToken'},
+      );
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonData = jsonDecode(utf8.decode(response.bodyBytes));
+
+        if (jsonData["userName"] == null || jsonData["userName"] == "" ||
+            jsonData["email"] == null || jsonData["email"] == "" ||
+            jsonData["birth"] == null || jsonData["birth"] == "" ||
+            jsonData["belong"] == null || jsonData["belong"] == "" ||
+            jsonData["department"] == null || jsonData["department"] == "" ||
+            jsonData["hobby"] == null || jsonData["hobby"] == "" ||
+            jsonData["objective"] == null || jsonData["objective"] == "" ||
+            jsonData["address"] == null || jsonData["address"] == "" ||
+            jsonData["techStack"] == null || jsonData["techStack"] == "") {
+          // 프로필 입력 화면으로 이동
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => UserInformationScreen()), // 프로필 입력 화면으로 이동
+          );
+        }
+
+      } else {
+
+        print('실패 Failed to load data${response.body}');
+      }
+    } catch (e) {
+
+      print('Error: $e');
     }
   }
 
