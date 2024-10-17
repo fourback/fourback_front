@@ -7,10 +7,12 @@ import 'package:web_socket_channel/io.dart';
 import 'package:stomp_dart_client/stomp_config.dart';
 import 'package:stomp_dart_client/stomp.dart';
 import 'package:stomp_dart_client/stomp_frame.dart';
+import 'package:http/http.dart' as http;
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'dart:convert';
 import 'package:intl/intl.dart';
 
+import '../../api_url.dart';
 import '../../auth.dart';
 import '../../chat_database_helper.dart';
 import '../../models/studyGroup.dart';
@@ -35,6 +37,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   late WebSocketChannel _channel;
   StreamSubscription? _chatSubscription;
   UserInfo? currentUser;
+  bool enableNotification = false;
 
   @override
   void initState() {
@@ -169,6 +172,48 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       print("WebSocket 연결 중 예외 발생: $e");
     }
   }
+  Future<void> notificationOn() async {
+    String? token = await readAccess();
+    final url = Uri.parse('${ApiUrl.baseUrl}/studyGroup/notification/${widget.studyGroup.id}');
+
+    final response = await http.post(
+      url,
+      headers: {'access': '$token'},
+    );
+
+    if (response.statusCode == 200) {
+      setState(() {
+        enableNotification = true;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('채팅 알림 켜짐')),
+      );
+    } else {
+      throw Exception('알림 켜기 실패: ${response.statusCode}');
+    }
+  }
+
+
+  Future<void> notificationOff() async {
+    String? token = await readAccess();
+    final url = Uri.parse('${ApiUrl.baseUrl}/studyGroup/notification/${widget.studyGroup.id}');
+
+    final response = await http.delete(
+      url,
+      headers: {'access': '$token'},
+    );
+
+    if (response.statusCode == 200) {
+      setState(() {
+        enableNotification = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('채팅 알림 꺼짐')),
+      );
+    } else {
+      throw Exception('알림 끄기 실패: ${response.statusCode}');
+    }
+  }
 
   void _sendMessage(String text) {
     if (text.isEmpty) return;
@@ -200,6 +245,33 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         backgroundColor: Colors.white,
 
         title: Text('${widget.studyGroup.studyName}'),
+        actions: [
+          IconButton(
+            icon: Icon(
+              enableNotification ? Icons.notifications : Icons.notifications_off,
+              color: enableNotification ? Colors.blue : Colors.grey,
+            ),
+            onPressed: () {
+              setState(() {
+                enableNotification = !enableNotification; // 알림 상태 변경
+              });
+              if (enableNotification) {
+                // 알림 켜기 API 호출
+                notificationOn();
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text("알림이 켜졌습니다."),
+                ));
+              } else {
+                // 알림 끄기 API 호출
+                notificationOff();
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text("알림이 꺼졌습니다."),
+                ));
+              }
+            },
+          ),
+        ],
+
 
       ),
       backgroundColor: Colors.white,

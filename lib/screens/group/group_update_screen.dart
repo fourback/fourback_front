@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:bemajor_frontend/models/studyGroup.dart';
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 import 'package:intl/intl.dart';
@@ -11,22 +11,49 @@ import '../../api_url.dart';
 
 
 
-class GroupCreateScreen extends StatefulWidget {
+class GroupUpdateScreen extends StatefulWidget {
+
+  final StudyGroup studyGroup;
+
+  GroupUpdateScreen({required this.studyGroup});
   @override
-  _GroupCreateScreenState createState() => _GroupCreateScreenState();
+  _GroupUpdateScreenState createState() => _GroupUpdateScreenState();
 }
 
-class _GroupCreateScreenState extends State<GroupCreateScreen> {
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController locationController = TextEditingController();
-  final TextEditingController cycleController = TextEditingController();
-  final TextEditingController ruleController = TextEditingController();
+class _GroupUpdateScreenState extends State<GroupUpdateScreen> {
+
+  late TextEditingController nameController = TextEditingController();
+  late TextEditingController locationController = TextEditingController();
+  late TextEditingController cycleController = TextEditingController();
+  late TextEditingController ruleController = TextEditingController();
   String? selectedCategory;
   int maxMembers = 1;
   DateTime selectedDate = DateTime.now();
   DateTimeRange? selectedDateRange;
   DateRangePickerController _controller = DateRangePickerController();
   String dateRangeText = '기간 선택';
+
+
+  @override
+  void initState() {
+    super.initState();
+
+    // 초기화 작업 - 기존 그룹 정보를 컨트롤러에 세팅
+    nameController = TextEditingController(text: widget.studyGroup.studyName);
+    locationController = TextEditingController(text: widget.studyGroup.studyLocation);
+    cycleController = TextEditingController(text: widget.studyGroup.studyCycle);
+    ruleController = TextEditingController(text: widget.studyGroup.studyRule);
+    selectedCategory = widget.studyGroup.category;
+    maxMembers = widget.studyGroup.teamSize;
+
+    // 기간 설정
+    selectedDateRange = DateTimeRange(
+      start: widget.studyGroup.startDate,
+      end: widget.studyGroup.endDate,
+    );
+    dateRangeText = '${DateFormat('yyyy-MM-dd').format(selectedDateRange!.start)} ~ ${DateFormat('yyyy-MM-dd').format(selectedDateRange!.end)}';
+  }
+
 
   @override
   void dispose() {
@@ -37,11 +64,11 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
     super.dispose();
   }
 
-  Future<void> _createGroup() async {
+  Future<void> _updateGroup() async {
     String? token = await readAccess();
     try {
-      final response = await http.post(
-        Uri.parse('${ApiUrl.baseUrl}/studygroup'),
+      final response = await http.put(
+        Uri.parse('${ApiUrl.baseUrl}/studygroup/${widget.studyGroup.id}'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
           'access': '$token',
@@ -58,19 +85,34 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
         }),
       );
 
+      StudyGroup updatedStudyGroup = StudyGroup(
+        id: widget.studyGroup.id,  // 기존 그룹 ID 유지
+        studyName: nameController.text,
+        studyLocation: locationController.text,
+        studyCycle: cycleController.text,
+        studyRule: ruleController.text,
+        category: selectedCategory!,
+        teamSize: maxMembers,
+        startDate: selectedDateRange!.start,
+        endDate: selectedDateRange!.end,
+        studySchedule: widget.studyGroup.studySchedule,
+        ownerOauth2Id: widget.studyGroup.ownerOauth2Id,
 
+      );
+
+      Navigator.of(context).pop(updatedStudyGroup);
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('그룹이 성공적으로 생성되었습니다.'),
+            content: Text('그룹이 성공적으로 수정되었습니다.'),
             duration: Duration(seconds: 1),
           ),
         );
-        Navigator.of(context).pop(true);
+
       } else if(response.statusCode == 401) {
         bool success = await reissueToken(context);
         if(success) {
-          await _createGroup();
+          await _updateGroup();
         } else {
           print('토큰 재발급 실패');
         }
@@ -99,7 +141,7 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
         scrolledUnderElevation: 0,
         centerTitle: true,
         title: Text(
-          '그룹 만들기',
+          '그룹 수정',
           style: TextStyle(
             color: Colors.black, // 텍스트 색상을 지정
           ),
@@ -444,7 +486,7 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
                               );
                               return;
                             } else {
-                              _createGroup();
+                              _updateGroup();
 
 
                             }
@@ -458,7 +500,7 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
                             ),
                           ),
                           child: Text(
-                            '만들기',
+                            '수정',
                             style: TextStyle(fontSize: 16),
                           ),
                         ),
