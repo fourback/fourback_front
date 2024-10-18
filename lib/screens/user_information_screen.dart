@@ -66,7 +66,7 @@ class _MypageScreenState extends State<UserInformationScreen> {
         final Map<String, dynamic> jsonData =
             jsonDecode(utf8.decode(response.bodyBytes));
         setState(() {
-          userImage = jsonData["fileName"];
+          userImage = jsonData["imageUrl"];
           userNameController.text = jsonData["userName"] ?? "";
           emailController.text = jsonData["email"] ?? "";
           birthController.text = jsonData["birth"] ?? "";

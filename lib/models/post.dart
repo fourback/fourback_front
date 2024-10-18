@@ -33,7 +33,7 @@ class Post {
         commentCount: json['commentCount'],
         viewCount: json['viewCount'],
         postDate: json['postDate'],
-        imageName: List<String>.from(json['imageUrl'] ?? []),
+        imageName: List<String>.from(json['imageName'] ?? []),
         postGood:  json['postGood'],
         boardName: json['boardName'],
         userCheck: json['userCheck'],
