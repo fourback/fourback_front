@@ -27,16 +27,13 @@ class _FriendScreenState extends State<FriendScreen> {
   void initState() {
     super.initState();
     // 화면이 로드될 때 친구 목록과 친구 요청 개수 정보를 불러옴
-    fetchFriendInfo();
-    countFriendApply();
+    _loadData();
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // 화면이 다시 로드될 때마다 데이터를 새로 불러오기
-    fetchFriendInfo();
-    countFriendApply();
+  // 친구 정보와 친구 요청 개수 데이터를 동시에 불러오는 메서드
+  Future<void> _loadData() async {
+    await fetchFriendInfo();
+    await countFriendApply();
   }
 
   Future<void> countFriendApply() async {
@@ -113,7 +110,10 @@ class _FriendScreenState extends State<FriendScreen> {
                           fileName: friendInfo[index].fileName ?? "No file",
                         ),
                       ),
-                    );
+                    ).then((_) {
+                      // 돌아왔을 때 무조건 데이터를 새로고침
+                      fetchFriendInfo();
+                    });
                   },
                   child: Padding(
                     padding: const EdgeInsets.only(right: 20, left: 20),
