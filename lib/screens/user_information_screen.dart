@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:bemajor_frontend/ip.dart';
 import 'package:bemajor_frontend/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -37,7 +38,6 @@ class _MypageScreenState extends State<UserInformationScreen> {
       source: ImageSource.gallery, //위치는 갤러리
       maxHeight: 150,
       maxWidth: 150,
-
     );
     if (image != null) {
       setState(() {
@@ -54,7 +54,7 @@ class _MypageScreenState extends State<UserInformationScreen> {
     String? accessToken = await readAccess();
 
     final url = Uri.http(
-      "116.47.60.159:8080",
+      address,
       "/api/users",
     );
     try {
@@ -63,9 +63,10 @@ class _MypageScreenState extends State<UserInformationScreen> {
         headers: {'access': '$accessToken'},
       );
       if (response.statusCode == 200) {
-        final Map<String, dynamic> jsonData = jsonDecode(utf8.decode(response.bodyBytes));
+        final Map<String, dynamic> jsonData =
+            jsonDecode(utf8.decode(response.bodyBytes));
         setState(() {
-          userImage = jsonData["fileName"];
+          userImage = jsonData["imageUrl"];
           userNameController.text = jsonData["userName"] ?? "";
           emailController.text = jsonData["email"] ?? "";
           birthController.text = jsonData["birth"] ?? "";
@@ -78,7 +79,6 @@ class _MypageScreenState extends State<UserInformationScreen> {
           print(userImage);
           isLoading = false;
         });
-
       } else {
         setState(() {
           isLoading = false;
@@ -100,15 +100,14 @@ class _MypageScreenState extends State<UserInformationScreen> {
     * multipartfile 보내는 양식으로 고쳐야 함
     * */
     final url = Uri.http(
-      "116.47.60.159:8080",
+      address,
       "api/users",
     );
     final headers = {
       "Content-Type": "application/json",
       'access': '$accessToken'
     };
-    final body =
-    {
+    final body = {
       "userName": userNameController.text,
       "email": emailController.text,
       "birth": birthController.text,
@@ -119,7 +118,6 @@ class _MypageScreenState extends State<UserInformationScreen> {
       "address": addressController.text,
       "techStack": techStackController.text
     };
-
 
     try {
       final response = await http.put(
@@ -141,16 +139,11 @@ class _MypageScreenState extends State<UserInformationScreen> {
     }
   }
 
-
-
   Future<void> uploadImage(XFile image) async {
     String? accessToken = await readAccess();
     final url = Uri.http(
-      "116.47.60.159:8080",
-
+      address,
       "api/users/image",
-
-
     );
     var request = http.MultipartRequest('POST', url);
     request.headers['access'] = '$accessToken';
@@ -158,15 +151,13 @@ class _MypageScreenState extends State<UserInformationScreen> {
       access token, refresh token 없애는 로직 구현
       + 헤더에 access token, refresh token 전송해줘야 함
      */
-    request.files.add(
-        await http.MultipartFile.fromPath('file', image.path)
-    );
+    request.files.add(await http.MultipartFile.fromPath('file', image.path));
     try {
       final response = await request.send();
       if (response.statusCode == 200) {
         var responseBody = await response.stream.bytesToString();
         setState(() {
-          userImage=responseBody;
+          userImage = responseBody;
         });
         print('upload successfully');
         print(userImage);
@@ -186,7 +177,7 @@ class _MypageScreenState extends State<UserInformationScreen> {
 
     String? accessToken = await readAccess();
     final url = Uri.http(
-      "116.47.60.159:8080",
+      address,
       "api/users/image",
     );
 
@@ -229,7 +220,6 @@ class _MypageScreenState extends State<UserInformationScreen> {
     objectiveController = TextEditingController();
     addressController = TextEditingController();
     techStackController = TextEditingController();
-
   }
 
   @override
@@ -253,14 +243,14 @@ class _MypageScreenState extends State<UserInformationScreen> {
       appBar: AppBar(
         scrolledUnderElevation: 0,
         backgroundColor: Colors.white,
-
         title: Text('프로필 등록',
             style: TextStyle(
-              fontSize: 25,fontWeight: FontWeight.bold,
+              fontSize: 25,
+              fontWeight: FontWeight.bold,
             )),
         centerTitle: true,
       ),
-      body:isLoading
+      body: isLoading
           ? Center(child: CircularProgressIndicator())
           : LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
@@ -314,8 +304,8 @@ class _MypageScreenState extends State<UserInformationScreen> {
                           child: PublicImage(
                             imageUrl: () {
                               final url = userImage != null
-                                  ? 'http://116.47.60.159:8080/api/images/$userImage'
-                                  : 'http://116.47.60.159:8080/api/images/default_profile_image.jpg';
+                                  ? userImage!
+                                  : "https://www.pngarts.com/files/10/Default-Profile-Picture-PNG-Download-Image.png";
 
                               print('Image URL: $url'); // URL을 출력
                               return url;

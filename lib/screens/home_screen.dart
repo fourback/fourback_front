@@ -322,8 +322,8 @@ class _HomeBodyState extends State<_HomeBody> {
                               children: [
                                 PublicImage(
                                   imageUrl: widget.posts[index].profileImage.isNotEmpty
-                                      ? 'http://116.47.60.159:8080/api/images/${widget.posts[index].profileImage}'
-                                      : 'http://116.47.60.159:8080/api/images/default_profile_image.jpg',
+                                      ? widget.posts[index].profileImage
+                                      : "https://www.pngarts.com/files/10/Default-Profile-Picture-PNG-Download-Image.png",
                                   placeholderPath: 'assets/icons/loading.gif',
                                   width: 40.0, // 원하는 크기로 조정하세요
                                   height: 40.0, // 원하는 크기로 조정하세요
@@ -388,11 +388,11 @@ class _HomeBodyState extends State<_HomeBody> {
                                     borderRadius: BorderRadius.circular(8.0),
                                     child: PublicImage(
                                       placeholderPath: 'assets/icons/loading.gif',
-                                      imageUrl: 'http://116.47.60.159:8080/api/images/' + widget.posts[index].imageName[0],
+                                      imageUrl: widget.posts[index].imageName[0],
                                       width: 80,
                                       height: 80,
                                       fit: BoxFit.cover,
-                                      key: ValueKey('http://116.47.60.159:8080/api/images/' + widget.posts[index].imageName[0]),
+                                      key: ValueKey(widget.posts[index].imageName[0]),
                                     ),
                                   ),
                                 ),

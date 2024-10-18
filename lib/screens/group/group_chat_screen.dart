@@ -103,7 +103,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
           date: formatDate(message['timestamp']),
           studyGroupName: message['studyGroupName'] ?? 'Unknown Group',
           isMine: message['userId'] == userId,
-          profileImageName: user.fileName,
+          profileImageName: user.imageUrl,
         );
       }).toList();
     });
@@ -155,7 +155,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               date: formatDate(decodedMessage['sendTime']),
               studyGroupName: decodedMessage['studyGroupName'] ?? 'Unknown Group',
               isMine: decodedMessage['senderId'] == currentUser?.userId,
-              profileImageName: senderUser.fileName,
+              profileImageName: senderUser.imageUrl,
             ));
 
           });
@@ -452,8 +452,8 @@ class ChatMessageWidget extends StatelessWidget {
                 ? SizedBox(width: 40.0, height: 40.0) // 프로필 이미지 공간을 차지하는 빈 공간
                 : PublicImage(
               imageUrl: message.profileImageName != null
-                  ? 'http://116.47.60.159:8080/api/images/${message.profileImageName}'
-                  : 'http://116.47.60.159:8080/api/images/default_profile_image.jpg',
+                  ? message.profileImageName!
+                  : "https://www.pngarts.com/files/10/Default-Profile-Picture-PNG-Download-Image.png",
               placeholderPath: 'assets/icons/loading.gif',
               width: 40.0, // 원하는 크기로 조정하세요
               height: 40.0, // 원하는 크기로 조정하세요
