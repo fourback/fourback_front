@@ -61,16 +61,8 @@ class _PublicImageState extends State<PublicImage> {
       return cachedImage;
     }
 
-    final token = await readAccess();
-    if (token == null) {
-      throw Exception('Token not found');
-    }
-
     final response = await http.get(
       Uri.parse(widget.imageUrl),
-      headers: {
-        'access': '$token',
-      },
     );
 
     if (response.statusCode == 200) {
@@ -131,5 +123,6 @@ class _PublicImageState extends State<PublicImage> {
         }
       },
     );
+
   }
 }

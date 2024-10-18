@@ -125,8 +125,8 @@ class _PostListScreenState extends State<PostListScreen> {
                       children: [
                         PublicImage(
                           imageUrl: posts[index].profileImage.isNotEmpty
-                              ? 'http://116.47.60.159:8080/api/images/${posts[index].profileImage}'
-                              : 'http://116.47.60.159:8080/api/images/default_profile_image.jpg',
+                              ? posts[index].profileImage
+                              : "https://www.pngarts.com/files/10/Default-Profile-Picture-PNG-Download-Image.png",
                           placeholderPath: 'assets/icons/loading.gif',
                           width: 40.0, // 원하는 크기로 조정하세요
                           height: 40.0, // 원하는 크기로 조정하세요
@@ -202,12 +202,12 @@ class _PostListScreenState extends State<PostListScreen> {
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(8.0),
                                 child: PublicImage(
-                                  imageUrl: 'http://116.47.60.159:8080/api/images/' + posts[index].imageName[0],
+                                  imageUrl: posts[index].imageName[0],
                                   placeholderPath: 'assets/icons/loading.gif',
                                   width: 80,
                                   height: 80,
                                   fit: BoxFit.cover,
-                                  key: ValueKey('http://116.47.60.159:8080/api/images/' + posts[index].imageName[0]),
+                                  key: ValueKey(posts[index].imageName[0]),
                                 ),
                               ),
                             ),

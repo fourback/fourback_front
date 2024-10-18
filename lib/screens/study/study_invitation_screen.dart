@@ -170,9 +170,9 @@ class _StudyInvitationScreenState extends State<StudyInvitationScreen> {
               child:Row(
                 children: [
                   PublicImage(
-                    imageUrl: user!.fileName != null
-                        ? 'http://116.47.60.159:8080/api/images/${user!.fileName}'
-                        : 'http://116.47.60.159:8080/api/images/default_profile_image.jpg',
+                    imageUrl: user!.imageUrl != null
+                        ? user!.imageUrl!
+                        : "https://www.pngarts.com/files/10/Default-Profile-Picture-PNG-Download-Image.png",
                     placeholderPath: 'assets/icons/loading.gif',
                     width: 40.0, // 원하는 크기로 조정하세요
                     height: 40.0, // 원하는 크기로 조정하세요
