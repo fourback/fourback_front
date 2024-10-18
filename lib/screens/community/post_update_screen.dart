@@ -49,7 +49,7 @@ class _InputScreenState extends State<PostUpdateScreen> {
   }
 
   Future<void> _deleteImage(List<String> fileNames) async {
-    final url = Uri.parse('${ApiUrl.baseUrl}/api/post/image');
+    final url = Uri.parse('${ApiUrl.baseUrl}/api/post/images');
     String? token = await readAccess();
     final response = await http.delete(
         url,
