@@ -110,7 +110,7 @@ class _FriendScreenState extends State<FriendScreen> {
                           objective: friendInfo[index].objective ?? "No objective",
                           address: friendInfo[index].address ?? "No address",
                           techStack: friendInfo[index].techStack ?? "No tech stack",
-                          fileName: friendInfo[index].fileName ?? "No file",
+                          fileName: friendInfo[index].imageUrl ?? "No file",
                         ),
                       ),
                     );

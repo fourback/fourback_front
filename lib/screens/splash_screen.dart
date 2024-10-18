@@ -2,6 +2,7 @@ import 'package:bemajor_frontend/screens/user_information_screen.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../ip.dart';
 import 'home_screen.dart';
 import 'login_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -61,7 +62,7 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<bool> _checkUserProfile(String token) async {
-    final url = Uri.http('116.47.60.159:8080', '/api/users');
+    final url = Uri.http(address, '/api/users');
     try {
       final response = await http.get(
         url,

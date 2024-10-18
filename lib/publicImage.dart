@@ -53,7 +53,7 @@ class _PublicImageState extends State<PublicImage> {
     }
   }
 
-  Future<Uint8List> _loadImage() async {
+  Future<Uint8List> ㅋ_loadImage() async {
     // 캐시에서 이미지를 먼저 확인합니다.
     final cachedImage = ImageCacheManager.get(widget.imageUrl);
     if (cachedImage != null) {

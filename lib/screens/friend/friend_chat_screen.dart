@@ -1,6 +1,7 @@
 import 'dart:async';
 
 
+import 'package:bemajor_frontend/ip.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -92,7 +93,7 @@ class _FriendChatScreenState extends State<FriendChatScreen> {
     userId = decodedToken['userId'];// 사용자 ID 가져오기
 
     final url = Uri.http(
-      "116.47.60.159:8080",
+      address,
       "/api/users",
     );
     try {
@@ -419,8 +420,8 @@ class ChatMessageWidget extends StatelessWidget {
                 ? SizedBox(width: 40.0, height: 40.0) // 프로필 이미지 공간을 차지하는 빈 공간
                 : PublicImage(
               imageUrl: message.profileImageName != null
-                  ? 'http://116.47.60.159:8080/api/images/${message.profileImageName}'
-                  : 'http://116.47.60.159:8080/api/images/default_profile_image.jpg',
+                  ? message.profileImageName!
+                  : "https://www.pngarts.com/files/10/Default-Profile-Picture-PNG-Download-Image.png",
               placeholderPath: 'assets/icons/loading.gif',
               width: 40.0, // 원하는 크기로 조정하세요
               height: 40.0, // 원하는 크기로 조정하세요
