@@ -1,6 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
+import '../../api_url.dart';
+import '../../auth.dart';
+import '../../models/friendDelete.dart';
 import 'friend_chat_screen.dart';
+import 'package:http/http.dart' as http;
 
 class FriendDetailScreen extends StatelessWidget {
   final int friendId;
@@ -30,6 +36,40 @@ class FriendDetailScreen extends StatelessWidget {
     required this.fileName
 
   });
+
+  Future<void> deleteFriend(BuildContext context) async {
+    String? token = await readAccess();
+
+    try {
+      final response = await http.delete(
+      Uri.parse('${ApiUrl.baseUrl}/api/friend'),
+      headers: {
+        'access': '$token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(FriendDelete(friendId)),
+    );
+
+    if (response.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('삭제되었습니다.')),
+      );
+      Navigator.pop(context, true);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('친구 삭제에 실패했습니다.')),
+      );
+      print('Response body: ${response.body}');
+    }
+
+    } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text('친구 삭제 중 오류가 발생했습니다.')),
+    );
+    print('Error: $e');
+    }
+
+}
 
   @override
   Widget build(BuildContext context) {
@@ -106,7 +146,9 @@ class FriendDetailScreen extends StatelessWidget {
                     Column(
                       children: [
                         ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            deleteFriend(context);
+                          },
                           style: ElevatedButton.styleFrom(
                               minimumSize: Size(200, 50),
                               shape: RoundedRectangleBorder(
