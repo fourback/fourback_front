@@ -219,7 +219,7 @@ class _FriendChatScreenState extends State<FriendChatScreen> {
     final message = {
       "content": text,
       "senderName": userName, // 실제 본인 이름으로 변경
-      "sendTime": DateTime.now().toUtc().add(Duration(hours: 9)).toIso8601String(), // 현재 시간을 ISO8601 형식으로 전송
+    //  "sendTime": DateTime.now().toUtc().add(Duration(hours: 9)).toIso8601String(), // 현재 시간을 ISO8601 형식으로 전송
     };
 
     // 서버로 메시지를 보냅니다.
