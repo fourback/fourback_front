@@ -479,8 +479,8 @@ class _DetailScreenState extends State<DetailScreen> {
                       children: [
                         PublicImage(
                           imageUrl: widget.post.profileImage.isNotEmpty
-                              ? 'http://116.47.60.159:8080/api/images/${widget.post.profileImage}'
-                              : 'http://116.47.60.159:8080/api/images/default_profile_image.jpg',
+                              ? widget.post.profileImage
+                              : "https://www.pngarts.com/files/10/Default-Profile-Picture-PNG-Download-Image.png",
                           placeholderPath: 'assets/icons/loading.gif',
                           width: 40.0, // 원하는 크기로 조정하세요
                           height: 40.0, // 원하는 크기로 조정하세요
@@ -575,11 +575,11 @@ class _DetailScreenState extends State<DetailScreen> {
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(8.0),
                               child: PublicImage(
-                                imageUrl: 'http://116.47.60.159:8080/api/images/' + imageName,
+                                imageUrl: imageName,
                                 width: MediaQuery.of(context).size.width,
                                 fit: BoxFit.cover,
                                 placeholderPath: 'assets/icons/loading.gif',
-                                key: ValueKey('http://116.47.60.159:8080/api/images/' + imageName),
+                                key: ValueKey(imageName),
                               ),
                             ),
                           )
@@ -676,8 +676,8 @@ class _DetailScreenState extends State<DetailScreen> {
                               children: [
                                 PublicImage(
                                   imageUrl: commentsResult[index].profileImage != null
-                                      ? 'http://116.47.60.159:8080/api/images/${commentsResult[index].profileImage}'
-                                      : 'http://116.47.60.159:8080/api/images/default_profile_image.jpg',
+                                      ? commentsResult[index].profileImage!
+                                      : "https://www.pngarts.com/files/10/Default-Profile-Picture-PNG-Download-Image.png",
                                   placeholderPath: 'assets/icons/loading.gif',
                                   width: 40.0, // 원하는 크기로 조정하세요x`
                                   height: 40.0, // 원하는 크기로 조정하세요
@@ -830,8 +830,8 @@ class _DetailScreenState extends State<DetailScreen> {
                                                 children: [
                                                   PublicImage(
                                                     imageUrl: replies[replyIndex].profileImage != null
-                                                        ? 'http://116.47.60.159:8080/api/images/${replies[replyIndex].profileImage}'
-                                                        : 'http://116.47.60.159:8080/api/images/default_profile_image.jpg',
+                                                        ? replies[replyIndex].profileImage!
+                                                        : "https://www.pngarts.com/files/10/Default-Profile-Picture-PNG-Download-Image.png",
                                                     placeholderPath: 'assets/icons/loading.gif',
                                                     width: 40.0, // 원하는 크기로 조정하세요
                                                     height: 40.0, // 원하는 크기로 조정하세요

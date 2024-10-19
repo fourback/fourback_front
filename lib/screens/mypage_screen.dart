@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:bemajor_frontend/ip.dart';
 import 'package:bemajor_frontend/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -54,7 +55,7 @@ class _MypageScreenState extends State<MypageScreen> {
     String? accessToken = await readAccess();
 
     final url = Uri.http(
-      "116.47.60.159:8080",
+      address,
       "/api/users",
     );
     try {
@@ -65,7 +66,7 @@ class _MypageScreenState extends State<MypageScreen> {
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonData = jsonDecode(utf8.decode(response.bodyBytes));
         setState(() {
-          userImage = jsonData["fileName"];
+          userImage = jsonData["imageUrl"];
           userNameController.text = jsonData["userName"] ?? "";
           emailController.text = jsonData["email"] ?? "";
           birthController.text = jsonData["birth"] ?? "";
@@ -108,7 +109,7 @@ class _MypageScreenState extends State<MypageScreen> {
     * multipartfile 보내는 양식으로 고쳐야 함
     * */
     final url = Uri.http(
-      "116.47.60.159:8080",
+      address,
       "api/users",
     );
     final headers = {
@@ -149,7 +150,7 @@ class _MypageScreenState extends State<MypageScreen> {
     String? refreshToken = await readRefresh();
     String? accessToken = await readAccess();
     final url = Uri.http(
-      "116.47.60.159:8080",
+      address,
       "logout",
     );
     /*  ***
@@ -187,7 +188,7 @@ class _MypageScreenState extends State<MypageScreen> {
   Future<void> uploadImage(XFile image) async {
     String? accessToken = await readAccess();
     final url = Uri.http(
-      "116.47.60.159:8080",
+      address,
 
       "api/users/image",
 
@@ -227,7 +228,7 @@ class _MypageScreenState extends State<MypageScreen> {
 
     String? accessToken = await readAccess();
     final url = Uri.http(
-      "116.47.60.159:8080",
+      address,
       "api/users/image",
     );
 
@@ -355,8 +356,8 @@ class _MypageScreenState extends State<MypageScreen> {
                               child: PublicImage(
                                 imageUrl: () {
                                   final url = userImage != null
-                                      ? 'http://116.47.60.159:8080/api/images/$userImage'
-                                      : 'http://116.47.60.159:8080/api/images/default_profile_image.jpg';
+                                      ? userImage!
+                                      : "https://www.pngarts.com/files/10/Default-Profile-Picture-PNG-Download-Image.png";
 
                                   print('Image URL: $url'); // URL을 출력
                                   return url;

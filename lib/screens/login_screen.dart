@@ -181,7 +181,7 @@ class _LoginScreenState extends State<LoginScreen> {
     String? accessToken = await readAccess();
 
     final url = Uri.http(
-      "116.47.60.159:8080",
+      address,
       "/api/users",
     );
     try {
