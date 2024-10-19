@@ -49,7 +49,7 @@ class _InputScreenState extends State<PostUpdateScreen> {
   }
 
   Future<void> _deleteImage(List<String> fileNames) async {
-    final url = Uri.parse('${ApiUrl.baseUrl}/api/post/${widget.post.id}/images/}');
+    final url = Uri.parse('${ApiUrl.baseUrl}/api/post/${widget.post.id}/images');
     String? token = await readAccess();
     final response = await http.delete(
         url,
@@ -158,7 +158,7 @@ class _InputScreenState extends State<PostUpdateScreen> {
     if (confirmDelete == true) {
       if (images[index].url != null) {
         Uri uri = Uri.parse(images[index].url!);
-        deletedImages.add(uri.pathSegments.last);
+        deletedImages.add(uri.toString());
       }
       setState(() {
         images.removeAt(index);
