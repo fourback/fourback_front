@@ -58,6 +58,13 @@ class _FriendAlarmScreenState extends State<FriendAlarmScreen> {
         'Content-Type': 'application/json',
       },
     );
+
+    if (response.statusCode == 200) {
+      // 수락한 친구 요청을 목록에서 제거
+      setState(() {
+        appliesResult.removeWhere((apply) => apply.applyId.toString() == applyId);
+      });
+    }
   }
 
   @override

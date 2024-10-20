@@ -153,10 +153,7 @@ class _MypageScreenState extends State<MypageScreen> {
       address,
       "logout",
     );
-    /*  ***
-      access token, refresh token 없애는 로직 구현
-      + 헤더에 access token, refresh token 전송해줘야 함
-     */
+
     final headers = {
       "Content-Type": "application/json",
       'access': '$accessToken',

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 
+
 import 'package:bemajor_frontend/ip.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -202,8 +203,14 @@ class _FriendChatScreenState extends State<FriendChatScreen> {
         }
 
         _scrollToBottom();
-      }, onError: (error) {
+      }, onError: (error) async{
         print("WebSocket 연결 실패: $error");
+        bool success = await reissueToken(context);
+        if(success) {
+          await _connectWebSocket();
+        } else {
+          print('토큰 재발급 실패');
+        }
       }, onDone: () {
         print("WebSocket 연결이 종료되었습니다.");
 
@@ -219,8 +226,7 @@ class _FriendChatScreenState extends State<FriendChatScreen> {
     // 서버로 전송할 메시지 형식
     final message = {
       "content": text,
-      "senderName": userName, // 실제 본인 이름으로 변경
-      "sendTime": DateTime.now().toUtc().add(Duration(hours: 9)).toIso8601String(), // 현재 시간을 ISO8601 형식으로 전송
+      "senderName": userName,
     };
 
     // 서버로 메시지를 보냅니다.

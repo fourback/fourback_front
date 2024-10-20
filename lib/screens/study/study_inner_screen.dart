@@ -66,12 +66,14 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
       headers: {'access': '$token'},
     );
 
-
     if (response.statusCode == 200) {
+
+      // final List<dynamic> jsonMap2 = jsonDecode(utf8.decode(response.bodyBytes));
       final Map<String, dynamic> jsonMap2 = jsonDecode(utf8.decode(response.bodyBytes));
 
       setState(() {
-        enableNotification = jsonMap2['enableNotification'];
+
+
         user = (jsonMap2['users'] as List<dynamic>)
             .map((data) => UserInfo.fromJson(data))
             .toList();
@@ -349,7 +351,7 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
         ),
       ),
       actions: [
-        if (isOwner)
+        if (isOwner || isMember)
           Padding(
           padding: const EdgeInsets.only(left: 8.0),
           child: Theme(

@@ -162,8 +162,14 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         }
 
         _scrollToBottom();
-      }, onError: (error) {
+      }, onError: (error) async{
         print("WebSocket 연결 실패: $error");
+        bool success = await reissueToken(context);
+        if(success) {
+          await _connectWebSocket();
+        } else {
+          print('토큰 재발급 실패');
+        }
       }, onDone: () {
         print("WebSocket 연결이 종료되었습니다.");
 
@@ -221,9 +227,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     // 서버로 전송할 메시지 형식
     final message = {
       "content": text,
-      "senderName": currentUser?.userName, // 실제 본인 이름으로 변경
-      "sendTime": DateTime.now().toUtc().add(Duration(hours: 9)).toIso8601String(), // 현재 시간을 ISO8601 형식으로 전송
-      "studyGroupName": widget.studyGroup.studyName // 스터디 그룹 이름을 실제로 변경
+      "senderName": currentUser?.userName,
+      "studyGroupName": widget.studyGroup.studyName
     };
 
     // 서버로 메시지를 보냅니다.
@@ -246,30 +251,30 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
 
         title: Text('${widget.studyGroup.studyName}'),
         actions: [
-          IconButton(
-            icon: Icon(
-              enableNotification ? Icons.notifications : Icons.notifications_off,
-              color: enableNotification ? Colors.blue : Colors.grey,
-            ),
-            onPressed: () {
-              setState(() {
-                enableNotification = !enableNotification; // 알림 상태 변경
-              });
-              if (enableNotification) {
-                // 알림 켜기 API 호출
-                notificationOn();
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text("알림이 켜졌습니다."),
-                ));
-              } else {
-                // 알림 끄기 API 호출
-                notificationOff();
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text("알림이 꺼졌습니다."),
-                ));
-              }
-            },
-          ),
+          // IconButton(
+          //   icon: Icon(
+          //     enableNotification ? Icons.notifications : Icons.notifications_off,
+          //     color: enableNotification ? Colors.blue : Colors.grey,
+          //   ),
+          //   onPressed: () {
+          //     setState(() {
+          //       enableNotification = !enableNotification; // 알림 상태 변경
+          //     });
+          //     if (enableNotification) {
+          //       // 알림 켜기 API 호출
+          //       notificationOn();
+          //       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          //         content: Text("알림이 켜졌습니다."),
+          //       ));
+          //     } else {
+          //       // 알림 끄기 API 호출
+          //       notificationOff();
+          //       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          //         content: Text("알림이 꺼졌습니다."),
+          //       ));
+          //     }
+          //   },
+          // ),
         ],
 
 
