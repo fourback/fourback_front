@@ -62,21 +62,21 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
   Future<void> fetchStudys() async {
     String? token = await readAccess();
     final response = await http.get(
-      Uri.parse('${ApiUrl.baseUrl}/studygroup/members/${widget.studyGroup.id}'),
+      Uri.parse('${ApiUrl.baseUrl}/studygroup/details/${widget.studyGroup.id}'),
       headers: {'access': '$token'},
     );
 
     if (response.statusCode == 200) {
 
-      final List<dynamic> jsonMap2 = jsonDecode(utf8.decode(response.bodyBytes));
-      // final Map<String, dynamic> jsonMap2 = jsonDecode(utf8.decode(response.bodyBytes));
+      // final List<dynamic> jsonMap2 = jsonDecode(utf8.decode(response.bodyBytes));
+      final Map<String, dynamic> jsonMap2 = jsonDecode(utf8.decode(response.bodyBytes));
 
       setState(() {
-        user = jsonMap2.map((data) => UserInfo.fromJson(data)).toList();
-        // enableNotification = jsonMap2['enableNotification'];
-        // user = (jsonMap2['users'] as List<dynamic>)
-        //     .map((data) => UserInfo.fromJson(data))
-        //     .toList();
+
+
+        user = (jsonMap2['users'] as List<dynamic>)
+            .map((data) => UserInfo.fromJson(data))
+            .toList();
       });
     } else if(response.statusCode == 401) {
       bool success = await reissueToken(context);
