@@ -87,6 +87,11 @@ class _GroupScreenState extends State<GroupScreen> {
         setState(() {
           studyGroups = parseStudyGroups(response.body);
           filteredStudyGroups = studyGroups;
+
+          // 그룹이 없을 때 빈 리스트를 유지
+          if (studyGroups.isEmpty) {
+            filteredStudyGroups = [];
+          }
         });
       } else if (response.statusCode == 401) {
         bool success = await reissueToken(context);
@@ -210,9 +215,7 @@ class _GroupScreenState extends State<GroupScreen> {
       appBar: _appbarWidget(),
       body: RefreshIndicator(
         onRefresh: _refreshData, // 당겨서 새로고침
-        child: studyGroups.isEmpty
-            ? Center(child: CircularProgressIndicator())
-            : SingleChildScrollView(
+        child: SingleChildScrollView(
           physics: AlwaysScrollableScrollPhysics(),
           child: Padding(
             padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
@@ -248,11 +251,11 @@ class _GroupScreenState extends State<GroupScreen> {
                   ),
                 ),
                 SizedBox(height: 10),
-                _buildPageView(),
+                _buildPageView(), // 스택으로 사진 넘기는 부분 유지
                 SizedBox(height: 20),
-                _buildCategoryIcons(),
+                _buildCategoryIcons(), // 카테고리 필터 버튼들
                 SizedBox(height: 20),
-                _buildStudyGroupGrid(),
+                _buildStudyGroupGrid(), // 그룹 목록을 보여주는 부분
               ],
             ),
           ),
@@ -390,7 +393,6 @@ class _GroupScreenState extends State<GroupScreen> {
                         );
                       },
                       style: ElevatedButton.styleFrom(
-
                         backgroundColor: Color(0xFF333333),
                       ),
                       child: Text(
@@ -500,7 +502,21 @@ class _GroupScreenState extends State<GroupScreen> {
     var itemWidth = (screenSize.width - 20) / 2;
     var itemHeight = itemWidth * 1.5;
 
-    return GridView.builder(
+    return filteredStudyGroups.isEmpty
+        ? Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Center(
+        child: Text(
+          '아직 생성된 그룹이 없습니다',
+          style: GoogleFonts.inter(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey,
+          ),
+        ),
+      ),
+    )
+        : GridView.builder(
       physics: NeverScrollableScrollPhysics(),
       shrinkWrap: true,
       itemCount: filteredStudyGroups.length,

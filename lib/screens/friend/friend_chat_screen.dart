@@ -105,7 +105,7 @@ class _FriendChatScreenState extends State<FriendChatScreen> {
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonData = jsonDecode(utf8.decode(response.bodyBytes));
         setState(() {
-          userProfile = jsonData["fileName"];
+          userProfile = jsonData["imageUrl"];
           userName = jsonData["userName"];
         });
         print(userName);
