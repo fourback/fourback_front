@@ -191,14 +191,6 @@ PreferredSizeWidget _HomeAppbar({
                 height: 30,
               ),
             ),
-            IconButton(
-              onPressed: () {},
-              icon: SvgPicture.asset(
-                'assets/icons/bell.svg',
-                height: 28,
-                width: 28,
-              ),
-            ),
           ],
         ),
       ),
