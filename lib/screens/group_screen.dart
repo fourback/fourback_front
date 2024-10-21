@@ -187,11 +187,15 @@ class _GroupScreenState extends State<GroupScreen> {
   void filterStudyGroups(String category) {
     setState(() {
       if (selectedCategory == category) {
+        // 이미 선택된 카테고리를 다시 클릭하면 전체 그룹을 보여줌
         selectedCategory = "All";
-        filteredStudyGroups = studyGroups;
+        fetchStudyGroups(); // 전체 그룹 불러오기
       } else {
         selectedCategory = category;
-        if (category != "내 그룹") {
+        if (category == "내 그룹") {
+          // "내 그룹"을 클릭하면 내 그룹을 불러옴
+          fetchMyStudyGroups();
+        } else {
           filteredStudyGroups = studyGroups.where((group) => group.category == category).toList();
         }
       }
@@ -461,10 +465,18 @@ class _GroupScreenState extends State<GroupScreen> {
     bool isSelected = selectedCategory == category;
     return GestureDetector(
       onTap: () {
-        if (category == "내 그룹") {
-          fetchMyStudyGroups(); // 내 그룹 API 호출
+        if (selectedCategory == "내 그룹" && category == "내 그룹") {
+          // "내 그룹"이 선택된 상태에서 다시 클릭하면 전체 그룹을 다시 불러옴
+          fetchStudyGroups(); // 전체 그룹 불러오기
+          setState(() {
+            selectedCategory = "All"; // 전체 그룹 카테고리로 변경
+          });
+        } else if (category == "내 그룹") {
+          // "내 그룹"을 처음 클릭하면 내 그룹을 불러옴
+          filterStudyGroups("내 그룹");
         } else {
-          filterStudyGroups(category); // 기존 카테고리 필터링
+          // 다른 카테고리를 클릭하면 해당 카테고리의 그룹을 필터링
+          filterStudyGroups(category);
         }
       },
       child: Column(
