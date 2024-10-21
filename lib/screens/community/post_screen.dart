@@ -516,7 +516,6 @@ class _DetailScreenState extends State<DetailScreen> {
                             itemBuilder: (BuildContext context) {
                               return [
                                 PopupMenuItem<String>(
-
                                   value: 'edit',
                                   child: Text('수정'),
                                   onTap: () async {
@@ -525,13 +524,11 @@ class _DetailScreenState extends State<DetailScreen> {
                                       MaterialPageRoute(builder: (context) => PostUpdateScreen(widget.post)),
                                     );
 
-
                                     // 수정된 게시글 정보를 받아오고 상태를 업데이트
 
                                     if (updatedPost == true) {
                                       _updatePost();
                                     }
-
 
                                   },
                                   // 수정 액션 Ontap 시 글 작성 화면 이동
@@ -539,8 +536,6 @@ class _DetailScreenState extends State<DetailScreen> {
                                 PopupMenuItem<String>(
                                   onTap: () async {
                                     await _deletePost();
-
-
                                   },
                                   value: 'delete',
                                   child: Text('삭제'), // 삭제 액션 Ontap 시 글 삭제
@@ -739,18 +734,21 @@ class _DetailScreenState extends State<DetailScreen> {
                                       };
                                     },
                                     itemBuilder: (BuildContext context) {
+
                                       return [
                                         PopupMenuItem<String>(
                                           value: 'edit',
                                           child: Text('수정'), // 수정 액션
                                         ),
                                         PopupMenuItem<String>(
+
                                           value: 'delete',
                                           child: Text('삭제'), // 삭제 액션
                                         ),
                                       ];
                                     },
                                     icon: Icon(Icons.more_vert, color: Colors.grey),
+                                    color: Colors.white,
                                   ),
                               ],
                             ),
