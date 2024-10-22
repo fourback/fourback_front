@@ -54,7 +54,7 @@ class _DetailScreenState extends State<DetailScreen> {
   List<int> _commentLikeCounts = List.generate(12, (index) => 3); // 댓글 좋아요 수
 
   List<List<bool>> _replyLikes = List.generate(12, (index) => List.generate(3, (replyIndex) => false)); // 대댓글 좋아요 상태
-  List<List<int>> _replyLikeCounts = List.generate(12, (index) => List.generate(3, (replyIndex) => 3));// 대댓글 좋아요 수 테이블 수정
+  List<List<int>> _replyLikeCounts = List.generate(12, (index) => List.generate(3, (replyIndex) => 3)); // 대댓글 좋아요 수 테이블 수정
 
   @override
   void initState() {
@@ -241,12 +241,12 @@ class _DetailScreenState extends State<DetailScreen> {
         print('댓글이 성공적으로 전송되었습니다.');
         await fetchComments(); // 새로운 댓글을 작성한 후 댓글 리스트를 다시 로드
       } else if(response.statusCode == 401) {
-          bool success = await reissueToken(context);
-          if(success) {
-            await _addComment(content,parentCommentId);
-          } else {
-            print('토큰 재발급 실패');
-          }
+        bool success = await reissueToken(context);
+        if(success) {
+          await _addComment(content,parentCommentId);
+        } else {
+          print('토큰 재발급 실패');
+        }
       } else {
         print('API 요청이 실패했습니다.');
       }
@@ -272,6 +272,7 @@ class _DetailScreenState extends State<DetailScreen> {
       if (response.statusCode == 200) {
         print('댓글이 성공적으로 수정되었습니다.');
         await fetchComments(); // 댓글을 수정한 후 댓글 리스트를 다시 로드
+        isModifying = false;
       } else if(response.statusCode == 401) {
         bool success = await reissueToken(context);
         if(success) {

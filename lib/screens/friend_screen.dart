@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:bemajor_frontend/publicImage.dart';
 import 'package:flutter/material.dart';
 import 'package:bemajor_frontend/screens/friend/friend_alarm_screen.dart';
 import 'package:bemajor_frontend/screens/friend/friend_detail_screen.dart';
@@ -62,7 +61,6 @@ class _FriendScreenState extends State<FriendScreen> {
         print('토큰 재발급 실패');
       }
     }
-  }
 
   Future<void> fetchFriendInfo() async {
     String? token = await readAccess();
