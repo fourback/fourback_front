@@ -40,7 +40,7 @@ class _StudyInvitationScreenState extends State<StudyInvitationScreen> {
     if (response.statusCode == 200) {
       final dynamic jsonMap2 = jsonDecode(utf8.decode(response.bodyBytes));
       setState(() {
-        user = UserInfo.fromJson(jsonMap2);
+        user = UserInfo.fromJson2(jsonMap2);
       });
     }
   }

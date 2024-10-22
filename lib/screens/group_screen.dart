@@ -74,7 +74,6 @@ class _GroupScreenState extends State<GroupScreen> {
   Future<void> fetchStudyGroups() async {
     String? token = await readAccess();
     final url = '${ApiUrl.baseUrl}/studygroup';
-    print('Fetching study groups from $url'); // 로깅 추가
     try {
       final response = await http.get(
         Uri.parse(url),
@@ -83,7 +82,9 @@ class _GroupScreenState extends State<GroupScreen> {
           'Content-Type': 'application/json; charset=UTF-8',
         },
       );
+
       if (response.statusCode == 200) {
+
         setState(() {
           studyGroups = parseStudyGroups(response.body);
           filteredStudyGroups = studyGroups;
@@ -454,7 +455,7 @@ class _GroupScreenState extends State<GroupScreen> {
           _buildIconColumn("assets/icons/mygroup.svg", "내 그룹", "내 그룹"),
           _buildIconColumn("assets/icons/study.svg", "스터디", "스터디"),
           _buildIconColumn("assets/icons/project.svg", "프로젝트", "프로젝트"),
-          _buildIconColumn("assets/icons/share.svg", "정보 공유", "정보 공유"),
+          _buildIconColumn("assets/icons/share.svg", "정보공유", "정보공유"),
           _buildIconColumn("assets/icons/amity.svg", "친목", "친목"),
         ],
       ),
@@ -577,12 +578,12 @@ class _GroupScreenState extends State<GroupScreen> {
                             () {
                           if (studyGroup.category == "프로젝트") {
                             return "assets/icons/ex5.png";
-                          } else if (studyGroup.category == '스터디') {
+                          } else if (studyGroup.category == "스터디") {
                             return "assets/icons/ex6.png";
-                          } else if (studyGroup.category == '친목') {
+                          } else if (studyGroup.category == "친목") {
                             return "assets/icons/ex7.png";
-                          } else {
-                            return "assets/icons/eximage.png";
+                          } else  {
+                            return "assets/icons/ex8.png";
                           }
                         }(),
                         fit: BoxFit.cover,

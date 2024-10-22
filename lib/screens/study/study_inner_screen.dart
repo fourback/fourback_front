@@ -29,7 +29,7 @@ class StudyInnerScreen extends StatefulWidget {
 
 class _StudyInnerScreenState extends State<StudyInnerScreen> {
   late StudyGroup studyGroup;
-  bool enableNotification = false;
+  bool enableNotification = true;
 
 
   final TextEditingController inviteFriendController = TextEditingController();
@@ -46,6 +46,7 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
   bool isOwner = false; // 그룹 생성자인지 확인할 변수
   int pendingApprovalCount = 0; // 그룹 참여 승인 대기 인원
   late List<StudyGroupGoalResponse> goals = [];
+  bool isLimit = false;
 
 
   @override
@@ -71,12 +72,18 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
       // final List<dynamic> jsonMap2 = jsonDecode(utf8.decode(response.bodyBytes));
       final Map<String, dynamic> jsonMap2 = jsonDecode(utf8.decode(response.bodyBytes));
 
+
+
       setState(() {
-
-
+        enableNotification = jsonMap2['isEnableNotification'];
         user = (jsonMap2['users'] as List<dynamic>)
             .map((data) => UserInfo.fromJson(data))
             .toList();
+        if(user.length == studyGroup.teamSize) {
+          isLimit == true;
+        }
+
+
       });
     } else if(response.statusCode == 401) {
       bool success = await reissueToken(context);
@@ -171,48 +178,6 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
 
   }
 
-  Future<void> notificationOn() async {
-    String? token = await readAccess();
-    final url = Uri.parse('${ApiUrl.baseUrl}/studyGroup/notification/${widget.studyGroup.id}');
-
-    final response = await http.post(
-      url,
-      headers: {'access': '$token'},
-    );
-
-    if (response.statusCode == 200) {
-      setState(() {
-        enableNotification = true;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('채팅 알림 켜짐')),
-      );
-    } else {
-      throw Exception('알림 켜기 실패: ${response.statusCode}');
-    }
-  }
-
-  Future<void> notificationOff() async {
-    String? token = await readAccess();
-    final url = Uri.parse('${ApiUrl.baseUrl}/studyGroup/notification/${widget.studyGroup.id}');
-
-    final response = await http.delete(
-      url,
-      headers: {'access': '$token'},
-    );
-
-    if (response.statusCode == 200) {
-      setState(() {
-        enableNotification = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('채팅 알림 꺼짐')),
-      );
-    } else {
-      throw Exception('알림 끄기 실패: ${response.statusCode}');
-    }
-  }
-
 
   Future<void> fetchStudyGroupGoals() async {
     String? token = await readAccess();
@@ -287,7 +252,7 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
                   ),
                 ),
               ),
-            if (!isOwner && !isMember) // 소유자도 멤버도 아닌 경우 참여 신청 버튼
+            if (!isOwner && !isMember && !isLimit) // 소유자도 멤버도 아닌 경우 참여 신청 버튼
               Padding(
                 padding: const EdgeInsets.all(10.0),
                 child: GestureDetector(
@@ -351,7 +316,7 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
         ),
       ),
       actions: [
-        if (isOwner || isMember)
+        if (isOwner)
           Padding(
           padding: const EdgeInsets.only(left: 8.0),
           child: Theme(
@@ -360,7 +325,8 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
                 color: Colors.white, // 팝업 메뉴의 배경색을 흰색으로 설정
               ),
             ),
-            child: PopupMenuButton<String>(
+            child:
+            PopupMenuButton<String>(
               onSelected: (String value) async {
                 if (value == 'delete') {
                   showDialog(
@@ -403,11 +369,7 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
                     });
                   }
                 }
-                else if (value == 'notifications_on') {
-                   notificationOn();
-                } else if (value == 'notifications_off') {
-                  notificationOff();
-                }
+
               },
               itemBuilder: (BuildContext context) {
                 return [
@@ -419,19 +381,10 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
                     value: 'update',
                     child: Text('수정'),
                   ),
-                  if (enableNotification)
-                    PopupMenuItem<String>(
-                      value: 'notifications_off',
-                      child: Text('채팅 알림 끄기'),
-                    )
-                  else
-                    PopupMenuItem<String>(
-                      value: 'notifications_on',
-                      child: Text('채팅 알림 켜기'),
-                    ),
+
                 ];
               },
-              icon: Icon(Icons.list),
+              icon: Icon(Icons.more_vert),
               offset: Offset(0, 50),
             ),
           ),
@@ -465,10 +418,20 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
             Container(
               margin: EdgeInsets.all(3),
               padding: const EdgeInsets.only(left: 8.0, top: 16.0),
-              child: Text(
-                '그룹 멤버',
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              child:  Row(
+                children: [
+                  const Text(
+                    '그룹 멤버',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                      '(${user.length}/${studyGroup.teamSize})',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                ],
               ),
+
             ),
             SizedBox(height: 20.0),
             Container(
@@ -1015,12 +978,15 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
       widgets.add(
 
         GestureDetector(
-          onTap: () {
-            Navigator.push(
+          onTap: () async{
+            await Navigator.push(
               context,
 
-              MaterialPageRoute(builder: (context) => GroupChatScreen(studyGroup: widget.studyGroup,user: user)),
+              MaterialPageRoute(builder: (context) => GroupChatScreen(studyGroup: widget.studyGroup,user: user,alarm: enableNotification,)),
             );
+            setState(() {
+              fetchStudys();
+            });
 
 
           },

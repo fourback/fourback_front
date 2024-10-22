@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:bemajor_frontend/publicImage.dart';
 import 'package:flutter/material.dart';
 import 'package:bemajor_frontend/screens/friend/friend_alarm_screen.dart';
 import 'package:bemajor_frontend/screens/friend/friend_detail_screen.dart';
@@ -109,7 +110,7 @@ class _FriendScreenState extends State<FriendScreen> {
                             objective: friendInfo[index].objective ?? "No objective",
                             address: friendInfo[index].address ?? "No address",
                             techStack: friendInfo[index].techStack ?? "No tech stack",
-                            fileName: friendInfo[index].imageUrl ?? "No file",
+                            fileName: friendInfo[index].imageUrl ?? "",
                           ),
                         ),
                       ).then((_) {
@@ -133,14 +134,15 @@ class _FriendScreenState extends State<FriendScreen> {
                           crossAxisAlignment: CrossAxisAlignment.center, // 수직 중앙 정렬
                           children: [
                             // 임시 프로필 이미지 적용
-                            CircleAvatar(
-                              radius: 30, // 프로필 이미지 크기 설정
-                              backgroundColor: Color(0xFFD8BFD8), // 임시 배경색
-                              child: Icon(
-                                Icons.person, // 사람 아이콘 사용
-                                size: 30,
-                                color: Colors.white, // 아이콘 색상
-                              ),
+                            PublicImage(
+                              imageUrl: friendInfo[index].imageUrl != null
+                                  ? friendInfo[index].imageUrl!
+                                  : "https://www.pngarts.com/files/10/Default-Profile-Picture-PNG-Download-Image.png",
+                              placeholderPath: 'assets/icons/loading.gif',
+                              width: 40.0, // 원하는 크기로 조정하세요
+                              height: 40.0, // 원하는 크기로 조정하세요
+                              fit: BoxFit.cover, // 이미지 맞춤 설정
+                              isCircular: true, // 원형으로 표시
                             ),
                             SizedBox(width: 20), // 프로필 이미지와 텍스트 간격
                             Column(

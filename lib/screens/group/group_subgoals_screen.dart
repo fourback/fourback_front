@@ -136,6 +136,8 @@ class _SubGoalsScreenState extends State<SubGoalsScreen> {
     );
 
     if (response.statusCode == 200) {
+      Navigator.of(context).pop();
+
 
     } else {
       print("Failed to delete sub-goal: ${response.body}");

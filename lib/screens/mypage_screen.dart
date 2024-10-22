@@ -559,7 +559,28 @@ class _MypageScreenState extends State<MypageScreen> {
                           height: 20,
                         ),
                         ElevatedButton(
-                          onPressed: sendUserInfo,
+                          onPressed: () {
+                            if (userNameController.text.trim().isEmpty ||
+                                emailController.text.trim().isEmpty ||
+                                birthController.text.trim().isEmpty ||
+                                belongController.text.trim().isEmpty ||
+                                departmentController.text.trim().isEmpty ||
+                                hobbyController.text.trim().isEmpty ||
+                                objectiveController.text.trim().isEmpty ||
+                                addressController.text.trim().isEmpty ||
+                                techStackController.text.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('필수 정보를 모두 입력해주세요.'),
+                                  duration: Duration(seconds: 1),
+                                ),
+
+                              );
+                              return;
+                            } else {
+                              sendUserInfo();
+                            }
+                          },
                           style: ElevatedButton.styleFrom(
                               minimumSize: Size(200, 50),
                               shape: RoundedRectangleBorder(

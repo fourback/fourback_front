@@ -48,6 +48,15 @@ class UserInfo {
       imageUrl:json['imageUrl'],
     );
   }
+
+  factory UserInfo.fromJson2(Map<String, dynamic> json) {
+    return UserInfo(
+      userId: json['userId'],
+      userName: json['name'],
+      imageUrl:json['profileImage'], email: '', birth: ''
+        '', belong: '', department: '', hobby: '', objective: '', address: '', techStack: '',
+    );
+  }
   @override
   String toString() {
     return 'UserInfo{id: $userId, name: $userName, email: $email $imageUrl}';

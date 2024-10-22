@@ -54,7 +54,7 @@ class _DetailScreenState extends State<DetailScreen> {
   List<int> _commentLikeCounts = List.generate(12, (index) => 3); // 댓글 좋아요 수
 
   List<List<bool>> _replyLikes = List.generate(12, (index) => List.generate(3, (replyIndex) => false)); // 대댓글 좋아요 상태
-  List<List<int>> _replyLikeCounts = List.generate(12, (index) => List.generate(3, (replyIndex) => 3)); // 대댓글 좋아요 수 테이블 수정
+  List<List<int>> _replyLikeCounts = List.generate(12, (index) => List.generate(3, (replyIndex) => 3));// 대댓글 좋아요 수 테이블 수정
 
   @override
   void initState() {
@@ -563,7 +563,7 @@ class _DetailScreenState extends State<DetailScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => FullImageScreen(imageUrl: 'http://116.47.60.159:8080/api/images/' + imageName),
+                                  builder: (context) => FullImageScreen(imageUrl: imageName),
                                 ),
                               );
                             },

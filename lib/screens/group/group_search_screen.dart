@@ -113,7 +113,7 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
                         } else if (studyGroup.category == '친목') {
                           return "assets/icons/ex7.png";
                         } else {
-                          return "assets/icons/eximage.png";
+                          return "assets/icons/ex8.png";
                         }
                       }(),
                       fit: BoxFit.cover,

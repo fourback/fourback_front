@@ -115,10 +115,10 @@ class _LoginScreenState extends State<LoginScreen> {
     await getKakaoUserInfo();
     await _sendUserInfo();
     await fetchUserInfo();
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => navigationScreen()),
-    );
+
+
+
+
 
   }
 
@@ -204,7 +204,13 @@ class _LoginScreenState extends State<LoginScreen> {
           // 프로필 입력 화면으로 이동
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => UserInformationScreen()), // 프로필 입력 화면으로 이동
+            MaterialPageRoute(builder: (context) =>
+                UserInformationScreen()), // 프로필 입력 화면으로 이동
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => navigationScreen()),
           );
         }
 
