@@ -61,6 +61,13 @@ class _StudyScheduleScreenState extends State<StudyScheduleScreen> {
             duration: Duration(seconds: 1),
           ),
         );
+      } else if(response.statusCode == 401) {
+        bool success = await reissueToken(context);
+        if(success) {
+          await fetchSchedule();
+        } else {
+          print('토큰 재발급 실패');
+        }
       } else {
         print("${response.statusCode}, ${response.body}");
       }

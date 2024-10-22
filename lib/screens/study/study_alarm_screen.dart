@@ -52,6 +52,13 @@ class _StudyAlarmScreenState extends State<StudyAlarmScreen> {
             .toList()
             .cast<StudyGroupApplicationResponse>();
       });
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await fetchApplicants();
+      } else {
+        print('토큰 재발급 실패');
+      }
     } else {
       print('Error: ${response.statusCode}');
     }
@@ -77,6 +84,13 @@ class _StudyAlarmScreenState extends State<StudyAlarmScreen> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('신청을 수락했습니다.')));
       // 신청 목록 새로 고침
       fetchApplicants();
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await acceptApplicant(studyApplicationId);
+      } else {
+        print('토큰 재발급 실패');
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('신청 수락에 실패했습니다.')));
     }

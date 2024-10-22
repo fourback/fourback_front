@@ -199,6 +199,13 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         SnackBar(content: Text('채팅 알림이 켜졌습니다.'),duration: Duration(seconds: 1),),
 
       );
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await notificationOn();
+      } else {
+        print('토큰 재발급 실패');
+      }
     } else {
       throw Exception('알림 켜기 실패: ${response.body}');
     }
@@ -220,6 +227,13 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('채팅 알림이 꺼졌습니다.'),duration: Duration(seconds: 1),),
       );
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await notificationOff();
+      } else {
+        print('토큰 재발급 실패');
+      }
     } else {
       throw Exception('알림 끄기 실패: ${response.statusCode}');
     }

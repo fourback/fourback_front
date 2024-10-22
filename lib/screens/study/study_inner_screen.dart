@@ -111,6 +111,13 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
         isOwner = result['role'] == 'ADMIN';
         isMember = result['role'] == 'MEMBER';
       });
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await checkGroupRole();
+      } else {
+        print('토큰 재발급 실패');
+      }
     }
   }
   Future<void> loadInitialData() async {
@@ -133,7 +140,14 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
       setState(() {
         pendingApprovalCount = result['count'] ?? 0; // null 체크 후 값 설정
       });
-    } else {
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await fetchPendingApplications();
+      } else {
+        print('토큰 재발급 실패');
+      }
+    }else {
       print('Failed to fetch pending applications. Status code: ${response.statusCode}');
       print('Response body: ${response.body}');  // 응답 본문 출력
     }
@@ -150,6 +164,13 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("그룹 참여 신청이 완료되었습니다.")),
       );
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await requestToJoinGroup();
+      } else {
+        print('토큰 재발급 실패');
+      }
     }
   }
 
@@ -162,6 +183,13 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
 
     if (response.statusCode == 200) {
       Navigator.push(context, MaterialPageRoute(builder: (context) => GroupScreen()));
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await deleteStudys();
+      } else {
+        print('토큰 재발급 실패');
+      }
     }
   }
 
@@ -195,6 +223,13 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
         }).toList();
       });
 
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await fetchStudyGroupGoals();
+      } else {
+        print('토큰 재발급 실패');
+      }
     } else {
       throw Exception('Failed to load study group goals');
     }

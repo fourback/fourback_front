@@ -240,6 +240,13 @@ class _DetailScreenState extends State<DetailScreen> {
       if (response.statusCode == 200) {
         print('댓글이 성공적으로 전송되었습니다.');
         await fetchComments(); // 새로운 댓글을 작성한 후 댓글 리스트를 다시 로드
+      } else if(response.statusCode == 401) {
+          bool success = await reissueToken(context);
+          if(success) {
+            await _addComment(content,parentCommentId);
+          } else {
+            print('토큰 재발급 실패');
+          }
       } else {
         print('API 요청이 실패했습니다.');
       }
@@ -265,6 +272,13 @@ class _DetailScreenState extends State<DetailScreen> {
       if (response.statusCode == 200) {
         print('댓글이 성공적으로 수정되었습니다.');
         await fetchComments(); // 댓글을 수정한 후 댓글 리스트를 다시 로드
+      } else if(response.statusCode == 401) {
+        bool success = await reissueToken(context);
+        if(success) {
+          await _modifyComment(content,commentId);
+        } else {
+          print('토큰 재발급 실패');
+        }
       } else {
         print('API 요청이 실패했습니다.');
       }
@@ -289,6 +303,13 @@ class _DetailScreenState extends State<DetailScreen> {
       if (response.statusCode == 200) {
         print('댓글이 성공적으로 삭제되었습니다.');
         await fetchComments(); // 댓글을 수정한 후 댓글 리스트를 다시 로드
+      } else if(response.statusCode == 401) {
+        bool success = await reissueToken(context);
+        if(success) {
+          await _deleteComment(commentId);
+        } else {
+          print('토큰 재발급 실패');
+        }
       } else {
         print('API 요청이 실패했습니다.');
       }
@@ -340,6 +361,13 @@ class _DetailScreenState extends State<DetailScreen> {
         print('좋아요가 성공적으로 추가되었습니다.');
         _getFavoriteComment(commentResult.id, index);
         await fetchComments(); // 새로운 댓글을 작성한 후 댓글 리스트를 다시 로드
+      } else if(response.statusCode == 401) {
+        bool success = await reissueToken(context);
+        if(success) {
+          await _addFavoriteComment(commentResult,index);
+        } else {
+          print('토큰 재발급 실패');
+        }
       } else {
         print('API 요청이 실패했습니다.');
       }
@@ -365,7 +393,14 @@ class _DetailScreenState extends State<DetailScreen> {
         print('좋아요가 성공적으로 제거되었습니다.');
         _getFavoriteComment(commentResult.id, index);
         await fetchComments(); // 새로운 댓글을 작성한 후 댓글 리스트를 다시 로드
-      } else {
+      } else if(response.statusCode == 401) {
+        bool success = await reissueToken(context);
+        if(success) {
+          await _deleteFavoriteComment(commentResult,index);
+        } else {
+          print('토큰 재발급 실패');
+        }
+      }else {
         print('API 요청이 실패했습니다.');
       }
     } catch (e) {
@@ -390,6 +425,13 @@ class _DetailScreenState extends State<DetailScreen> {
         print('좋아요가 성공적으로 추가되었습니다.');
         _getFavoriteReply(commentResult.id, index, replyIndex);
         await fetchComments(); // 새로운 댓글을 작성한 후 댓글 리스트를 다시 로드
+      } else if(response.statusCode == 401) {
+        bool success = await reissueToken(context);
+        if(success) {
+          await _addFavoriteReply(commentResult,index,replyIndex);
+        } else {
+          print('토큰 재발급 실패');
+        }
       } else {
         print('API 요청이 실패했습니다.');
       }
@@ -415,7 +457,14 @@ class _DetailScreenState extends State<DetailScreen> {
         print('좋아요가 성공적으로 제거되었습니다.');
         _getFavoriteReply(commentResult.id, index, replyIndex);
         await fetchComments(); // 새로운 댓글을 작성한 후 댓글 리스트를 다시 로드
-      } else {
+      } else if(response.statusCode == 401) {
+        bool success = await reissueToken(context);
+        if(success) {
+          await _deleteFavoriteReply(commentResult,index,replyIndex);
+        } else {
+          print('토큰 재발급 실패');
+        }
+      }else {
         print('API 요청이 실패했습니다.');
       }
     } catch (e) {

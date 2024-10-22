@@ -45,7 +45,15 @@ class _FriendAlarmScreenState extends State<FriendAlarmScreen> {
         appliesResult =
             jsonData.map((data) => FriendApplyInfo.fromJson(data)).toList();
       });
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await fetchFriendApplyInfo();
+      } else {
+        print('토큰 재발급 실패');
+      }
     }
+
   }
 
   Future<void> acceptFriendApply(String applyId) async {
@@ -64,6 +72,13 @@ class _FriendAlarmScreenState extends State<FriendAlarmScreen> {
       setState(() {
         appliesResult.removeWhere((apply) => apply.applyId.toString() == applyId);
       });
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await acceptFriendApply(applyId);
+      } else {
+        print('토큰 재발급 실패');
+      }
     }
   }
 

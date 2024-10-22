@@ -138,6 +138,13 @@ class _MypageScreenState extends State<MypageScreen> {
       );
       if (response.statusCode == 200) {
         print('Data sent successfully');
+      } else if(response.statusCode == 401) {
+        bool success = await reissueToken(context);
+        if(success) {
+          await sendUserInfo();
+        } else {
+          print('토큰 재발급 실패');
+        }
       } else {
         print('${response.body} Failed to send data');
       }
@@ -174,6 +181,13 @@ class _MypageScreenState extends State<MypageScreen> {
               (Route<dynamic> route) => false,  // 모든 기존 화면 제거
         );
 
+      } else if(response.statusCode == 401) {
+        bool success = await reissueToken(context);
+        if(success) {
+          await logout();
+        } else {
+          print('토큰 재발급 실패');
+        }
       } else {
         print('Failed logout');
       }
@@ -207,8 +221,14 @@ class _MypageScreenState extends State<MypageScreen> {
         setState(() {
           userImage=responseBody;
         });
-        print('upload successfully');
-        print(userImage);
+
+      } else if(response.statusCode == 401) {
+        bool success = await reissueToken(context);
+        if(success) {
+          await uploadImage(image);
+        } else {
+          print('토큰 재발급 실패');
+        }
       } else {
         print('Failed');
       }
@@ -247,6 +267,13 @@ class _MypageScreenState extends State<MypageScreen> {
           userImage = null; // 이미지 삭제 후 기본 이미지로 변경
           print('State updated: userImage set to null');
         });
+      } else if(response.statusCode == 401) {
+        bool success = await reissueToken(context);
+        if(success) {
+          await deleteImage();
+        } else {
+          print('토큰 재발급 실패');
+        }
       } else {
         print('Failed to delete image. Status code: ${response.statusCode}');
       }

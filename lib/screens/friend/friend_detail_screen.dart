@@ -56,7 +56,14 @@ class FriendDetailScreen extends StatelessWidget {
         SnackBar(content: Text('삭제되었습니다.')),
       );
       Navigator.pop(context, true);
-    } else {
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await deleteFriend(context);
+      } else {
+        print('토큰 재발급 실패');
+      }
+    }else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('친구 삭제에 실패했습니다.')),
       );

@@ -54,6 +54,13 @@ class _FriendScreenState extends State<FriendScreen> {
       setState(() {
         friendRequests = jsonMap['count'];
       });
+    }else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await countFriendApply();
+      } else {
+        print('토큰 재발급 실패');
+      }
     }
   }
 
@@ -76,6 +83,13 @@ class _FriendScreenState extends State<FriendScreen> {
         friendSize = jsonMap['size'];
         friendInfo = jsonData.map((data) => UserInfo.fromJson(data)).toList();
       });
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await fetchFriendInfo();
+      } else {
+        print('토큰 재발급 실패');
+      }
     }
   }
 
