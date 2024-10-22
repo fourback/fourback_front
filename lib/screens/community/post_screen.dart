@@ -440,7 +440,6 @@ class _DetailScreenState extends State<DetailScreen> {
       print('오류: $e');
     }
   }
-  }
 
   Future<void> _deleteFavoriteReply(CommentResult commentResult, int index, int replyIndex) async {
     String apiUrl = '${ApiUrl.baseUrl}/api/comment/favorite?commentID=${commentResult.id}';
