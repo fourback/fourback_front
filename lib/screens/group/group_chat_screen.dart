@@ -22,8 +22,9 @@ import '../../publicImage.dart';
 class GroupChatScreen extends StatefulWidget {
   final StudyGroup studyGroup;
   final List<UserInfo> user;
+  bool alarm;
 
-  GroupChatScreen({required this.studyGroup, required this.user});
+  GroupChatScreen({required this.studyGroup, required this.user, required this.alarm});
 
   @override
   _GroupChatScreenState createState() => _GroupChatScreenState();
@@ -37,7 +38,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   late WebSocketChannel _channel;
   StreamSubscription? _chatSubscription;
   UserInfo? currentUser;
-  bool enableNotification = false;
+
 
   @override
   void initState() {
@@ -118,7 +119,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     };
     try {
       _channel = IOWebSocketChannel.connect(
-        Uri.parse('ws://116.47.60.159:8080/groupChat?studyGroupId=${widget.studyGroup.id}'),
+        Uri.parse('${ApiUrl.websocketUrl}/groupChat?studyGroupId=${widget.studyGroup.id}&isAlarmSet=${widget.alarm}'),
         headers: headers,
       );
 
@@ -178,44 +179,61 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       print("WebSocket 연결 중 예외 발생: $e");
     }
   }
+
   Future<void> notificationOn() async {
     String? token = await readAccess();
-    final url = Uri.parse('${ApiUrl.baseUrl}/studyGroup/notification/${widget.studyGroup.id}');
 
-    final response = await http.post(
+    final url = Uri.parse('${ApiUrl.baseUrl}/studygroup/${widget.studyGroup.id}/alarm');
+
+    final response = await http.patch(
       url,
       headers: {'access': '$token'},
     );
 
     if (response.statusCode == 200) {
       setState(() {
-        enableNotification = true;
+        widget.alarm = true;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('채팅 알림 켜짐')),
+
+        SnackBar(content: Text('채팅 알림이 켜졌습니다.'),duration: Duration(seconds: 1),),
+
       );
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await notificationOn();
+      } else {
+        print('토큰 재발급 실패');
+      }
     } else {
-      throw Exception('알림 켜기 실패: ${response.statusCode}');
+      throw Exception('알림 켜기 실패: ${response.body}');
     }
   }
 
-
   Future<void> notificationOff() async {
     String? token = await readAccess();
-    final url = Uri.parse('${ApiUrl.baseUrl}/studyGroup/notification/${widget.studyGroup.id}');
+    final url = Uri.parse('${ApiUrl.baseUrl}/studygroup/${widget.studyGroup.id}/alarm');
 
-    final response = await http.delete(
+    final response = await http.patch(
       url,
       headers: {'access': '$token'},
     );
 
     if (response.statusCode == 200) {
       setState(() {
-        enableNotification = false;
+        widget.alarm = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('채팅 알림 꺼짐')),
+        SnackBar(content: Text('채팅 알림이 꺼졌습니다.'),duration: Duration(seconds: 1),),
       );
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await notificationOff();
+      } else {
+        print('토큰 재발급 실패');
+      }
     } else {
       throw Exception('알림 끄기 실패: ${response.statusCode}');
     }
@@ -251,30 +269,24 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
 
         title: Text('${widget.studyGroup.studyName}'),
         actions: [
-          // IconButton(
-          //   icon: Icon(
-          //     enableNotification ? Icons.notifications : Icons.notifications_off,
-          //     color: enableNotification ? Colors.blue : Colors.grey,
-          //   ),
-          //   onPressed: () {
-          //     setState(() {
-          //       enableNotification = !enableNotification; // 알림 상태 변경
-          //     });
-          //     if (enableNotification) {
-          //       // 알림 켜기 API 호출
-          //       notificationOn();
-          //       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          //         content: Text("알림이 켜졌습니다."),
-          //       ));
-          //     } else {
-          //       // 알림 끄기 API 호출
-          //       notificationOff();
-          //       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          //         content: Text("알림이 꺼졌습니다."),
-          //       ));
-          //     }
-          //   },
-          // ),
+          IconButton(
+            icon: Icon(
+              widget.alarm ? Icons.notifications : Icons.notifications_off,
+              color:  widget.alarm ? Colors.blue : Colors.grey,
+            ),
+            onPressed: () {
+
+              if (!widget.alarm) {
+                // 알림 켜기 API 호출
+                notificationOn();
+
+              } else {
+                // 알림 끄기 API 호출
+                notificationOff();
+
+              }
+            },
+          ),
         ],
 
 
@@ -352,16 +364,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
             padding: const EdgeInsets.fromLTRB(4.0, 10.0, 0.0, 10.0),
             child: Row(
               children: [
-                IconButton(
-                  icon: SvgPicture.asset(
-                    'assets/icons/clip.svg',
-                    width: 30,
-                    height: 30,
-                  ),
-                  onPressed: () {
-                    // 버튼이 눌렸을 때의 동작
-                  },
-                ),
+
                 Expanded(
                   child: TextField(
                     controller: _controller,
@@ -376,19 +379,12 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                       fillColor: Color(0xFFF3F6F6),
                       filled: true,
                     ),
-                    onSubmitted: _sendMessage,
+                    onEditingComplete: () {
+                      _sendMessage(_controller.text);
+                    },
                   ),
                 ),
-                IconButton(
-                  icon: SvgPicture.asset(
-                    'assets/icons/camera2.svg',
-                    width: 30,
-                    height: 30,
-                  ),
-                  onPressed: () {
-                    // 버튼이 눌렸을 때의 동작
-                  },
-                ),
+
                 IconButton(
                   icon: SvgPicture.asset(
                     'assets/icons/send.svg',
@@ -396,7 +392,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                   ),
                   onPressed: () {
                     _sendMessage(_controller.text);
-                    FocusScope.of(context).unfocus();
                   },
                 ),
               ],

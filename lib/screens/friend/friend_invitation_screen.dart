@@ -74,6 +74,13 @@ class _FriendInvitationScreenState extends State<FriendInvitationScreen> {
             jsonData.map((data) => UserInviteFriend.fromJson(data)).toList();
         filteredFriends = friends; //  검색 초기값을 friends로 설정
       });
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await fetchUserList();
+      } else {
+        print('토큰 재발급 실패');
+      }
     }
   }
 

@@ -115,10 +115,10 @@ class _LoginScreenState extends State<LoginScreen> {
     await getKakaoUserInfo();
     await _sendUserInfo();
     await fetchUserInfo();
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => navigationScreen()),
-    );
+
+
+
+
 
   }
 
@@ -204,10 +204,23 @@ class _LoginScreenState extends State<LoginScreen> {
           // 프로필 입력 화면으로 이동
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => UserInformationScreen()), // 프로필 입력 화면으로 이동
+            MaterialPageRoute(builder: (context) =>
+                UserInformationScreen()), // 프로필 입력 화면으로 이동
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => navigationScreen()),
           );
         }
 
+      } else if(response.statusCode == 401) {
+        bool success = await reissueToken(context);
+        if(success) {
+          await fetchUserInfo();
+        } else {
+          print('토큰 재발급 실패');
+        }
       } else {
 
         print('실패 Failed to load data${response.body}');

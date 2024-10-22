@@ -2,6 +2,7 @@ import 'dart:async';
 
 
 
+import 'package:bemajor_frontend/api_url.dart';
 import 'package:bemajor_frontend/ip.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -105,10 +106,11 @@ class _FriendChatScreenState extends State<FriendChatScreen> {
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonData = jsonDecode(utf8.decode(response.bodyBytes));
         setState(() {
-          userProfile = jsonData["imageUrl"];
+          userProfile = jsonData["imageUrl"] ?? "";
           userName = jsonData["userName"];
         });
         print(userName);
+
 
       } else if(response.statusCode == 401) {
         bool success = await reissueToken(context);
@@ -139,7 +141,7 @@ class _FriendChatScreenState extends State<FriendChatScreen> {
 
     setState(() {
       _messages = savedMessages.map((message) {
-        print("메시지$message");
+
         return ChatMessage(
           sender: message['sender'],
           text: message['message'],
@@ -167,7 +169,7 @@ class _FriendChatScreenState extends State<FriendChatScreen> {
           ? '$userId\_${widget.friendId}'
           : '${widget.friendId}\_$userId';
       _channel = IOWebSocketChannel.connect(
-        Uri.parse('ws://116.47.60.159:8080/friendChat?chatRoomId=$chatRoomId'),
+        Uri.parse('${ApiUrl.websocketUrl}/friendChat?chatRoomId=$chatRoomId'),
         headers: headers,
       );
 
@@ -323,16 +325,7 @@ class _FriendChatScreenState extends State<FriendChatScreen> {
             padding: const EdgeInsets.fromLTRB(4.0, 10.0, 0.0, 10.0),
             child: Row(
               children: [
-                IconButton(
-                  icon: SvgPicture.asset(
-                    'assets/icons/clip.svg',
-                    width: 30,
-                    height: 30,
-                  ),
-                  onPressed: () {
-                    // 버튼이 눌렸을 때의 동작
-                  },
-                ),
+
                 Expanded(
                   child: TextField(
                     controller: _controller,
@@ -347,18 +340,10 @@ class _FriendChatScreenState extends State<FriendChatScreen> {
                       fillColor: Color(0xFFF3F6F6),
                       filled: true,
                     ),
-                    onSubmitted: _sendMessage,
+                    onEditingComplete: () {
+                      _sendMessage(_controller.text);
+                    },
                   ),
-                ),
-                IconButton(
-                  icon: SvgPicture.asset(
-                    'assets/icons/camera2.svg',
-                    width: 30,
-                    height: 30,
-                  ),
-                  onPressed: () {
-                    // 버튼이 눌렸을 때의 동작
-                  },
                 ),
                 IconButton(
                   icon: SvgPicture.asset(
@@ -367,7 +352,7 @@ class _FriendChatScreenState extends State<FriendChatScreen> {
                   ),
                   onPressed: () {
                     _sendMessage(_controller.text);
-                    FocusScope.of(context).unfocus();
+
                   },
                 ),
               ],
@@ -425,7 +410,7 @@ class ChatMessageWidget extends StatelessWidget {
             hideProfile
                 ? SizedBox(width: 40.0, height: 40.0) // 프로필 이미지 공간을 차지하는 빈 공간
                 : PublicImage(
-              imageUrl: message.profileImageName != null
+              imageUrl: message.profileImageName!.isNotEmpty
                   ? message.profileImageName!
                   : "https://www.pngarts.com/files/10/Default-Profile-Picture-PNG-Download-Image.png",
               placeholderPath: 'assets/icons/loading.gif',

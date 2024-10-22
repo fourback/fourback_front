@@ -145,7 +145,8 @@ class _HomeScreenState extends State<HomeScreen> {
             });
             filterPosts(boardName);
           },
-          scrollController: _scrollController, // ScrollController 전달
+          scrollController: _scrollController, refreshPosts: refreshPosts,
+          // ScrollController 전달
         ),
       ),
     );
@@ -191,14 +192,6 @@ PreferredSizeWidget _HomeAppbar({
                 height: 30,
               ),
             ),
-            IconButton(
-              onPressed: () {},
-              icon: SvgPicture.asset(
-                'assets/icons/bell.svg',
-                height: 28,
-                width: 28,
-              ),
-            ),
           ],
         ),
       ),
@@ -210,7 +203,8 @@ class _HomeBody extends StatefulWidget {
   final List<BoardDto> boards; // Board 리스트 추가
   final List<Post> posts; // Post 리스트 추가
   final Function(String?) onBoardSelected; // 보드 선택 콜백 함수 추가
-  final ScrollController scrollController; // ScrollController 추가
+  final ScrollController scrollController;
+  final Future<void> Function() refreshPosts;// ScrollController 추가
 
   const _HomeBody({
     Key? key,
@@ -218,6 +212,7 @@ class _HomeBody extends StatefulWidget {
     required this.posts,
     required this.onBoardSelected,
     required this.scrollController,
+    required this.refreshPosts,
   }) : super(key: key);
 
   @override
@@ -225,6 +220,8 @@ class _HomeBody extends StatefulWidget {
 }
 
 class _HomeBodyState extends State<_HomeBody> {
+
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -438,7 +435,7 @@ class _HomeBodyState extends State<_HomeBody> {
 
                         if (ifDelete == true) {
                           setState(() {
-                            widget.posts.removeAt(index);
+                            widget.refreshPosts();
                           });
                         }
                       },

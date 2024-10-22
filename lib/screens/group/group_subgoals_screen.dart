@@ -45,6 +45,13 @@ class _SubGoalsScreenState extends State<SubGoalsScreen> {
         isLoading = false;
       });
 
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await fetchSubGoals();
+      } else {
+        print('토큰 재발급 실패');
+      }
     } else {
       setState(() {
         isLoading = true;
@@ -72,6 +79,13 @@ class _SubGoalsScreenState extends State<SubGoalsScreen> {
       setState(() {
         fetchSubGoals();
       });
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await addSubGoal(subGoalName);
+      } else {
+        print('토큰 재발급 실패');
+      }
     } else {
       print(response.body);
     }
@@ -97,6 +111,13 @@ class _SubGoalsScreenState extends State<SubGoalsScreen> {
       setState(() {
         fetchSubGoals();
       });
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await checkSubGoal(detailGoalId,check);
+      } else {
+        print('토큰 재발급 실패');
+      }
     } else {
       print("Failed to update check status: ${response.body}");
     }
@@ -118,6 +139,13 @@ class _SubGoalsScreenState extends State<SubGoalsScreen> {
       setState(() {
         fetchSubGoals();
       });
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await deleteSubGoal(detailGoalId);
+      } else {
+        print('토큰 재발급 실패');
+      }
     } else {
       print("Failed to delete sub-goal: ${response.body}");
     }
@@ -136,7 +164,16 @@ class _SubGoalsScreenState extends State<SubGoalsScreen> {
     );
 
     if (response.statusCode == 200) {
+      Navigator.of(context).pop();
 
+
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await deleteGoal(goalId);
+      } else {
+        print('토큰 재발급 실패');
+      }
     } else {
       print("Failed to delete sub-goal: ${response.body}");
     }

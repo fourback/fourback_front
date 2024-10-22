@@ -40,8 +40,15 @@ class _StudyInvitationScreenState extends State<StudyInvitationScreen> {
     if (response.statusCode == 200) {
       final dynamic jsonMap2 = jsonDecode(utf8.decode(response.bodyBytes));
       setState(() {
-        user = UserInfo.fromJson(jsonMap2);
+        user = UserInfo.fromJson2(jsonMap2);
       });
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await SearchUser();
+      } else {
+        print('토큰 재발급 실패');
+      }
     }
   }
   Future<void> InviteUser() async {
@@ -54,6 +61,13 @@ class _StudyInvitationScreenState extends State<StudyInvitationScreen> {
 
     if (response.statusCode == 200) {
       Navigator.pop(context);
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await InviteUser();
+      } else {
+        print('토큰 재발급 실패');
+      }
     } else {
       showDialog(
         context: context,

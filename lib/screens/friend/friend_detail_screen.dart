@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../api_url.dart';
 import '../../auth.dart';
 import '../../models/friendDelete.dart';
+import '../../publicImage.dart';
 import 'friend_chat_screen.dart';
 import 'package:http/http.dart' as http;
 
@@ -55,7 +56,14 @@ class FriendDetailScreen extends StatelessWidget {
         SnackBar(content: Text('삭제되었습니다.')),
       );
       Navigator.pop(context, true);
-    } else {
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await deleteFriend(context);
+      } else {
+        print('토큰 재발급 실패');
+      }
+    }else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('친구 삭제에 실패했습니다.')),
       );
@@ -97,32 +105,34 @@ class FriendDetailScreen extends StatelessWidget {
                   child: Stack(
                     children: [
                       // 임시 프로필 이미지 표시
-                      CircleAvatar(
-                        radius: 80, // 160x160 크기 설정
-                        backgroundColor: Colors.grey[300], // 임시 배경색
-                        child: Icon(
-                          Icons.person, // 사람 아이콘 사용
-                          size: 80,
-                          color: Colors.white, // 아이콘 색상
+                      Container(
+                        width: 160,
+                        height: 160,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Color(0xff242760),  // 원하는 테두리 색상
+                            width: 2.0, // 테두리 두께
+                          ),
                         ),
-                      ),
-                      // 이미지 선택 또는 삭제 버튼
-                      Positioned(
-                        bottom: 0, // 하단 중앙에 배치
-                        right: 0,
-                        child: IconButton(
-                          onPressed: () {}, // 임시로 동작하지 않게 설정
-                          icon: CircleAvatar(
-                            radius: 20, // 아이콘 배경 크기
-                            backgroundColor: Color(0xff242760),
-                            child: Icon(
-                              Icons.camera_alt, // 카메라 아이콘
-                              color: Colors.white,
-                              size: 24, // 아이콘 크기
-                            ),
+
+                        child: Padding(
+                          padding: const EdgeInsets.all(4.0),
+                          child: PublicImage(
+                            imageUrl:
+                             fileName.isNotEmpty
+                                  ? fileName!
+                                  : "https://www.pngarts.com/files/10/Default-Profile-Picture-PNG-Download-Image.png",
+                            placeholderPath: 'assets/icons/loading.gif',
+                            width: 150,
+                            height: 150,
+                            fit: BoxFit.cover,
+                            isCircular: true,
                           ),
                         ),
                       ),
+                      // 이미지 선택 또는 삭제 버튼
+
                     ],
                   ),
                 ),

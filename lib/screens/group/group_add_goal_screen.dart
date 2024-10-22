@@ -44,6 +44,13 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
         'title': _titleController.text,
         'date': _dateController.text,
       });
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await _submitGoal();
+      } else {
+        print('토큰 재발급 실패');
+      }
     } else {
       print(response.body);
     }

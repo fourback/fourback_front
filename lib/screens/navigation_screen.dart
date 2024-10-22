@@ -73,7 +73,7 @@ class _MyAppState extends State<navigationScreen> {
             BottomNavigationBarItem(
               icon: SvgPicture.asset('assets/icons/group.svg'),
               activeIcon: SvgPicture.asset('assets/icons/group.svg',color: Color(0xFF7C3AED),),
-              label: '그룹관리',
+              label: '그룹',
             ),
             BottomNavigationBarItem(
               icon: SvgPicture.asset('assets/icons/botchat.svg'),

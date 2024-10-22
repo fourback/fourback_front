@@ -53,8 +53,14 @@ class _FriendScreenState extends State<FriendScreen> {
       setState(() {
         friendRequests = jsonMap['count'];
       });
+    }else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await countFriendApply();
+      } else {
+        print('토큰 재발급 실패');
+      }
     }
-  }
 
   Future<void> fetchFriendInfo() async {
     String? token = await readAccess();
@@ -75,15 +81,19 @@ class _FriendScreenState extends State<FriendScreen> {
         friendSize = jsonMap['size'];
         friendInfo = jsonData.map((data) => UserInfo.fromJson(data)).toList();
       });
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await fetchFriendInfo();
+      } else {
+        print('토큰 재발급 실패');
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    double deviceHeight = MediaQuery
-        .of(context)
-        .size
-        .height;
+    double deviceHeight = MediaQuery.of(context).size.height;
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: _friendAppbar(context),
@@ -92,18 +102,7 @@ class _FriendScreenState extends State<FriendScreen> {
         child: Column(
           children: [
             Expanded(
-              child: friendInfo.isEmpty
-                  ? Center(
-                child: Text(
-                  '아직 친구가 없습니다.',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey,
-                  ),
-                ),
-              )
-                  : ListView.builder(
+              child: ListView.builder(
                 itemCount: friendInfo.length,
                 itemBuilder: (context, index) {
                   return GestureDetector(
@@ -112,26 +111,19 @@ class _FriendScreenState extends State<FriendScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) =>
-                              FriendDetailScreen(
-                                friendId: friendInfo[index].userId,
-                                friendName: friendInfo[index].userName ??
-                                    "Unknown",
-                                email: friendInfo[index].email ?? "No email",
-                                belong: friendInfo[index].belong ?? "No belong",
-                                department: friendInfo[index].department ??
-                                    "No department",
-                                birth: friendInfo[index].birth ?? "Unknown",
-                                hobby: friendInfo[index].hobby ?? "No hobby",
-                                objective: friendInfo[index].objective ??
-                                    "No objective",
-                                address: friendInfo[index].address ??
-                                    "No address",
-                                techStack: friendInfo[index].techStack ??
-                                    "No tech stack",
-                                fileName: friendInfo[index].imageUrl ??
-                                    "No file",
-                              ),
+                          builder: (context) => FriendDetailScreen(
+                            friendId: friendInfo[index].userId,
+                            friendName: friendInfo[index].userName ?? "Unknown",
+                            email: friendInfo[index].email ?? "No email",
+                            belong: friendInfo[index].belong ?? "No belong",
+                            department: friendInfo[index].department ?? "No department",
+                            birth: friendInfo[index].birth ?? "Unknown",
+                            hobby: friendInfo[index].hobby ?? "No hobby",
+                            objective: friendInfo[index].objective ?? "No objective",
+                            address: friendInfo[index].address ?? "No address",
+                            techStack: friendInfo[index].techStack ?? "No tech stack",
+                            fileName: friendInfo[index].imageUrl ?? "",
+                          ),
                         ),
                       ).then((_) {
                         // 돌아왔을 때 무조건 데이터를 새로고침
@@ -151,25 +143,23 @@ class _FriendScreenState extends State<FriendScreen> {
                         ),
                         height: deviceHeight * 0.12, // 높이를 약간 늘림
                         child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          // 수직 중앙 정렬
+                          crossAxisAlignment: CrossAxisAlignment.center, // 수직 중앙 정렬
                           children: [
                             // 임시 프로필 이미지 적용
-                            CircleAvatar(
-                              radius: 30, // 프로필 이미지 크기 설정
-                              backgroundColor: Color(0xFFD8BFD8), // 임시 배경색
-                              child: Icon(
-                                Icons.person, // 사람 아이콘 사용
-                                size: 30,
-                                color: Colors.white, // 아이콘 색상
-                              ),
+                            PublicImage(
+                              imageUrl: friendInfo[index].imageUrl != null
+                                  ? friendInfo[index].imageUrl!
+                                  : "https://www.pngarts.com/files/10/Default-Profile-Picture-PNG-Download-Image.png",
+                              placeholderPath: 'assets/icons/loading.gif',
+                              width: 40.0, // 원하는 크기로 조정하세요
+                              height: 40.0, // 원하는 크기로 조정하세요
+                              fit: BoxFit.cover, // 이미지 맞춤 설정
+                              isCircular: true, // 원형으로 표시
                             ),
                             SizedBox(width: 20), // 프로필 이미지와 텍스트 간격
                             Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              // Column 내에서 왼쪽 정렬
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              // 텍스트를 중앙에 배치
+                              crossAxisAlignment: CrossAxisAlignment.start, // Column 내에서 왼쪽 정렬
+                              mainAxisAlignment: MainAxisAlignment.center, // 텍스트를 중앙에 배치
                               children: [
                                 Text(
                                   friendInfo[index].userName!,
@@ -180,8 +170,7 @@ class _FriendScreenState extends State<FriendScreen> {
                                 ),
                                 SizedBox(height: 5),
                                 Text(
-                                  '${friendInfo[index]
-                                      .belong} ${friendInfo[index].department}',
+                                  '${friendInfo[index].belong} ${friendInfo[index].department}',
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: Colors.grey[600], // 부가 정보는 회색으로 표시
@@ -198,8 +187,7 @@ class _FriendScreenState extends State<FriendScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 20.0, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch, // 버튼의 너비를 최대화
@@ -215,8 +203,7 @@ class _FriendScreenState extends State<FriendScreen> {
                       );
                     },
                     child: Container(
-                      padding: EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 15),
+                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                       decoration: BoxDecoration(
                         color: Colors.black, // 검정색 배경
                         borderRadius: BorderRadius.circular(16), // 모서리 둥글게
@@ -244,8 +231,7 @@ class _FriendScreenState extends State<FriendScreen> {
                       );
                     },
                     child: Container(
-                      padding: EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 15),
+                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                       decoration: BoxDecoration(
                         color: Colors.black, // 검정색 배경
                         borderRadius: BorderRadius.circular(16), // 모서리 둥글게
@@ -269,16 +255,16 @@ class _FriendScreenState extends State<FriendScreen> {
       ),
     );
   }
+}
 
-  PreferredSizeWidget _friendAppbar(BuildContext context) {
-    return AppBar(
-      backgroundColor: Colors.white,
-      scrolledUnderElevation: 0,
-      title: Text(
-        "친구목록",
-        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-      ),
-      centerTitle: true,
-    );
-  }
+PreferredSizeWidget _friendAppbar(BuildContext context) {
+  return AppBar(
+    backgroundColor: Colors.white,
+    scrolledUnderElevation: 0,
+    title: Text(
+      "친구목록",
+      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+    ),
+    centerTitle: true,
+  );
 }

@@ -74,7 +74,6 @@ class _GroupScreenState extends State<GroupScreen> {
   Future<void> fetchStudyGroups() async {
     String? token = await readAccess();
     final url = '${ApiUrl.baseUrl}/studygroup';
-    print('Fetching study groups from $url'); // 로깅 추가
     try {
       final response = await http.get(
         Uri.parse(url),
@@ -83,10 +82,17 @@ class _GroupScreenState extends State<GroupScreen> {
           'Content-Type': 'application/json; charset=UTF-8',
         },
       );
+
       if (response.statusCode == 200) {
+
         setState(() {
           studyGroups = parseStudyGroups(response.body);
           filteredStudyGroups = studyGroups;
+
+          // 그룹이 없을 때 빈 리스트를 유지
+          if (studyGroups.isEmpty) {
+            filteredStudyGroups = [];
+          }
         });
       } else if (response.statusCode == 401) {
         bool success = await reissueToken(context);
@@ -182,11 +188,15 @@ class _GroupScreenState extends State<GroupScreen> {
   void filterStudyGroups(String category) {
     setState(() {
       if (selectedCategory == category) {
+        // 이미 선택된 카테고리를 다시 클릭하면 전체 그룹을 보여줌
         selectedCategory = "All";
-        filteredStudyGroups = studyGroups;
+        fetchStudyGroups(); // 전체 그룹 불러오기
       } else {
         selectedCategory = category;
-        if (category != "내 그룹") {
+        if (category == "내 그룹") {
+          // "내 그룹"을 클릭하면 내 그룹을 불러옴
+          fetchMyStudyGroups();
+        } else {
           filteredStudyGroups = studyGroups.where((group) => group.category == category).toList();
         }
       }
@@ -210,9 +220,7 @@ class _GroupScreenState extends State<GroupScreen> {
       appBar: _appbarWidget(),
       body: RefreshIndicator(
         onRefresh: _refreshData, // 당겨서 새로고침
-        child: studyGroups.isEmpty
-            ? Center(child: CircularProgressIndicator())
-            : SingleChildScrollView(
+        child: SingleChildScrollView(
           physics: AlwaysScrollableScrollPhysics(),
           child: Padding(
             padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
@@ -248,11 +256,11 @@ class _GroupScreenState extends State<GroupScreen> {
                   ),
                 ),
                 SizedBox(height: 10),
-                _buildPageView(),
+                _buildPageView(), // 스택으로 사진 넘기는 부분 유지
                 SizedBox(height: 20),
-                _buildCategoryIcons(),
+                _buildCategoryIcons(), // 카테고리 필터 버튼들
                 SizedBox(height: 20),
-                _buildStudyGroupGrid(),
+                _buildStudyGroupGrid(), // 그룹 목록을 보여주는 부분
               ],
             ),
           ),
@@ -390,7 +398,6 @@ class _GroupScreenState extends State<GroupScreen> {
                         );
                       },
                       style: ElevatedButton.styleFrom(
-
                         backgroundColor: Color(0xFF333333),
                       ),
                       child: Text(
@@ -448,7 +455,7 @@ class _GroupScreenState extends State<GroupScreen> {
           _buildIconColumn("assets/icons/mygroup.svg", "내 그룹", "내 그룹"),
           _buildIconColumn("assets/icons/study.svg", "스터디", "스터디"),
           _buildIconColumn("assets/icons/project.svg", "프로젝트", "프로젝트"),
-          _buildIconColumn("assets/icons/share.svg", "정보 공유", "정보 공유"),
+          _buildIconColumn("assets/icons/share.svg", "정보공유", "정보공유"),
           _buildIconColumn("assets/icons/amity.svg", "친목", "친목"),
         ],
       ),
@@ -459,10 +466,18 @@ class _GroupScreenState extends State<GroupScreen> {
     bool isSelected = selectedCategory == category;
     return GestureDetector(
       onTap: () {
-        if (category == "내 그룹") {
-          fetchMyStudyGroups(); // 내 그룹 API 호출
+        if (selectedCategory == "내 그룹" && category == "내 그룹") {
+          // "내 그룹"이 선택된 상태에서 다시 클릭하면 전체 그룹을 다시 불러옴
+          fetchStudyGroups(); // 전체 그룹 불러오기
+          setState(() {
+            selectedCategory = "All"; // 전체 그룹 카테고리로 변경
+          });
+        } else if (category == "내 그룹") {
+          // "내 그룹"을 처음 클릭하면 내 그룹을 불러옴
+          filterStudyGroups("내 그룹");
         } else {
-          filterStudyGroups(category); // 기존 카테고리 필터링
+          // 다른 카테고리를 클릭하면 해당 카테고리의 그룹을 필터링
+          filterStudyGroups(category);
         }
       },
       child: Column(
@@ -500,7 +515,21 @@ class _GroupScreenState extends State<GroupScreen> {
     var itemWidth = (screenSize.width - 20) / 2;
     var itemHeight = itemWidth * 1.5;
 
-    return GridView.builder(
+    return filteredStudyGroups.isEmpty
+        ? Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Center(
+        child: Text(
+          '아직 생성된 그룹이 없습니다',
+          style: GoogleFonts.inter(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey,
+          ),
+        ),
+      ),
+    )
+        : GridView.builder(
       physics: NeverScrollableScrollPhysics(),
       shrinkWrap: true,
       itemCount: filteredStudyGroups.length,
@@ -549,12 +578,12 @@ class _GroupScreenState extends State<GroupScreen> {
                             () {
                           if (studyGroup.category == "프로젝트") {
                             return "assets/icons/ex5.png";
-                          } else if (studyGroup.category == '스터디') {
+                          } else if (studyGroup.category == "스터디") {
                             return "assets/icons/ex6.png";
-                          } else if (studyGroup.category == '친목') {
+                          } else if (studyGroup.category == "친목") {
                             return "assets/icons/ex7.png";
-                          } else {
-                            return "assets/icons/eximage.png";
+                          } else  {
+                            return "assets/icons/ex8.png";
                           }
                         }(),
                         fit: BoxFit.cover,

@@ -1,3 +1,4 @@
+import 'package:bemajor_frontend/auth.dart';
 import 'package:bemajor_frontend/screens/user_information_screen.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
@@ -83,6 +84,13 @@ class _SplashScreenState extends State<SplashScreen> {
             jsonData["address"] == null || jsonData["address"] == "" ||
             jsonData["techStack"] == null || jsonData["techStack"] == "") {
           return true;  // 프로필 정보가 불완전하면 true 반환
+        }
+      } else if(response.statusCode == 401) {
+        bool success = await reissueToken(context);
+        if(success) {
+          await _checkUserProfile(token);
+        } else {
+          print('토큰 재발급 실패');
         }
       } else {
         print('Failed to load profile data: ${response.body}');
