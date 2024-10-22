@@ -77,7 +77,7 @@ class _FriendInvitationScreenState extends State<FriendInvitationScreen> {
     }
   }
 
-  Future<void> addFriendApply(int friendId) async {
+  Future<int> addFriendApply(int friendId) async {
     String? token = await readAccess();
 
     final response = await http.post(
@@ -88,6 +88,9 @@ class _FriendInvitationScreenState extends State<FriendInvitationScreen> {
       },
       body: jsonEncode(FriendApply(friendId)),
     );
+
+    // 상태 코드를 반환하여 성공/실패를 구분
+    return response.statusCode;
   }
 
   void _filterFriends() {
@@ -200,25 +203,39 @@ class _FriendInvitationScreenState extends State<FriendInvitationScreen> {
   }
 }
 
-void _showAcceptDialog(BuildContext context, UserInviteFriend friend, Function addFriendApply) {
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      backgroundColor: Colors.white,
-      title: Text("알림"),
-      content: Text(friend.userName + "님에게 친구 요청을 보냈습니다."),
-      actions: [
-        TextButton(
-          onPressed: () {
-            addFriendApply(friend.userId);
-            Navigator.of(context).pop();
-          },
-          child: Text("확인"),
-        ),
-      ],
-    ),
-  );
-}
+  void _showAcceptDialog(BuildContext context, UserInviteFriend friend, Function addFriendApply) async {
+    int statusCode = await addFriendApply(friend.userId);  // HTTP 상태 코드를 확인
+
+    String message;
+
+    // 상태 코드에 따라 메시지 설정
+    if (statusCode >= 200 && statusCode < 300) {
+      message = "${friend.userName}님에게 친구 요청을 보냈습니다.";  // 성공
+    } else if (statusCode == 400) {
+      message = "잘못된 요청입니다. 다시 시도해주세요.";  // 400 Bad Request
+    } else if (statusCode == 401) {
+      message = "이미 요청했거나 이미 친구입니다.";  // 401 Unauthorized
+    } else {
+      message = "알 수 없는 오류가 발생했습니다. 상태 코드: $statusCode";  // 기타 에러
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        title: Text("알림"),
+        content: Text(message),  // 설정된 메시지를 다이얼로그에 표시
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();  // 다이얼로그 닫기
+            },
+            child: Text("확인"),
+          ),
+        ],
+      ),
+    );
+  }
 
 PreferredSizeWidget _friendinvitationAppbar(BuildContext context) {
   return AppBar(

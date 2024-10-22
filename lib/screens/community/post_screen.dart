@@ -265,6 +265,7 @@ class _DetailScreenState extends State<DetailScreen> {
       if (response.statusCode == 200) {
         print('댓글이 성공적으로 수정되었습니다.');
         await fetchComments(); // 댓글을 수정한 후 댓글 리스트를 다시 로드
+        isModifying = false;
       } else {
         print('API 요청이 실패했습니다.');
       }
