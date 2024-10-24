@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:bemajor_frontend/models/studyGroup.dart';
+import 'package:bemajor_frontend/screens/study/study_inner_screen.dart';
 
 class GroupSearchScreen extends StatefulWidget {
   final List<StudyGroup> studyGroups;
@@ -48,9 +49,7 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
         scrolledUnderElevation: 0,
         title: TextField(
           controller: searchController,
-          onChanged: (value) {
-            filterStudyGroups(value);
-          },
+          onChanged: filterStudyGroups,
           decoration: InputDecoration(
             hintText: "검색: 이름, 카테고리, 모임 장소",
             border: InputBorder.none,
@@ -80,84 +79,94 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
           ),
           itemBuilder: (context, index) {
             final studyGroup = filteredStudyGroups[index];
-            return Container(
-              width: itemWidth,
-              height: itemHeight,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15),
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.2),
-                    spreadRadius: 2,
-                    blurRadius: 5,
-                    offset: Offset(0, 2),
-                  )
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 이미지
-                  ClipRRect(
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(15),
-                      topRight: Radius.circular(15),
-                    ),
-                    child: Image.asset(
-                          () {
-                        if (studyGroup.category == "프로젝트") {
-                          return "assets/icons/ex5.png";
-                        } else if (studyGroup.category == '스터디') {
-                          return "assets/icons/ex6.png";
-                        } else if (studyGroup.category == '친목') {
-                          return "assets/icons/ex7.png";
-                        } else {
-                          return "assets/icons/ex8.png";
-                        }
-                      }(),
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: itemHeight * 0.48,
-                    ),
-
+            return GestureDetector(
+              onTap: () {
+                // 그룹 클릭 시 StudyInnerScreen으로 이동
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => StudyInnerScreen(studyGroup: studyGroup),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // 스터디 그룹 이름
-                        Text(
-                          studyGroup.studyName,
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        // 카테고리
-                        Text(
-                          "카테고리: ${studyGroup.category}",
-                          style: GoogleFonts.inter(fontSize: 14),
-                        ),
-                        // 모임 장소
-                        Text(
-                          "모임 장소: ${studyGroup.studyLocation}",
-                          style: GoogleFonts.inter(fontSize: 14),
-                        ),
-                        // 모임 주기
-                        Text(
-                          studyGroup.studyCycle,
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
+                );
+              },
+              child: Container(
+                width: itemWidth,
+                height: itemHeight,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(15),
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.2),
+                      spreadRadius: 2,
+                      blurRadius: 5,
+                      offset: Offset(0, 2),
+                    )
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 이미지
+                    ClipRRect(
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(15),
+                        topRight: Radius.circular(15),
+                      ),
+                      child: Image.asset(
+                            () {
+                          if (studyGroup.category == "프로젝트") {
+                            return "assets/icons/ex5.png";
+                          } else if (studyGroup.category == '스터디') {
+                            return "assets/icons/ex6.png";
+                          } else if (studyGroup.category == '친목') {
+                            return "assets/icons/ex7.png";
+                          } else {
+                            return "assets/icons/ex8.png";
+                          }
+                        }(),
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: itemHeight * 0.48,
+                      ),
                     ),
-                  ),
-                ],
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 스터디 그룹 이름
+                          Text(
+                            studyGroup.studyName,
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          // 카테고리
+                          Text(
+                            "카테고리: ${studyGroup.category}",
+                            style: GoogleFonts.inter(fontSize: 14),
+                          ),
+                          // 모임 장소
+                          Text(
+                            "모임 장소: ${studyGroup.studyLocation}",
+                            style: GoogleFonts.inter(fontSize: 14),
+                          ),
+                          // 모임 주기
+                          Text(
+                            studyGroup.studyCycle,
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           },
