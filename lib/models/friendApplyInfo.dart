@@ -4,13 +4,18 @@ class FriendApplyInfo {
   final int friendId;
   final String friendName;
   final String? friendImage;
+  final String belong;
+  final String department;
 
   FriendApplyInfo({
   required this.applyId,
   required this.userId,
   required this.friendId,
   required this.friendName,
-  required this.friendImage});
+  required this.friendImage,
+    required this.belong,
+    required this.department,
+  });
 
   factory FriendApplyInfo.fromJson(Map<String, dynamic> json) {
     return FriendApplyInfo(
@@ -18,7 +23,10 @@ class FriendApplyInfo {
         userId: json['userId'],
         friendId:json['friendId'],
         friendName: json['friendName'],
-        friendImage:json['friendImage']
+        friendImage:json['friendImage'] ?? "",
+      belong: json['belong'],
+      department: json['department'],
+
     );
   }
 

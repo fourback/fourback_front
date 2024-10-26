@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:bemajor_frontend/models/friendApply.dart';
+import 'package:bemajor_frontend/publicImage.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../../api_url.dart';
@@ -152,17 +153,39 @@ class _FriendInvitationScreenState extends State<FriendInvitationScreen> {
                       children: [
                         Row(
                           children: [
-                            CircleAvatar(
-                              backgroundColor: Colors.black,
-                              radius: 30, // 프로필 이미지 크기 설정
+                            PublicImage(
+                              imageUrl: filteredFriends[index].imageUrl.isNotEmpty
+                                  ? filteredFriends[index].imageUrl!
+                                  : "https://www.pngarts.com/files/10/Default-Profile-Picture-PNG-Download-Image.png",
+                              placeholderPath: 'assets/icons/loading.gif',
+                              width: 40.0,
+                              // 원하는 크기로 조정하세요
+                              height: 40.0,
+                              // 원하는 크기로 조정하세요
+                              fit: BoxFit.cover,
+                              // 이미지 맞춤 설정
+                              isCircular: true, // 원형으로 표시
                             ),
                             SizedBox(width: 15), // 프로필 이미지와 텍스트 간격
-                            Text(
-                              filteredFriends[index].userName,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  filteredFriends[index].userName,
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  filteredFriends[index].belong + ", " + filteredFriends[index].department, // 작성자 학교 표시
+                                  style: TextStyle(
+                                    fontSize: 14.0,
+                                    fontWeight: FontWeight.normal,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
