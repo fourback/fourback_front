@@ -761,6 +761,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                           context: context,
                                           builder: (BuildContext context) {
                                             return AlertDialog(
+                                              backgroundColor: Colors.white,
                                               content: Text("댓글을 삭제하시겠습니까?"),
                                               actions: [
                                                 TextButton(
@@ -926,6 +927,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                                             context: context,
                                                             builder: (BuildContext context) {
                                                               return AlertDialog(
+                                                                backgroundColor: Colors.white,
                                                                 content: Text("대댓글을 삭제하시겠습니까?"),
                                                                 actions: [
                                                                   TextButton(
@@ -962,7 +964,9 @@ class _DetailScreenState extends State<DetailScreen> {
                                                         ];
                                                       },
                                                       icon: Icon(Icons.more_vert, color: Colors.grey),
+                                                      color: Colors.white,
                                                     ),
+
                                                 ],
                                               ),
                                               SizedBox(height: 16.0),
