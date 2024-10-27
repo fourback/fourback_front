@@ -60,7 +60,7 @@ void main() async {
 
   // runApp() 호출 전 Flutter SDK 초기화
   KakaoSdk.init(
-    nativeAppKey: 'dbcdac051802f0898252a47b136fe975',
+    nativeAppKey: '392f3fa3c82e15b86fdfc09fb4462e81',
   );
 
   HttpOverrides.global = MyHttpOverrides();
