@@ -36,7 +36,6 @@ class ChatDatabaseHelper {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         groupId INTEGER,
         userId  INTEGER,
-        sender TEXT,
         message TEXT,
         timestamp TEXT
       )

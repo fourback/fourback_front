@@ -98,7 +98,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         );
 
         return ChatMessage(
-          sender: message['sender'],
+          sender: user.userName,
           text: message['message'],
           time: formatTime(message['timestamp']),
           date: formatDate(message['timestamp']),
@@ -141,7 +141,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         await ChatDatabaseHelper().insertMessage({
           'groupId': widget.studyGroup.id, // 그룹 ID
           'userId': decodedMessage['senderId'], // 발신자 ID
-          'sender': decodedMessage['senderName'], // 발신자 이름
           'message': decodedMessage['content'], // 메시지 내용
           'timestamp': decodedMessage['sendTime'], // 현재 시간을 저장
         });
@@ -150,7 +149,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
           setState(() {
             print("메시지: ${decodedMessage['content']}");
             _messages.add(ChatMessage(
-              sender: decodedMessage['senderName'],
+              sender: senderUser.userName,
               text: decodedMessage['content'],
               time: formatTime(decodedMessage['sendTime']),
               date: formatDate(decodedMessage['sendTime']),
@@ -180,64 +179,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     }
   }
 
-  Future<void> notificationOn() async {
-    String? token = await readAccess();
-
-    final url = Uri.parse('${ApiUrl.baseUrl}/studygroup/${widget.studyGroup.id}/alarm');
-
-    final response = await http.patch(
-      url,
-      headers: {'access': '$token'},
-    );
-
-    if (response.statusCode == 200) {
-      setState(() {
-        widget.alarm = true;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-
-        SnackBar(content: Text('채팅 알림이 켜졌습니다.'),duration: Duration(seconds: 1),),
-
-      );
-    } else if(response.statusCode == 401) {
-      bool success = await reissueToken(context);
-      if(success) {
-        await notificationOn();
-      } else {
-        print('토큰 재발급 실패');
-      }
-    } else {
-      throw Exception('알림 켜기 실패: ${response.body}');
-    }
-  }
-
-  Future<void> notificationOff() async {
-    String? token = await readAccess();
-    final url = Uri.parse('${ApiUrl.baseUrl}/studygroup/${widget.studyGroup.id}/alarm');
-
-    final response = await http.patch(
-      url,
-      headers: {'access': '$token'},
-    );
-
-    if (response.statusCode == 200) {
-      setState(() {
-        widget.alarm = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('채팅 알림이 꺼졌습니다.'),duration: Duration(seconds: 1),),
-      );
-    } else if(response.statusCode == 401) {
-      bool success = await reissueToken(context);
-      if(success) {
-        await notificationOff();
-      } else {
-        print('토큰 재발급 실패');
-      }
-    } else {
-      throw Exception('알림 끄기 실패: ${response.statusCode}');
-    }
-  }
 
   void _sendMessage(String text) {
     if (text.isEmpty) return;
@@ -268,26 +209,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         backgroundColor: Colors.white,
 
         title: Text('${widget.studyGroup.studyName}'),
-        actions: [
-          IconButton(
-            icon: Icon(
-              widget.alarm ? Icons.notifications : Icons.notifications_off,
-              color:  widget.alarm ? Colors.blue : Colors.grey,
-            ),
-            onPressed: () {
 
-              if (!widget.alarm) {
-                // 알림 켜기 API 호출
-                notificationOn();
-
-              } else {
-                // 알림 끄기 API 호출
-                notificationOff();
-
-              }
-            },
-          ),
-        ],
 
 
       ),

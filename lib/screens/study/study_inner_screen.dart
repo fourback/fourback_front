@@ -29,7 +29,7 @@ class StudyInnerScreen extends StatefulWidget {
 
 class _StudyInnerScreenState extends State<StudyInnerScreen> {
   late StudyGroup studyGroup;
-  bool enableNotification = true;
+  late bool enableNotification;
 
 
   final TextEditingController inviteFriendController = TextEditingController();
@@ -235,6 +235,65 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
     }
   }
 
+  Future<void> notificationOn() async {
+    String? token = await readAccess();
+
+    final url = Uri.parse('${ApiUrl.baseUrl}/studygroup/${widget.studyGroup.id}/alarm');
+
+    final response = await http.patch(
+      url,
+      headers: {'access': '$token'},
+    );
+
+    if (response.statusCode == 200) {
+      setState(() {
+        enableNotification = true;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+
+        SnackBar(content: Text('채팅 알림이 켜졌습니다.'),duration: Duration(seconds: 1),),
+
+      );
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await notificationOn();
+      } else {
+        print('토큰 재발급 실패');
+      }
+    } else {
+      throw Exception('알림 켜기 실패: ${response.body}');
+    }
+  }
+
+  Future<void> notificationOff() async {
+    String? token = await readAccess();
+    final url = Uri.parse('${ApiUrl.baseUrl}/studygroup/${widget.studyGroup.id}/alarm');
+
+    final response = await http.patch(
+      url,
+      headers: {'access': '$token'},
+    );
+
+    if (response.statusCode == 200) {
+      setState(() {
+        enableNotification = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('채팅 알림이 꺼졌습니다.'),duration: Duration(seconds: 1),),
+      );
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await notificationOff();
+      } else {
+        print('토큰 재발급 실패');
+      }
+    } else {
+      throw Exception('알림 끄기 실패: ${response.statusCode}');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
@@ -351,7 +410,7 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
         ),
       ),
       actions: [
-        if (isOwner)
+        if (isOwner || isMember)
           Padding(
           padding: const EdgeInsets.only(left: 8.0),
           child: Theme(
@@ -403,18 +462,33 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
                       studyGroup  = updatedStudyGroup;
                     });
                   }
+                } else if(value == 'notificationOff') {
+                  notificationOff();
+                } else if(value == 'notificationOn') {
+                  notificationOn();
                 }
 
               },
               itemBuilder: (BuildContext context) {
                 return [
-                  PopupMenuItem<String>(
-                    value: 'delete',
-                    child: Text('삭제'),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'update',
-                    child: Text('수정'),
+                  if(isOwner)
+                    PopupMenuItem<String>(
+                      value: 'update',
+                      child: Text('수정'),
+                    ),
+                  if (isOwner)
+                    PopupMenuItem<String>(
+                      value: 'delete',
+                      child: Text('삭제'),
+                    ),
+                  enableNotification
+                      ? PopupMenuItem<String>(
+                    value: 'notificationOff',
+                    child: Text('채팅 알림 끄기'),
+                  )
+                      : PopupMenuItem<String>(
+                    value: 'notificationOn',
+                    child: Text('채팅 알림 켜기'),
                   ),
 
                 ];
