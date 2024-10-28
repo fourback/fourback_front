@@ -58,6 +58,7 @@ dependencies:
   flutter_local_notifications: ^17.2.2
   permission_handler: ^11.3.1
 dev_dependencies:
+  flutter_launcher_icons: ^0.10.0
   kakao_flutter_sdk: ^1.9.1+2
   flutter_test:
     sdk: flutter
@@ -74,6 +75,11 @@ dev_dependencies:
   mime: ^1.0.0
   image_picker: ^1.1.2
   flutter_native_splash: ^2.0.7
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/Profile.png"  # 아이콘 이미지 경로
 
 
 

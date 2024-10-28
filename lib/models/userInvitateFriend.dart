@@ -16,10 +16,10 @@ class UserInviteFriend {
   factory UserInviteFriend.fromJson(Map<String, dynamic> json) {
     return UserInviteFriend(
         userId: json['userId'],
-        userName: json['userName'],
+        userName: json['userName'] ?? "",
       imageUrl: json['imageUrl'] ?? "",
-      belong: json['belong'],
-      department: json['department'],
+      belong: json['belong'] ?? "",
+      department: json['department'] ?? "",
     );
   }
 
