@@ -105,6 +105,8 @@ class _GroupAlarmScreenState extends State<GroupAlarmScreen> {
         } else {
           throw Exception('토큰 재발급 실패');
         }
+      }  else if(response.statusCode == 400) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('현재 그룹 정원이 가득 찼습니다.'),duration: Duration(seconds: 1)));
       } else {
         throw Exception('Failed to accept invitation: ${response.statusCode}');
       }

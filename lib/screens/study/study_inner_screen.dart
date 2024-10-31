@@ -294,6 +294,37 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
     }
   }
 
+  Future<void> fetchStudyGroupExit() async {
+    String? token = await readAccess();
+    final response = await http.post(
+      Uri.parse('${ApiUrl.baseUrl}/studygroup/exitgroup/${widget.studyGroup.id}'),
+      headers: {
+        'access': '$token'
+      },
+    );
+    if (response.statusCode == 200) {
+
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('그룹을 탈퇴했습니다.'),duration: Duration(seconds: 1),),
+      );
+
+
+
+    } else if(response.statusCode == 401) {
+      bool success = await reissueToken(context);
+      if(success) {
+        await fetchStudyGroupExit();
+      } else {
+        print('토큰 재발급 실패');
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('그룹을 탈퇴 실패'),duration: Duration(seconds: 1),),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
@@ -466,7 +497,10 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
                   notificationOff();
                 } else if(value == 'notificationOn') {
                   notificationOn();
+                } else if(value == 'exit') {
+                  fetchStudyGroupExit();
                 }
+
 
               },
               itemBuilder: (BuildContext context) {
@@ -490,6 +524,11 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
                     value: 'notificationOn',
                     child: Text('채팅 알림 켜기'),
                   ),
+                  if(isMember)
+                    PopupMenuItem<String>(
+                      value: 'exit',
+                      child: Text('그룹 탈퇴'),
+                    ),
 
                 ];
               },
