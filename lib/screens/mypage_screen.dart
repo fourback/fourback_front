@@ -187,7 +187,48 @@ class _MypageScreenState extends State<MypageScreen> {
           print('토큰 재발급 실패');
         }
       } else {
-        print('Failed logout');
+        print(response.statusCode);
+      }
+    } catch (e) {
+      print('Error: $e');
+    }
+  }
+
+  Future<void> leave() async {
+    String? accessToken = await readAccess();
+    final url = Uri.http(
+      address,
+      "api/users"
+    );
+
+    final headers = {
+      "Content-Type": "application/json",
+      'access': '$accessToken',
+    };
+    try {
+      final response = await http.delete(
+        url,
+        headers: headers,
+      );
+      if (response.statusCode == 200) {
+        print('leave successfully');
+        removeAccess();
+        removeRefresh();
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => LoginScreen()),
+              (Route<dynamic> route) => false,  // 모든 기존 화면 제거
+        );
+
+      } else if(response.statusCode == 401) {
+        bool success = await reissueToken(context);
+        if(success) {
+          await leave();
+        } else {
+          print('토큰 재발급 실패');
+        }
+      } else {
+        print('Failed leave');
       }
     } catch (e) {
       print('Error: $e');
@@ -562,27 +603,11 @@ class _MypageScreenState extends State<MypageScreen> {
                         ),
                       ),
                     ),
-                    SizedBox(
+                    const SizedBox(
                       height: 20,
                     ),
                     Column(
                       children: [
-                        ElevatedButton(
-                          onPressed: logout,
-                          style: ElevatedButton.styleFrom(
-                              minimumSize: Size(200, 50),
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10)),
-                              backgroundColor:
-                              const Color.fromARGB(255, 211, 44, 44)),
-                          child: const Text(
-                            '로그아웃',
-                            style: TextStyle(color: Colors.white, fontSize: 18),
-                          ),
-                        ),
-                        SizedBox(
-                          height: 20,
-                        ),
                         ElevatedButton(
                           onPressed: () {
                             if (userNameController.text.trim().isEmpty ||
@@ -595,7 +620,7 @@ class _MypageScreenState extends State<MypageScreen> {
                                 addressController.text.trim().isEmpty ||
                                 techStackController.text.trim().isEmpty) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
+                                const SnackBar(
                                   content: Text('필수 정보를 모두 입력해주세요.'),
                                   duration: Duration(seconds: 1),
                                 ),
@@ -613,6 +638,38 @@ class _MypageScreenState extends State<MypageScreen> {
                               backgroundColor: Colors.black),
                           child: const Text(
                             '프로필 변경',
+                            style: TextStyle(color: Colors.white, fontSize: 18),
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 20,
+                        ),
+                        ElevatedButton(
+                          onPressed: logout,
+                          style: ElevatedButton.styleFrom(
+                              minimumSize: Size(200, 50),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10)),
+                              backgroundColor:
+                              const Color.fromARGB(255, 106, 32, 32)),
+                          child: const Text(
+                            '로그아웃',
+                            style: TextStyle(color: Colors.white, fontSize: 18),
+                          ),
+                        ),
+                        SizedBox(
+                          height: 20,
+                        ),
+                        ElevatedButton(
+                          onPressed: leave,
+                          style: ElevatedButton.styleFrom(
+                              minimumSize: Size(200, 50),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10)),
+                              backgroundColor:
+                              const Color.fromARGB(255, 255, 0, 0)),
+                          child: const Text(
+                            '회원 탈퇴',
                             style: TextStyle(color: Colors.white, fontSize: 18),
                           ),
                         ),
