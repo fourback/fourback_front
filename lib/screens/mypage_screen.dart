@@ -154,7 +154,6 @@ class _MypageScreenState extends State<MypageScreen> {
   }
 
   Future<void> logout() async {
-    String? refreshToken = await readRefresh();
     String? accessToken = await readAccess();
     final url = Uri.http(
       address,
@@ -164,7 +163,6 @@ class _MypageScreenState extends State<MypageScreen> {
     final headers = {
       "Content-Type": "application/json",
       'access': '$accessToken',
-      'refresh': '$refreshToken',
     };
     try {
       final response = await http.post(

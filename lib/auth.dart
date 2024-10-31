@@ -41,14 +41,12 @@ Future<bool> reissueToken(BuildContext context) async { //토큰 재발급
   try {
     print("reissueToken");
     String? refreshToken = await readRefresh();
-    String? accessToken = await readAccess();
 
 
     final reissueResponse = await http.post(
       Uri.parse('${ApiUrl.baseUrl}/reissue'),
       headers: {
         'refresh': '$refreshToken',
-        'access': '$accessToken',
       },
     );
 
