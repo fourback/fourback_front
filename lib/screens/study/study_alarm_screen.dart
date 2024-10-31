@@ -92,7 +92,10 @@ class _StudyAlarmScreenState extends State<StudyAlarmScreen> {
       } else {
         print('토큰 재발급 실패');
       }
-    } else {
+    } else if(response.statusCode == 400) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('현재 그룹 정원이 가득 찼습니다.'),duration: Duration(seconds: 1)));
+    }
+    else {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('신청 수락에 실패했습니다.')));
     }
   }

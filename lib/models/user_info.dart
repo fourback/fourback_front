@@ -54,7 +54,7 @@ class UserInfo {
       userId: json['userId'],
       userName: json['name'],
       imageUrl:json['profileImage'], email: '', birth: ''
-        '', belong: '', department: '', hobby: '', objective: '', address: '', techStack: '',
+        '', belong:json['belong'], department:json['department'], hobby: '', objective: '', address: '', techStack: '',
     );
   }
   @override
