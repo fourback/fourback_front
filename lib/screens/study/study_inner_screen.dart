@@ -325,6 +325,14 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
     }
   }
 
+  Future<void> _handleRefresh() async {
+    await fetchStudys();
+    await loadInitialData();
+    await checkGroupRole();
+    await fetchPendingApplications();
+    await fetchStudyGroupGoals();
+  }
+
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
@@ -344,70 +352,73 @@ class _StudyInnerScreenState extends State<StudyInnerScreen> {
         onLogoPressed: () {},
         onlistPressed: () {},
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            if (isOwner) // 소유자인 경우 승인 대기 인원 보여줌
-              Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.push(context,MaterialPageRoute(
-                      builder: (context) => StudyAlarmScreen(studyGroup: widget.studyGroup),
-                    ),
-                    );
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      color: Colors.black,
-                    ),
-                    width: MediaQuery.of(context).size.width * 0.9,
-                    height: MediaQuery.of(context).size.height * 0.05,
-                    child: Center(
-                      child: Text(
-                        '$pendingApprovalCount명의 유저가 그룹 참여 승인을 기다리고 있어요!',
-                        style: GoogleFonts.inter(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                          color: Colors.white,
+      body: RefreshIndicator(
+        onRefresh: _handleRefresh,
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              if (isOwner) // 소유자인 경우 승인 대기 인원 보여줌
+                Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(context,MaterialPageRoute(
+                        builder: (context) => StudyAlarmScreen(studyGroup: widget.studyGroup),
+                      ),
+                      );
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        color: Colors.black,
+                      ),
+                      width: MediaQuery.of(context).size.width * 0.9,
+                      height: MediaQuery.of(context).size.height * 0.05,
+                      child: Center(
+                        child: Text(
+                          '$pendingApprovalCount명의 유저가 그룹 참여 승인을 기다리고 있어요!',
+                          style: GoogleFonts.inter(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            if (!isOwner && !isMember && !isLimit) // 소유자도 멤버도 아닌 경우 참여 신청 버튼
-              Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: GestureDetector(
-                  onTap: () {
-                    requestToJoinGroup();
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      color: Colors.black,
-                    ),
-                    width: MediaQuery.of(context).size.width * 0.9,
-                    height: MediaQuery.of(context).size.height * 0.05,
-                    child: Center(
-                      child: Text(
-                        '그룹 참여 신청하기',
-                        style: GoogleFonts.inter(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                          color: Colors.white,
+              if (!isOwner && !isMember && !isLimit) // 소유자도 멤버도 아닌 경우 참여 신청 버튼
+                Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: GestureDetector(
+                    onTap: () {
+                      requestToJoinGroup();
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        color: Colors.black,
+                      ),
+                      width: MediaQuery.of(context).size.width * 0.9,
+                      height: MediaQuery.of(context).size.height * 0.05,
+                      child: Center(
+                        child: Text(
+                          '그룹 참여 신청하기',
+                          style: GoogleFonts.inter(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
+              ListBody(
+                children: _body(),
               ),
-            ListBody(
-              children: _body(),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

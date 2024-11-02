@@ -1,7 +1,7 @@
 class ApiUrl {
 
-  static const String baseUrl = 'http://59.11.250.123:8080'; //본인의 서버 url
-  static const String websocketUrl = "ws://59.11.250.123:8080";
+  static const String baseUrl = 'http://43.203.41.155:8080'; //본인의 서버 url
+  static const String websocketUrl = "ws://43.203.41.155:8080";
 
 
 

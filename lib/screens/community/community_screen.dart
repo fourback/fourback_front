@@ -163,8 +163,8 @@ class _BoardState extends State<BoardScreen> {
 
 
 
-              height: 200,
-              width: 341,
+              height: MediaQuery.of(context).size.height * 0.27, // 화면 높이의 25%
+              width: MediaQuery.of(context).size.width * 0.9, // 화면 너비의 90%
               decoration: BoxDecoration(
                   border: Border(
                       bottom: BorderSide(color: Color(0xffe9ecef),width: 1.3)
@@ -228,8 +228,8 @@ class _BoardState extends State<BoardScreen> {
         ),
 
         Container(
-          height: 300,
-          width: 355,
+          height: MediaQuery.of(context).size.height * 0.5, // 화면 높이의 25%
+          width: MediaQuery.of(context).size.width * 0.9, // 화면 너비의 90%
 
           child: ListView.builder(
               itemCount: boards.length,

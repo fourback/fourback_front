@@ -108,15 +108,24 @@ class _FriendScreenState extends State<FriendScreen> {
           children: [
             Expanded(
               child: friendInfo.isEmpty
-                  ? Center(
-                child: Text(
-                  '친구가 없습니다.',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey,
+                  ? ListView( // 빈 상태에서도 스크롤 가능하도록 ListView 사용
+                children: [
+                  Center(
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        top: MediaQuery.of(context).size.height * 0.3, // 화면 높이의 30% 만큼 패딩
+                      ),
+                      child: Text(
+                        '친구가 없습니다.',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+                ],
               )
                   : ListView.builder(
                 itemCount: friendInfo.length,
