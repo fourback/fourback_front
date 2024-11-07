@@ -4,9 +4,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../ip.dart';
-import 'home_screen.dart';
 import 'login_screen.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'navigation_screen.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -22,12 +20,13 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   String? _fcmToken;
+  bool _isTokenRefreshing = false;
+
   @override
-  void initState() {
+  void initState()  {
     super.initState();
     checkAutoLogin();
   }
-
 
   Future<void> initLocalNotification() async {
     const AndroidInitializationSettings initializationSettingsAndroid =
@@ -43,8 +42,10 @@ class _SplashScreenState extends State<SplashScreen> {
 
 
 
+
+
+
   Future<void> checkAutoLogin() async {
-    await Future.delayed(Duration(seconds: 3), () {});
     final prefs = await SharedPreferences.getInstance();
     String? token = prefs.getString('USERID');
     if (token != null) {
@@ -86,18 +87,26 @@ class _SplashScreenState extends State<SplashScreen> {
           return true;  // 프로필 정보가 불완전하면 true 반환
         }
       } else if(response.statusCode == 401) {
-        bool success = await reissueToken(context);
-        if(success) {
-          await _checkUserProfile(token);
-        } else {
-          print('토큰 재발급 실패');
+        if (!_isTokenRefreshing) {  // 토큰이 재발급 중이지 않을 때만 실행
+          _isTokenRefreshing = true;  // 토큰 재발급 상태로 설정
+          bool success = await reissueToken(context);
+          if (success) {
+            await _checkUserProfile(token);  // 재발급 후 다시 프로필 확인
+          } else {
+            print('토큰 재발급 실패');
+
+          }
+          _isTokenRefreshing = false;  // 토큰 재발급 끝난 후 상태 변경
         }
       } else {
         print('Failed to load profile data: ${response.body}');
+
       }
     } catch (e) {
       print('Error: $e');
+
     }
+
 
     return false;  // 프로필 정보가 완전하면 false 반환
   }
